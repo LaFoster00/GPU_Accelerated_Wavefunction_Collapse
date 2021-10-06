@@ -4,7 +4,7 @@ using Random = Unity.Mathematics.Random;
 
 using PropagatorState = System.Collections.Generic.List<System.Collections.Generic.List<int>[]>;
 
-public class WFC
+public class Model
 {
     #region Properties
 
@@ -53,16 +53,13 @@ public class WFC
 
     #endregion
 
-    public WFC(bool periodicOutput, int seed, List<double> patternsFrequencies,
+    public Model(bool periodicOutput, int seed, List<double> patternsFrequencies,
         PropagatorState propagator, int waveHeight, int waveWidth)
     {
         _gen = Random.CreateFromIndex((uint) seed);
         this._patternsFrequencies = patternsFrequencies.NormalizeList();
         _wave = new Wave(waveHeight, waveWidth, ref patternsFrequencies);
         _nbPatterns = propagator.Count;
-#if WFC_CPU
-        _propagator = new CPU_Propagator(_wave.Height, _wave.Width, periodicOutput, propagator);
-#endif
     }
 
     public (bool, int[,]) Run()

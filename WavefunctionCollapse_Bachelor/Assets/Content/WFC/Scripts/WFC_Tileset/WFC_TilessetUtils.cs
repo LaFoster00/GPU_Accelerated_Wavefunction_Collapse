@@ -103,7 +103,7 @@ public static class WFC_TilessetUtils
    * Generate the map associating an orientation id and an action to the
    * resulting orientation id.
    * Actions 0, 1, 2, and 3 are 0°, 90°, 180°, and 270° anticlockwise rotations.
-   * Actions 4, 5, 6, and 7 are actions 0, 1, 2, and 3 followed by a reflection
+   * Actions 4, 5, 6, and 7 are actions 0, 1, 2, and 3 preceded by a reflection
    * on the x axis.
    */
     public static int[,] GenerateActionMap(Symmetry2D symmetry)

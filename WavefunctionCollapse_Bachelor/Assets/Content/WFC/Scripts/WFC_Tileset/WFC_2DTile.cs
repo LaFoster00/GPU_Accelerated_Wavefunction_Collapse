@@ -1,6 +1,19 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
+[Serializable]
+public enum Symmetry2D
+{
+    L,
+    I,
+    X,
+    T,
+    Diag, // : \
+    F, // No symmetries, all transformations needed.
+}
+
+[Serializable]
 public enum Rotation
 {
     R0,
@@ -9,20 +22,42 @@ public enum Rotation
     R270,
 }
 
-public abstract class WFC_2DTile<T> : ScriptableObject
+/* Helper struct for keeping track of tile neighbours and their orientation */
+[Serializable]
+public struct Neighbour<T>
 {
+    // The actual neighbouring tile
+    public WFC_2DTile<T> neighbour;
+    
+    // The index of orientation of the tile (see WFC_2DTile<>.orientations)
+    public int neighbourOrientation;
+}
+
+public abstract class WFC_2DTile<T> : ScriptableObject
+ {
+     /* name of the tile */
     public string name;
+    
+    /* The actual content of the tile (Texture, Mesh, etc.) */
     public T tileContent;
+    
+    /* What symmetry axes does the content have */
     public Symmetry2D symmetry;
-
+    
+    /* Its weight on the distribution of presence of tiles */
+    public double weight;
+    
+    /* List of neighbours. These include information about the orientation of the tile */
+    public List<Neighbour<T>> neighbours = new List<Neighbour<T>>();
+    
     /*
-     First index is reflection-index.
-     Second index is rotation-index. Can be retrieved from Rotation via Rotation.ToIndex()
-     Holds reference to the rotated output asset which will can be used for preview and later resolve
-     */
+     Hold all possible orientations of tile content.
+     0, 1, 2 and 3 are 0°, 90°, 180° and 270° anticlockwise rotations.
+     4, 5, 6 and 7 are indexes 0, 1, 2 and 3 preceded by a reflection on
+     the x axis.
+    */
     public T[] orientations;
-
-
+    
     /* Should return the content rotated 90 degrees counter-clockwise  */
     protected abstract Func<T, T> GetRotatedContent { get; }
     

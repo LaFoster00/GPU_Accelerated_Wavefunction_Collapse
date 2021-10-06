@@ -1,12 +1,14 @@
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.WSA;
 
 [ExecuteInEditMode]
 public class WFC_Manager : MonoBehaviour
 {
-    public WFC_Input_Tileset[] inputs;
+    public WFC_Texture2DTile[] tiles;
     
     private void OnEnable()
     {
@@ -24,15 +26,20 @@ public class WFC_Manager : MonoBehaviour
 
     private void OnImportPackageCompleted(string packagename)
     {
-        print("HelloWorld");
-        string[] inputBitmaps = AssetDatabase.FindAssets("t:WFC_Input_Bitmap");
-        inputs = new WFC_Input_Tileset[inputBitmaps.Length];
-        int index = 0;
-        foreach (var inputBitmap in inputBitmaps)
+        Dictionary<WFC_Texture2DTile, int> tile_ids = new Dictionary<WFC_Texture2DTile, int>(tiles.Length);
+        int tileIndex = 1;
+        foreach (var tile in tiles)
         {
-            inputs[index] = AssetDatabase.LoadAssetAtPath<WFC_Input_Tileset>(AssetDatabase.GUIDToAssetPath(inputBitmap));
-            index++;
+            tile_ids.Add(tile, tileIndex++);
         }
         
+        foreach (var tile in tiles)
+        {
+            foreach (var neighbour in tile.neighbours)
+            {
+                
+            }
+            
+        }
     }
 }
