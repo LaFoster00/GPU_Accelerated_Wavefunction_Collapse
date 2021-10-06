@@ -11,7 +11,7 @@ public enum Symmetry2D
     X,
     T,
     Diag, // : \
-    P,
+    F, // No symmetries, all transformations needed.
 }
 
 /**
@@ -23,7 +23,7 @@ public struct TilingWFCOptions
 };
 
 [Serializable]
-public class WFC_2DTile<T>
+public class WFC_2DTileOld<T>
 {
     public string name;
     public Texture2D tile;
@@ -39,7 +39,7 @@ public class WFC_2DTile<T>
    * Create a tile with its differents orientations, its symmetries and its
    * weight on the distribution of tiles.
    */
-    public WFC_2DTile(List<T[,]> data, Symmetry2D symmetry, double weight)
+    public WFC_2DTileOld(List<T[,]> data, Symmetry2D symmetry, double weight)
     {
         this.data = data; 
         this.symmetry = symmetry;
@@ -51,151 +51,11 @@ public class WFC_2DTile<T>
      * weight on the distribution of tiles.
      * The other orientations are generated with its first one.
      */
-    public WFC_2DTile(T[,] data, Symmetry2D symmetry, double weight)
+    public WFC_2DTileOld(T[,] data, Symmetry2D symmetry, double weight)
     {
-        this.data = GenerateOriented(data, symmetry);
+        this.data = WFC_TilessetUtils.GenerateOriented(data, symmetry);
         this.symmetry = symmetry;
         this.weight = weight;
-    }
-
-    /**
-   * Generate the map associating an orientation id to the orientation
-   * id obtained when rotating 90° anticlockwise the tile.
-   */
-    public static int[] GenerateRotationMap(Symmetry2D symmetry2D)
-    {
-        switch (symmetry2D)
-        {
-            case Symmetry2D.X:
-                return new[] {0};
-            case Symmetry2D.I:
-            case Symmetry2D.Diag:
-                return new[] {1, 0};
-            case Symmetry2D.T:
-            case Symmetry2D.L:
-                return new[] {1, 2, 3, 0};
-            case Symmetry2D.P:
-            default:
-                return new[] {1, 2, 3, 0, 5, 6, 7, 4};
-        }
-    }
-
-    public static int NbOfPossibleOrientations(Symmetry2D symmetry)
-    {
-        switch (symmetry)
-        {
-            case Symmetry2D.X:
-                return 1;
-            case Symmetry2D.I:
-            case Symmetry2D.Diag:
-                return 2;
-            case Symmetry2D.T:
-            case Symmetry2D.L:
-                return 4;
-            default:
-                return 8;
-        }
-    }
-
-    /**
-   * Generate the map associating an orientation id to the orientation
-   * id obtained when reflecting the tile along the x axis.
-   */
-    public static int[] GenerateReflectionMap(Symmetry2D symmetry)
-    {
-        switch (symmetry)
-        {
-            case Symmetry2D.X:
-                return new[] {0};
-            case Symmetry2D.I:
-                return new[] {0, 1};
-            case Symmetry2D.Diag:
-                return new[] {1, 0};
-            case Symmetry2D.T:
-                return new[] {0, 3, 2, 1};
-            case Symmetry2D.L:
-                return new[] {1, 0, 3, 2};
-            case Symmetry2D.P:
-            default:
-                return new[] {4, 7, 6, 5, 0, 3, 2, 1};
-        }
-    }
-
-    /**
-   * Generate the map associating an orientation id and an action to the
-   * resulting orientation id.
-   * Actions 0, 1, 2, and 3 are 0°, 90°, 180°, and 270° anticlockwise rotations.
-   * Actions 4, 5, 6, and 7 are actions 0, 1, 2, and 3 preceded by a reflection
-   * on the x axis.
-   */
-    public static int[,] GenerateActionMap(Symmetry2D symmetry)
-    {
-        int[] rotationMap = GenerateRotationMap(symmetry);
-        int[] reflectionMap = GenerateRotationMap(symmetry);
-        int size = rotationMap.Length;
-        int[,] actionMap = new int[8, size];
-        
-        for (int i = 0; i < size; ++i)
-        {
-            actionMap[0, i] = i;
-        }
-
-        for (int a = 1; a < 4; ++a)
-        {
-            for (int i = 0; i < size; ++i)
-            {
-                actionMap[a, i] = rotationMap[actionMap[a - 1, i]];
-            }
-        }
-
-        for (int i = 0; i < size; ++i)
-        {
-            actionMap[4, i] = reflectionMap[actionMap[0, i]];
-        }
-
-        for (int a = 5; a < 8; ++a)
-        {
-            for (int i = 0; i < size; ++i)
-            {
-                actionMap[a, i] = rotationMap[actionMap[a - 1, i]];
-            }
-        }
-
-        return actionMap;
-    }
-    
-    /**
-   * Generate all distinct rotations of a 2D array given its symmetries;
-   */
-    public static List<T[,]> GenerateOriented(T[,] data, Symmetry2D symmetry) {
-        List<T[,]> oriented = new List<T[,]>();
-        oriented.Add(data);
-        
-        switch (symmetry) {
-            case Symmetry2D.I:
-            case Symmetry2D.Diag:
-                oriented.Add(data.Rotated());
-                break;
-            case Symmetry2D.T:
-            case Symmetry2D.L:
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated());
-                break;
-            case Symmetry2D.P:
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated().Reflected());
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated());
-                oriented.Add(data = data.Rotated());
-                break;
-            default:
-                break;
-        }
-
-        return oriented;
     }
 }
 
@@ -206,7 +66,7 @@ public class TilingWFC<T> {
     /**
    * The distincts tiles.
    */
-  private List<WFC_2DTile<T>> tiles;
+  private List<WFC_2DTileOld<T>> tiles;
 
   /**
    * Map ids of oriented tiles to tile and orientation.
@@ -242,7 +102,7 @@ public class TilingWFC<T> {
    * Generate mapping from id to oriented tiles and vice versa.
    */
   static (List<(int, int)>, List<List<int>>)
-  generate_oriented_tile_ids(List<WFC_2DTile<T>> tiles)
+  generate_oriented_tile_ids(List<WFC_2DTileOld<T>> tiles)
   {
     List<(int,int)> id_to_oriented_tile = new List<(int, int)>();
     List<List<int>> oriented_tile_ids = new List<List<int>>();
@@ -265,7 +125,7 @@ public class TilingWFC<T> {
    */
   static List<List<int>[]> generate_propagator(
       List<(int, int, int, int)> neighbors,
-      List<WFC_2DTile<T>> tiles,
+      List<WFC_2DTileOld<T>> tiles,
       List<(int, int)> id_to_oriented_tile,
       List<List<int>> oriented_tile_ids) {
     int nb_oriented_tiles = id_to_oriented_tile.Count;
@@ -284,9 +144,9 @@ public class TilingWFC<T> {
       int tile2 = neighbor.Item3;
       int orientation2 = neighbor.Item4;
       int[,] action_map1 =
-          WFC_2DTile<T>.GenerateActionMap(tiles[tile1].symmetry);
+          WFC_TilessetUtils.GenerateActionMap(tiles[tile1].symmetry);
       int[,] action_map2 =
-          WFC_2DTile<T>.GenerateActionMap(tiles[tile2].symmetry);
+          WFC_TilessetUtils.GenerateActionMap(tiles[tile2].symmetry);
 
       Action<int, int> add = ( action, direction) => {
           int temp_orientation1 = action_map1[action,orientation1];
@@ -330,7 +190,7 @@ public class TilingWFC<T> {
    * Get probability of presence of tiles.
    */
   static List<double>
-  get_tiles_weights( List<WFC_2DTile<T>> tiles) {
+  get_tiles_weights( List<WFC_2DTileOld<T>> tiles) {
     List<double> frequencies = new List<double>();
     for (int i = 0; i < tiles.Count; ++i) {
       for (int j = 0; j < tiles[i].data.Count; ++j) {
@@ -380,7 +240,7 @@ public class TilingWFC<T> {
    * Construct the TilingWFC class to generate a tiled image.
    */
   TilingWFC(
-      List<WFC_2DTile<T>> tiles,
+      List<WFC_2DTileOld<T>> tiles,
       List<(int, int, int, int)> neighbors,
       int height, int width,
       TilingWFCOptions options, int seed)
