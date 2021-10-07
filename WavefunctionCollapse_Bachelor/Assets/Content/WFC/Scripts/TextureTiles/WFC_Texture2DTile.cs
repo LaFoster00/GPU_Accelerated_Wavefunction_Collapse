@@ -19,4 +19,10 @@ public class WFC_Texture2DTile : WFC_2DTile<Texture2D>
             return texture2D => texture2D.Mirrored();
         }
     }
+
+    public override Texture2D[,] ResultToOutput(int[,] wave, WFC_2DTile<Texture2D>[] tiles)
+    {
+        Debug.Log("Such texture, much wow!");
+        return null;
+    }
 }

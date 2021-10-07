@@ -5,14 +5,15 @@ using UnityEngine;
 [Serializable]
 public enum Symmetry2D
 {
-    L,
-    I,
     X,
-    T,
+    I,
     Diag, // : \
+    T,
+    L, 
     F, // No symmetries, all transformations needed.
 }
 
+    
 [Serializable]
 public enum Rotation
 {
@@ -24,13 +25,38 @@ public enum Rotation
 
 /* Helper struct for keeping track of tile neighbours and their orientation */
 [Serializable]
-public struct Neighbour<T>
+public struct TileNeighbour<T> : Neighbour<T>
 {
+    // The tile describing its neighbour
+    public WFC_2DTile<T> leftTile;
+
+    // The index of orientation of the base tile (see WFC_2DTile<>.orientations)
+    public int leftTileOrientation;
+    
     // The actual neighbouring tile
-    public WFC_2DTile<T> neighbour;
+    public WFC_2DTile<T> rightTile;
     
     // The index of orientation of the tile (see WFC_2DTile<>.orientations)
-    public int neighbourOrientation;
+    public int rightTileOrientation;
+
+    public Neighbour<T>.AddToPropagator Add =>
+        (neighbour, actionMaps, orientedTileIds, propagator, action, direction) =>
+        {
+            TileNeighbour<T> tileNeighbour = (TileNeighbour<T>) neighbour;
+
+            int leftActionOrientation =
+                actionMaps[tileNeighbour.leftTile.symmetry.ToIndex()][action, tileNeighbour.leftTileOrientation];
+            int leftOrientedTileId = orientedTileIds[tileNeighbour.leftTile.tileId][leftActionOrientation];
+
+            int rightActionOrientation =
+                actionMaps[tileNeighbour.rightTile.symmetry.ToIndex()][action, tileNeighbour.rightTileOrientation];
+            int rightOrientedTileId =
+                orientedTileIds[tileNeighbour.rightTile.tileId][rightActionOrientation];
+
+            propagator[leftOrientedTileId][(int)direction][rightOrientedTileId] = true;
+            direction = Directions.GetOppositeDirection(direction);
+            propagator[rightOrientedTileId][(int)direction][leftOrientedTileId] = true;
+        };
 }
 
 public abstract class WFC_2DTile<T> : ScriptableObject
@@ -49,6 +75,8 @@ public abstract class WFC_2DTile<T> : ScriptableObject
     
     /* List of neighbours. These include information about the orientation of the tile */
     public List<Neighbour<T>> neighbours = new List<Neighbour<T>>();
+
+    [NonSerialized] public int tileId;
     
     /*
      Hold all possible orientations of tile content.
@@ -98,4 +126,7 @@ public abstract class WFC_2DTile<T> : ScriptableObject
                 break;
         }
     }
-}
+
+    /* Translate the generic WFC result into the image result */
+    public abstract T[,] ResultToOutput(int[,] wave, WFC_2DTile<T>[] tiles);
+ }

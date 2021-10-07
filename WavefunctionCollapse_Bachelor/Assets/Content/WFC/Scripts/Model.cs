@@ -2,46 +2,38 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using Random = Unity.Mathematics.Random;
 
-using PropagatorState = System.Collections.Generic.List<System.Collections.Generic.List<int>[]>;
-
 public class Model
 {
     #region Properties
 
     #region Private
 
-    /**
-   * The random number generator.
-   */
+    /* The random number generator. */
     private Random _gen;
 
-    /**
-   * The distribution of the patterns as given in input.
-   */
-    private List<double> _patternsFrequencies;
+    /* The distribution of the patterns as given in input. */
+    protected double[] patternsFrequencies;
 
-    /**
-   * The wave, indicating which patterns can be put in which cell.
-   */
-    private Wave _wave;
+    /* The wave, indicating which patterns can be put in which cell. */
+    protected Wave wave;
 
-    /**
-   * The number of distinct patterns.
-   */
-    private int _nbPatterns;
+    /* The number of distinct patterns. */
+    protected int nbPatterns;
 
-    /**
-   * The propagator, used to propagate the information in the wave.
-   */
+    /* The propagator, used to propagate the information in the wave. */
     private Propagator _propagator;
+    
+    /* Wave output dimensions */
+    protected readonly int waveHeight, waveWidth;
+    
+    /* If the ouput will be periodic */
+    protected readonly bool periodicOutput;
 
     #endregion
 
     #region Public
 
-    /*
-      * Return value of observe.
-      */
+    /* Return value of observe. */
     public enum ObserveStatus
     {
         Success, // WFC has finished and has succeeded.
@@ -53,20 +45,26 @@ public class Model
 
     #endregion
 
-    public Model(bool periodicOutput, int seed, List<double> patternsFrequencies,
-        PropagatorState propagator, int waveHeight, int waveWidth)
+    public Model(bool periodicOutput, int seed, int waveHeight, int waveWidth)
     {
         _gen = Random.CreateFromIndex((uint) seed);
-        this._patternsFrequencies = patternsFrequencies.NormalizeList();
-        _wave = new Wave(waveHeight, waveWidth, ref patternsFrequencies);
-        _nbPatterns = propagator.Count;
+        this.waveHeight = waveHeight;
+        this.waveWidth = waveWidth;
+        this.periodicOutput = periodicOutput;
+    }
+
+    protected void Init(double[] patternsFrequencies, List<int>[][] propagatorState)
+    {
+        this.patternsFrequencies = patternsFrequencies.Normalize();
+        wave = new Wave(waveHeight, waveWidth, this.patternsFrequencies);
+        nbPatterns = propagatorState.Length;
+        _propagator = new Propagator(waveHeight, waveWidth, periodicOutput, propagatorState);
     }
 
     public (bool, int[,]) Run()
     {
         while (true)
         {
-
             // Define the value of an undefined cell.
             ObserveStatus result = Observe();
 
@@ -81,7 +79,7 @@ public class Model
             }
 
             // Propagate the information.
-            _propagator.Propagate(_wave);
+            _propagator.Propagate(wave);
         }
     }
 
@@ -91,7 +89,7 @@ public class Model
     public ObserveStatus Observe()
     {
         // Get the cell with lowest entropy.
-        int argmin = _wave.GetMinEntropy(ref _gen);
+        int argmin = wave.GetMinEntropy(ref _gen);
 
         // If there is a contradiction, the algorithm has failed.
         if (argmin == -2)
@@ -109,17 +107,17 @@ public class Model
 
         // Choose an element according to the pattern distribution
         double s = 0;
-        for (int k = 0; k < _nbPatterns; k++)
+        for (int k = 0; k < nbPatterns; k++)
         {
-            s += _wave.Get(argmin, k) ? _patternsFrequencies[k] : 0;
+            s += wave.Get(argmin, k) ? patternsFrequencies[k] : 0;
         }
 
         double randomValue = math.remap(0, 1, 0, s, _gen.NextDouble());
-        int chosenValue = _nbPatterns - 1;
+        int chosenValue = nbPatterns - 1;
 
-        for (int k = 0; k < _nbPatterns; k++)
+        for (int k = 0; k < nbPatterns; k++)
         {
-            randomValue -= _wave.Get(argmin, k) ? _patternsFrequencies[k] : 0;
+            randomValue -= wave.Get(argmin, k) ? patternsFrequencies[k] : 0;
             if (randomValue <= 0)
             {
                 chosenValue = k;
@@ -128,13 +126,13 @@ public class Model
         }
 
         // And define the cell with the pattern.
-        for (int k = 0; k < _nbPatterns; k++)
+        for (int k = 0; k < nbPatterns; k++)
         {
-            if (_wave.Get(argmin, k) != (k == chosenValue))
+            if (wave.Get(argmin, k) != (k == chosenValue))
             {
-                _propagator.AddToPropagator(argmin / _wave.Width, argmin % _wave.Width,
+                _propagator.AddToPropagator(argmin / wave.width, argmin % wave.width,
                     k);
-                _wave.Set(argmin, k, false);
+                wave.Set(argmin, k, false);
             }
         }
 
@@ -146,18 +144,18 @@ public class Model
       */
     public void Propagate()
     {
-        _propagator.Propagate(_wave);
+        _propagator.Propagate(wave);
     }
 
     /*
       * Remove pattern from cell (i,j).
       */
-    public void RemoveWavePattern(int i, int j, int pattern)
+    public void RemoveWavePattern(int y, int x, int pattern)
     {
-        if (_wave.Get(i, j, pattern))
+        if (wave.Get(y, x, pattern))
         {
-            _wave.Set(i, j, pattern, false);
-            _propagator.AddToPropagator(i, j, pattern);
+            wave.Set(y, x, pattern, false);
+            _propagator.AddToPropagator(y, x, pattern);
         }
     }
 
@@ -168,12 +166,12 @@ public class Model
       */
     private int[,] WaveToOutput()
     {
-        int[,] outputPatterns = new int[_wave.Height, _wave.Width];
-        for (int i = 0; i < _wave.Size; i++)
+        int[,] outputPatterns = new int[wave.height, wave.width];
+        for (int i = 0; i < wave.size; i++)
         {
-            for (int k = 0; k < _nbPatterns; k++)
+            for (int k = 0; k < nbPatterns; k++)
             {
-                if (_wave.Get(i, k))
+                if (wave.Get(i, k))
                 {
                     outputPatterns.SetValue(k, i);
                 }

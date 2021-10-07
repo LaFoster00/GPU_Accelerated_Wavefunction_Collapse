@@ -13,11 +13,11 @@ using Random = Unity.Mathematics.Random;
  */
 public struct EntropyMemoisation
 {
- public List<double> PlogpSum; // The sum of p'(pattern) * log(p'(pattern)).
- public List<double> Sum; // The sum of of p'(pattern).
- public List<double> LogSum; // The log sum.
- public List<int> NbPatterns; // The number of patterns present.
- public List<double> Entropy; // The entropy of the cell.
+ public double[] PlogpSum; // The sum of p'(pattern) * log(p'(pattern)).
+ public double[] Sum; // The sum of of p'(pattern).
+ public double[] LogSum; // The log sum.
+ public int[] NbPatterns; // The number of patterns present.
+ public double[] Entropy; // The entropy of the cell.
 }
 
 /*
@@ -31,10 +31,10 @@ public class Wave
     #region Private
 
     /* The patterns frequencies p given to wfc. */
-    private readonly List<double> _patternFrequencies = new List<double>();
+    private readonly List<double> _patternFrequencies;
 
     /* The precomputation of p * log(p). */
-    private readonly List<double> _plogPatternFrequencies = new List<double>();
+    private readonly List<double> _plogPatternFrequencies;
 
     /* The precomputation of min (p * log(p)) / 2.
      This is used to define the maximum value of the noise. */
@@ -43,33 +43,35 @@ public class Wave
     /* The memoisation of important values for the computation of entropy. */
     private EntropyMemoisation _memoisation;
 
-    /* This value is set to true if there is a contradiction in the wave (all
-      elements set to false in a cell). */
+    /*
+     This value is set to true if there is a contradiction in the wave (all
+     elements set to false in a cell). 
+    */
     private bool _isImpossible;
 
     /* The number of distinct patterns; */
     private readonly int _nbPatterns;
 
-    /* The actual wave. data[index, pattern] is equal to true if the pattern can
-      be placed in the cell index. */
-    private bool[,] _data;
+    /*
+     The actual wave. data[index, pattern] is equal to true if the pattern can
+     be placed in the cell index. 
+    */
+    private bool[,,] _data;
 
     #endregion
 
     #region Public
 
     /* The size of the Wave */
-    public readonly int Width;
-    public readonly int Height;
-    public readonly int Size;
+    public readonly int width;
+    public readonly int height;
+    public readonly int size;
 
     #endregion
 
     #endregion
 
-    /**
- * Return distribution * log(distribution).
- */
+    /* Return distribution * log(distribution). */
     List<double> GetPlogp(ref List<double> distribution)
     {
         List<double> plogp = new List<double>(distribution.Count);
@@ -81,9 +83,7 @@ public class Wave
         return plogp;
     }
 
-    /**
- * Return min(v) / 2.
- */
+    /* Return min(v) / 2. */
     double GetMinAbsHalf(ref List<double> v)
     {
         double minAbsHalf = Single.MaxValue;
@@ -95,19 +95,19 @@ public class Wave
         return minAbsHalf;
     }
 
-    public Wave(int height, int width, ref List<double> patternFrequencies)
+    public Wave(int height, int width, double[] patternFrequencies)
     {
         #region Init Members
 
-        Width = width;
-        Height = height;
-        Size = width * height;
+        this.width = width;
+        this.height = height;
+        size = width * height;
         _patternFrequencies = new List<double>(patternFrequencies);
         _plogPatternFrequencies = GetPlogp(ref _patternFrequencies);
         _minAbsHalfPlogp = GetMinAbsHalf(ref _plogPatternFrequencies);
         _isImpossible = false;
-        _nbPatterns = patternFrequencies.Count;
-        _data = new bool[Height * Width, _nbPatterns];
+        _nbPatterns = patternFrequencies.Length;
+        _data = new bool[height, width, _nbPatterns];
         Parallel.For(0, _data.Length, index => { _data.SetValue(true, index); });
 
         #endregion
@@ -123,29 +123,33 @@ public class Wave
 
         double logBaseS = math.log(baseS);
         double entropyBase = logBaseS - baseEntropy / baseS;
-        _memoisation.PlogpSum = new List<double>(width * height);
-        _memoisation.Sum = Enumerable.Repeat(baseS, width * height).ToList();
-        _memoisation.LogSum = Enumerable.Repeat(logBaseS, width * height).ToList();
-        _memoisation.NbPatterns = Enumerable.Repeat(_nbPatterns, width * height).ToList();
-        _memoisation.Entropy = Enumerable.Repeat(entropyBase, width * height).ToList();
+        _memoisation.PlogpSum = new double[height * width];
+        _memoisation.Sum = Enumerable.Repeat(baseS, height * width).ToArray();
+        _memoisation.LogSum = Enumerable.Repeat(logBaseS, height * width).ToArray();
+        _memoisation.NbPatterns = Enumerable.Repeat(_nbPatterns, height * width).ToArray();
+        _memoisation.Entropy = Enumerable.Repeat(entropyBase, height * width).ToArray();
     }
 
     /* Return true if pattern can be placed in cell index. */
     public bool Get(int index, int pattern)
     {
-        return !_data[index, pattern];
+        int y = index / width;
+        int x = index % width;
+        return !_data[y, x, pattern];
     }
 
     /* Return true if pattern can be placed in cell (i,j) */
-    public bool Get(int i, int j, int pattern)
+    public bool Get(int y, int x, int pattern)
     {
-        return Get(i * Width + j, pattern);
+        return Get(y * width + x, pattern);
     }
 
     /* Set the value of pattern in cell index. */
     public void Set(int index, int pattern, bool value)
     {
-        bool oldValue = _data[index, pattern];
+        int y = index / width;
+        int x = index % width;
+        bool oldValue = _data[y, x, pattern];
         // If the value isn't changed, nothing needs to be done.
         if (oldValue == value)
         {
@@ -153,7 +157,7 @@ public class Wave
         }
 
         // Otherwise, the memoisation should be updated.
-        _data[index, pattern] = value;
+        _data[y, x, pattern] = value;
         _memoisation.PlogpSum[index] -= _plogPatternFrequencies[pattern];
         _memoisation.Sum[index] -= _patternFrequencies[pattern];
         _memoisation.LogSum[index] = math.log(_memoisation.Sum[index]);
@@ -172,7 +176,7 @@ public class Wave
     /* Set the value of pattern in cell (i,j). */
     public void Set(int i, int j, int pattern, bool value)
     {
-        Set(i * Width + j, pattern, value);
+        Set(i * width + j, pattern, value);
     }
 
     /* Return the index of the cell with lowest entropy different of 0.
@@ -189,7 +193,7 @@ public class Wave
         double min = Double.MaxValue;
         int argmin = -1;
 
-        for (int i = 0; i < Size; i++)
+        for (int i = 0; i < size; i++)
         {
 
             // If the cell is decided, we do not compute the entropy (which is equal

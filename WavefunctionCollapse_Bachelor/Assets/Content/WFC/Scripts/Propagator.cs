@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-
-using PropagatorState = System.Collections.Generic.List<System.Collections.Generic.List<int>[]>;
-
 public class Propagator
 {
     /**
@@ -15,7 +12,7 @@ public class Propagator
    * propagator[pattern1][direction] contains all the patterns that can
    * be placed in next to pattern1 in the direction direction.
    */
-    private PropagatorState _propagatorState;
+    private List<int>[][] _propagatorState;
 
     /**
    * The wave width and height.
@@ -29,20 +26,22 @@ public class Propagator
    */
     private readonly bool _periodicOutput;
 
-    /**
-   * All the tuples (y, x, pattern) that should be propagated.
-   * The tuple should be propagated when wave.get(y, x, pattern) is set to
-   * false.
-   */
+    /*
+     All the tuples (y, x, pattern) that should be propagated.
+     The tuple should be propagated when wave.get(y, x, pattern) is set to
+     false.
+    */
     List<(int, int, int)> _propagating;
 
-    /**
-   * compatible.get(y, x, pattern)[direction] contains the number of patterns
-   * present in the wave that can be placed in the cell next to (y,x) in the
-   * opposite direction of direction without being in contradiction with pattern
-   * placed in (y,x). If wave.get(y, x, pattern) is set to false, then
-   * compatible.get(y, x, pattern) has every element negative or null
-   */
+    /*
+     compatible.get(y, x, pattern)[direction] contains the number of patterns
+     present in the wave that can be placed in the cell next to (y,x) in the
+     opposite direction of direction without being in contradiction with pattern
+     placed in (y,x). If wave.get(y, x, pattern) is set to false, then
+     compatible.get(y, x, pattern) has every element negative or null
+     
+     TODO I have no idea why this would be interesting and what the implication of this data is
+    */
     private int[,,][] _compatible;
 
     /**
@@ -56,13 +55,12 @@ public class Propagator
         {
             for (int x = 0; x < _waveWidth; x++)
             {
+                /* In case of tiling pattern is an oriented tile not an actual pattern. */
                 for (int pattern = 0; pattern < _patternsSize; pattern++)
                 {
                     for (int direction = 0; direction < 4; direction++)
                     {
-                        value[direction] =
-                            (_propagatorState[pattern][Direction.GetOppositeDirection(direction)]
-                                .Count);
+                        value[direction] = _propagatorState[pattern][Directions.GetOppositeDirection(direction)].Count;
                     }
 
                     _compatible[y, x, pattern] = value;
@@ -75,13 +73,13 @@ public class Propagator
     * Constructor building the propagator and initializing compatible.
     */
     public Propagator(int waveHeight, int waveWidth, bool periodicOutput,
-        PropagatorState propagatorState)
+        List<int>[][] propagatorState)
     {
-        _patternsSize = propagatorState.Count;
-        _propagatorState = new PropagatorState(propagatorState);
-        _waveWidth = waveWidth;
         _waveHeight = waveHeight;
+        _waveWidth = waveWidth;
         _periodicOutput = periodicOutput;
+        _propagatorState = propagatorState;
+        _patternsSize = propagatorState.Length;
 
         _compatible = new int[_waveHeight, _waveWidth, _patternsSize][];
         InitCompatible();
@@ -119,31 +117,31 @@ public class Propagator
             {
 
                 // We get the next cell in the direction direction.
-                int dx = Direction.DirectionsX[direction];
-                int dy = Direction.DirectionsY[direction];
+                int dx = Directions.DirectionsX[direction];
+                int dy = Directions.DirectionsY[direction];
                 int x2, y2;
                 if (_periodicOutput)
                 {
-                    x2 = (x1 + dx + wave.Width) % wave.Width;
-                    y2 = (y1 + dy + wave.Height) % wave.Height;
+                    x2 = (x1 + dx + wave.width) % wave.width;
+                    y2 = (y1 + dy + wave.height) % wave.height;
                 }
                 else
                 {
                     x2 = x1 + dx;
                     y2 = y1 + dy;
-                    if (x2 < 0 || x2 >= wave.Width)
+                    if (x2 < 0 || x2 >= wave.width)
                     {
                         continue;
                     }
 
-                    if (y2 < 0 || y2 >= wave.Height)
+                    if (y2 < 0 || y2 >= wave.height)
                     {
                         continue;
                     }
                 }
 
                 // The index of the second cell, and the patterns compatible
-                int i2 = x2 + y2 * wave.Width;
+                int i2 = x2 + y2 * wave.width;
                 ref List<int> patterns = ref _propagatorState[pattern][direction];
 
                 // For every pattern that could be placed in that cell without being in
