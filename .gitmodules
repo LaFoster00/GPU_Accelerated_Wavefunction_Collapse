@@ -1,0 +1,3 @@
+[submodule "WavefunctionCollapse_Bachelor/Assets/USCSL"]
+	path = WavefunctionCollapse_Bachelor/Assets/USCSL
+	url = git@github.com:LaFoster00/USCSL.git
