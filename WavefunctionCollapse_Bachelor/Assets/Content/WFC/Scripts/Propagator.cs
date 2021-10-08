@@ -33,7 +33,7 @@ namespace WFC
          The tuple should be propagated when wave.get(y, x, pattern) is set to
          false.
         */
-        List<(int, int, int)> _propagating;
+        List<(int, int, int)> _propagating = new List<(int, int, int)>();
 
         /*
          compatible.get(y, x, pattern)[direction] contains the number of patterns
@@ -47,8 +47,22 @@ namespace WFC
         private int[,,][] _compatible;
 
         /*
-         Initialize compatible.
+         Constructor building the propagator and initializing compatible.
         */
+        public Propagator(int waveHeight, int waveWidth, bool periodicOutput,
+            List<int>[][] propagatorState)
+        {
+            _waveHeight = waveHeight;
+            _waveWidth = waveWidth;
+            _periodicOutput = periodicOutput;
+            _propagatorState = propagatorState;
+            _patternsSize = propagatorState.Length;
+
+            _compatible = new int[_waveHeight, _waveWidth, _patternsSize][];
+            InitCompatible();
+        }
+
+        /* Initialize compatible. */
         private void InitCompatible()
         {
             int[] value = new int[4];
@@ -71,23 +85,7 @@ namespace WFC
                 }
             }
         }
-
-        /*
-         Constructor building the propagator and initializing compatible.
-        */
-        public Propagator(int waveHeight, int waveWidth, bool periodicOutput,
-            List<int>[][] propagatorState)
-        {
-            _waveHeight = waveHeight;
-            _waveWidth = waveWidth;
-            _periodicOutput = periodicOutput;
-            _propagatorState = propagatorState;
-            _patternsSize = propagatorState.Length;
-
-            _compatible = new int[_waveHeight, _waveWidth, _patternsSize][];
-            InitCompatible();
-        }
-
+        
 
         /*
          Add an element to the propagator.

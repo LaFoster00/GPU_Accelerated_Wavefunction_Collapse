@@ -106,7 +106,14 @@ namespace WFC
             _isImpossible = false;
             _nbPatterns = patternFrequencies.Length;
             _data = new bool[height, width, _nbPatterns];
-            Parallel.For(0, _data.Length, index => { _data.SetValue(true, index); });
+            int widthNbPatterns = width * _nbPatterns;
+            Parallel.For(0, height * width * _nbPatterns, index =>
+            {
+                int y = index / widthNbPatterns;
+                int x = (index % widthNbPatterns) / _nbPatterns;
+                int pattern = (index % widthNbPatterns) % _nbPatterns;
+                _data[y,x,pattern] = true;
+            });
 
             #endregion
 
@@ -139,7 +146,7 @@ namespace WFC
         /* Return true if pattern can be placed in cell (i,j) */
         public bool Get(int y, int x, int pattern)
         {
-            return !_data[y, x, pattern];
+            return _data[y, x, pattern];
         }
 
         /* Set the value of pattern in cell index. */

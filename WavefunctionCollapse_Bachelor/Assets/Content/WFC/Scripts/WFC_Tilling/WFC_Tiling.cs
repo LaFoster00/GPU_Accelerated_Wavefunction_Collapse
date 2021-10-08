@@ -47,10 +47,10 @@ namespace WFC.Tiling
                 orientedTileIds[tID] = new int[tiles[tID].orientations.Length];
                 for (int oID = 0; oID < tiles[tID].orientations.Length; oID++) //oID = orientationID
                 {
-                    idToOrientedTile.Add((tID,
-                        oID)); // Each oriented tile id (Solver) will return their original tile and its orientation index
-                    orientedTileIds[tID][oID] =
-                        id; // Each original tile id and orientation will return their oriented tile id (Solver) 
+                    // Each oriented tile id (Solver) will return their original tile and its orientation index
+                    idToOrientedTile.Add((tID, oID)); 
+                    // Each original tile id and orientation will return their oriented tile id (Solver)
+                    orientedTileIds[tID][oID] = id;  
                     id++;
                 }
             }
@@ -96,7 +96,8 @@ namespace WFC.Tiling
             }
 
             /* Store the indices of all compatible oriented tiles. */
-            List<int>[][] propagator = new List<int>[nbOrientedTiles][];
+            List<int>[][] propagator = 
+                Enumerable.Repeat(Enumerable.Repeat(new List<int>(), 4).ToArray(), nbOrientedTiles).ToArray();
             for (int i = 0; i < nbOrientedTiles; ++i)
             {
                 for (int j = 0; j < nbOrientedTiles; ++j)
