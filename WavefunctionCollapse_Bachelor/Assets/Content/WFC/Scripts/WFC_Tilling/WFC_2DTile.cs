@@ -70,13 +70,13 @@ namespace WFC.Tiling
         public T tileContent;
 
         /* What symmetry axes does the content have */
-        public Symmetry2D symmetry;
+        public Symmetry2D symmetry = Symmetry2D.X;
 
         /* Its weight on the distribution of presence of tiles */
-        public double weight;
+        public double weight = 1;
 
         /* List of neighbours. These include information about the orientation of the tile */
-        public List<Neighbour<T>> neighbours = new List<Neighbour<T>>();
+        public List<TileNeighbour<T>> neighbours = new List<TileNeighbour<T>>();
 
         [NonSerialized] public int tileId;
 
