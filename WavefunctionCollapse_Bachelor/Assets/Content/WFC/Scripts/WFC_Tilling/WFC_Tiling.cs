@@ -106,7 +106,8 @@ namespace WFC.Tiling
                     {
                         if (densePropagator[i][d][j])
                         {
-                            propagator[i][d].Add(j);
+                            // TODO reduce entries as there are very many very quickly
+                            propagator[i][d].Add(j); 
                         }
                     }
                 }
