@@ -14,6 +14,11 @@ namespace WFC.Tiling
     {
         public WFC_Texture2DTile[] tiles;
 
+        public (bool Success, Texture2D[,] Result) result;
+
+        [SerializeField] private int displayHeight = 16;
+        [SerializeField] private int displayWidth = 16;
+
         public int width;
         public int height;
 
@@ -32,14 +37,30 @@ namespace WFC.Tiling
             }
 
             TilingWFC<Texture2D> tilingWfc = new TilingWFC<Texture2D>(tiles.Cast<WFC_2DTile<Texture2D>>().ToArray(),
-                neighbours.Cast<Neighbour<Texture2D>>().ToArray(), height, width, true, 
+                neighbours.Cast<Neighbour<Texture2D>>().ToArray(), height, width, true,
                 Random.Range(Int32.MinValue, Int32.MaxValue));
 
-            (bool Success, Texture2D[,] Result) result = tilingWfc.Run();
-
+            result = tilingWfc.Run();
             if (result.Success)
             {
-                print($"Hurray. It only took {Time.realtimeSinceStartup - startTime} seconds to complete this really simple task!");
+                print(
+                    $"Hurray. It only took {Time.realtimeSinceStartup - startTime} seconds to complete this really simple task!");
+            }
+        }
+
+        private void OnGUI()
+        {
+            if (result.Success)
+            {
+                for (int y = 0; y < result.Result.GetLength(0); y++)
+                {
+                    for (int x = 0; x < result.Result.GetLength(1); x++)
+                    {
+                        GUI.DrawTexture(
+                            Rect.MinMaxRect(displayWidth * x, displayHeight * y, displayWidth + displayWidth * x,
+                                displayHeight + displayHeight * y), result.Result[y, x]);
+                    }
+                }
             }
         }
 

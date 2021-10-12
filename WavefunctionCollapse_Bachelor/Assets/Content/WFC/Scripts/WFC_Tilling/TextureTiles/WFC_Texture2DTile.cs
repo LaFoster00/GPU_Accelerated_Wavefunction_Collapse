@@ -18,10 +18,19 @@ namespace WFC.Tiling
             get { return texture2D => texture2D.Mirrored(); }
         }
 
-        public override Texture2D[,] ResultToOutput(int[,] wave, WFC_2DTile<Texture2D>[] tiles)
+        public override Texture2D[,] ResultToOutput(int[,] wave, WFC_2DTile<Texture2D>[] tiles, (int, int)[] orientedToTileId)
         {
+            Texture2D[,] output = new Texture2D[wave.GetLength(0), wave.GetLength(1)];
+            for (int y = 0; y < wave.GetLength(0); y++)
+            {
+                for (int x = 0; x < wave.GetLength(1); x++)
+                {
+                    (int Tile, int Orientation) currentTile = orientedToTileId[wave[y, x]];
+                    output[y, x] = tiles[currentTile.Tile].orientations[currentTile.Orientation];
+                }
+            }
             Debug.Log("Such texture, much wow!");
-            return null;
+            return output;
         }
     }
 }

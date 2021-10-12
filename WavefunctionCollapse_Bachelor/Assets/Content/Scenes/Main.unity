@@ -236,10 +236,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tiles:
-  - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-  - {fileID: 11400000, guid: bc39127be4d8d86589893ba21f50325f, type: 2}
-  width: 64
-  height: 64
+  - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
+  - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+  displayHeight: 32
+  displayWidth: 32
+  width: 3
+  height: 3
 --- !u!4 &291630408
 Transform:
   m_ObjectHideFlags: 0

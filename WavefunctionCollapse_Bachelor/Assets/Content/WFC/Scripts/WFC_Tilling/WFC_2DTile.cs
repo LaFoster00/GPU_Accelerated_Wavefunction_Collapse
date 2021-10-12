@@ -27,7 +27,7 @@ namespace WFC.Tiling
 
 /* Helper struct for keeping track of tile neighbours and their orientation */
     [Serializable]
-    public struct TileNeighbour<T> : Neighbour<T>
+    public class TileNeighbour<T> : Neighbour<T>
     {
         // The tile describing its neighbour
         public WFC_2DTile<T> leftTile;
@@ -130,6 +130,6 @@ namespace WFC.Tiling
         }
 
         /* Translate the generic WFC result into the image result */
-        public abstract T[,] ResultToOutput(int[,] wave, WFC_2DTile<T>[] tiles);
+        public abstract T[,] ResultToOutput(int[,] wave, WFC_2DTile<T>[] tiles, (int, int)[] orientedToTileId);
     }
 }

@@ -170,7 +170,7 @@ namespace WFC.Tiling
                 return (false, null);
             }
 
-            return (true, _tiles[0].ResultToOutput(a.Result, _tiles));
+            return (true, _tiles[0].ResultToOutput(a.Result, _tiles, _idToOrientedTile));
         }
     }
 }
