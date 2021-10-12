@@ -70,14 +70,15 @@ namespace WFC.Tiling
         {
             int nbOrientedTiles = idToOrientedTile.Length;
             /* Create #nbOrientedTiles arrays filled with 4 arrays filled with #nbOrientedTiles false values */
-            bool[][][] densePropagator =
-                Enumerable
-                    .Repeat(
-                        Enumerable.Repeat(
-                            Enumerable.Repeat(
-                                false, nbOrientedTiles).ToArray(),
-                            4).ToArray(),
-                        nbOrientedTiles).ToArray();
+            bool[][][] densePropagator = new bool[nbOrientedTiles][][];
+            for (int i = 0; i < nbOrientedTiles; i++)
+            {
+                densePropagator[i] = new bool[4][];
+                for (var j = 0; j < 4; j++)
+                {
+                    densePropagator[i][j] = new bool[nbOrientedTiles];
+                }
+            }
 
             int[][,] actionMaps = WFC_TilessetUtils.GenerateAllActionMaps();
 
@@ -96,18 +97,18 @@ namespace WFC.Tiling
             }
 
             /* Store the indices of all compatible oriented tiles. */
-            List<int>[][] propagator = 
-                Enumerable.Repeat(Enumerable.Repeat(new List<int>(), 4).ToArray(), nbOrientedTiles).ToArray();
-            for (int i = 0; i < nbOrientedTiles; ++i)
+            List<int>[][] propagator = new List<int>[nbOrientedTiles][];
+            for (int tile = 0; tile < nbOrientedTiles; tile++)
             {
-                for (int j = 0; j < nbOrientedTiles; ++j)
+                propagator[tile] = new List<int>[4];
+                for (int dir = 0; dir < 4; dir++)
                 {
-                    for (int d = 0; d < 4; ++d)
+                    propagator[tile][dir] = new List<int>();
+                    for (int neighbour = 0; neighbour < nbOrientedTiles; neighbour++)
                     {
-                        if (densePropagator[i][d][j])
+                        if (densePropagator[tile][dir][neighbour])
                         {
-                            // TODO reduce entries as there are very many very quickly
-                            propagator[i][d].Add(j); 
+                            propagator[tile][dir].Add(neighbour);
                         }
                     }
                 }

@@ -46,6 +46,10 @@ namespace WFC.Tiling
                 print(
                     $"Hurray. It only took {Time.realtimeSinceStartup - startTime} seconds to complete this really simple task!");
             }
+            else
+            {
+                print($"WuHuwhwaaawg i cant do it!");
+            }
         }
 
         private void OnGUI()

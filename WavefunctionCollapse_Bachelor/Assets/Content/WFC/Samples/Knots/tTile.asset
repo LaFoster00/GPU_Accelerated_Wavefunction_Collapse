@@ -18,23 +18,27 @@ MonoBehaviour:
   weight: 1
   neighbours:
   - leftTile: {fileID: 11400000}
-    leftTileOrientation: 1
-    rightTile: {fileID: 11400000}
-    rightTileOrientation: 3
-  - leftTile: {fileID: 11400000}
     leftTileOrientation: 0
     rightTile: {fileID: 11400000}
     rightTileOrientation: 0
   - leftTile: {fileID: 11400000}
-    leftTileOrientation: 2
+    leftTileOrientation: 0
     rightTile: {fileID: 11400000}
-    rightTileOrientation: 0
+    rightTileOrientation: 1
+  - leftTile: {fileID: 11400000}
+    leftTileOrientation: 0
+    rightTile: {fileID: 11400000}
+    rightTileOrientation: 2
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 1
     rightTile: {fileID: 11400000}
-    rightTileOrientation: 0
+    rightTileOrientation: 3
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 3
     rightTile: {fileID: 11400000}
     rightTileOrientation: 1
-  orientations: []
+  orientations:
+  - {fileID: 2800000, guid: 504ea6bd018f45455a3ab71783451585, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}

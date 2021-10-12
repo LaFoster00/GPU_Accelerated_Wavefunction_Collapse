@@ -65,7 +65,6 @@ namespace WFC
         /* Initialize compatible. */
         private void InitCompatible()
         {
-            int[] value = new int[4];
             // We compute the number of pattern compatible in all directions.
             for (int y = 0; y < _waveHeight; y++)
             {
@@ -74,6 +73,7 @@ namespace WFC
                     /* In case of tiling pattern is an oriented tile not an actual pattern. */
                     for (int pattern = 0; pattern < _patternsSize; pattern++)
                     {
+                        int[] value = new int[4];
                         for (int direction = 0; direction < 4; direction++)
                         {
                             value[direction] = _propagatorState[pattern][Directions.GetOppositeDirection(direction)]
@@ -139,7 +139,7 @@ namespace WFC
                         }
                     }
 
-                    // The index of the second cell, and the patterns compatible
+                    // The index of the second cell, and the patterns compatible with the just discarded pattern
                     int i2 = x2 + y2 * wave.width;
                     List<int> patterns = _propagatorState[pattern][direction];
 

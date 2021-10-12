@@ -21,12 +21,5 @@ MonoBehaviour:
     leftTileOrientation: 0
     rightTile: {fileID: 11400000}
     rightTileOrientation: 0
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
-    rightTileOrientation: 1
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-    rightTileOrientation: 1
-  orientations: []
+  orientations:
+  - {fileID: 2800000, guid: 117f398b05fbbfc1e84ab52fe28ab475, type: 3}

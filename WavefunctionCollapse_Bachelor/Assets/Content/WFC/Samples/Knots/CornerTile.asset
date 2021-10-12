@@ -18,55 +18,39 @@ MonoBehaviour:
   weight: 1
   neighbours:
   - leftTile: {fileID: 11400000}
-    leftTileOrientation: 1
+    leftTileOrientation: 0
+    rightTile: {fileID: 11400000}
+    rightTileOrientation: 2
+  - leftTile: {fileID: 11400000}
+    leftTileOrientation: 0
+    rightTile: {fileID: 11400000}
+    rightTileOrientation: 3
+  - leftTile: {fileID: 11400000}
+    leftTileOrientation: 2
+    rightTile: {fileID: 11400000}
+    rightTileOrientation: 0
+  - leftTile: {fileID: 11400000}
+    leftTileOrientation: 2
+    rightTile: {fileID: 11400000}
+    rightTileOrientation: 1
+  - leftTile: {fileID: 11400000}
+    leftTileOrientation: 2
+    rightTile: {fileID: 11400000, guid: bc39127be4d8d86589893ba21f50325f, type: 2}
+    rightTileOrientation: 0
+  - leftTile: {fileID: 11400000}
+    leftTileOrientation: 3
     rightTile: {fileID: 11400000, guid: bc39127be4d8d86589893ba21f50325f, type: 2}
     rightTileOrientation: 0
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
-    rightTileOrientation: 0
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
-    rightTileOrientation: 1
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
     rightTile: {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
     rightTileOrientation: 0
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 1
     rightTile: {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
-    rightTileOrientation: 1
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-    rightTileOrientation: 2
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-    rightTileOrientation: 3
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
     rightTileOrientation: 0
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 1
-    rightTile: {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-    rightTileOrientation: 1
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 1
-    rightTile: {fileID: 11400000}
-    rightTileOrientation: 3
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 1
-    rightTile: {fileID: 11400000}
-    rightTileOrientation: 0
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000}
-    rightTileOrientation: 1
-  - leftTile: {fileID: 11400000}
-    leftTileOrientation: 0
-    rightTile: {fileID: 11400000}
-    rightTileOrientation: 2
-  orientations: []
+  orientations:
+  - {fileID: 2800000, guid: a6baf6c6cadb299a6b9ee6a29a92c68c, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
