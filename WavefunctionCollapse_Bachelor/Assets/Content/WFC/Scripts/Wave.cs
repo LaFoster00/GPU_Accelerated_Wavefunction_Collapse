@@ -238,9 +238,9 @@ namespace WFC
             return argmin;
         }
 
-        public void DebugDrawCurrentState(Action<int2, bool[,,], (int, int)[]> outputCurrentState, (int, int)[] orientedToTileId, int2 currentCell)
+        public void DebugDrawCurrentState(Action<int2, int2, bool[,,], (int, int)[]> outputCurrentState, (int, int)[] orientedToTileId, int2 currentCell, int2 targetCell)
         {
-            outputCurrentState(currentCell, _data, orientedToTileId);
+            outputCurrentState(currentCell, targetCell, _data, orientedToTileId);
         }
     }
 }

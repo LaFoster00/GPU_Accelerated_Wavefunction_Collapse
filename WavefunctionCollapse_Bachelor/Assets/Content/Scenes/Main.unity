@@ -271,6 +271,7 @@ MonoBehaviour:
   tiles:
   - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
   - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+  - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
   displayHeight: 32
   displayWidth: 32
   width: 16
@@ -278,7 +279,8 @@ MonoBehaviour:
   drawFrame: 1
   frameTexture: {fileID: 2800000, guid: 8ba78a6717d99e7149284a6b51708efa, type: 3}
   highlightTexture: {fileID: 2800000, guid: 0de633a87b1dea303864f5f317515aa2, type: 3}
-  debugMode: 1
+  greenHighlightTexture: {fileID: 2800000, guid: c1576c538e7b231b09a74843580fa775, type: 3}
+  debugMode: 2
   stepInterval: 0
 --- !u!4 &291630408
 Transform:

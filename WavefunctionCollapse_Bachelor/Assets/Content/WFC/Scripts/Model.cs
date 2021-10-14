@@ -32,6 +32,9 @@ namespace WFC
         /* If the ouput will be periodic */
         protected readonly bool periodicOutput;
 
+        /* Debug mode */
+        protected bool debug;
+        
         #endregion
 
         #region Public
@@ -58,6 +61,7 @@ namespace WFC
 
         protected void Init(double[] patternsFrequencies, List<int>[][] propagatorState, Propagator.Settings propagatorSettings)
         {
+            debug = propagatorSettings.debug != Propagator.Settings.DebugMode.None;
             this.patternsFrequencies = patternsFrequencies.Normalize();
             wave = new Wave(waveHeight, waveWidth, this.patternsFrequencies);
             nbPatterns = propagatorState.Length;
@@ -91,8 +95,20 @@ namespace WFC
                     yield break;
                 }
 
-                // Propagate the information.
-                yield return Propagate();
+                if (debug)
+                {
+                    // Propagate the information.
+                    yield return Propagate();
+                }
+                else
+                {
+                    var propagate = Propagate();
+                    propagate.MoveNext();
+                    while (propagate.Current != null)
+                    {
+                        propagate.MoveNext();
+                    }
+                }
             }
         }
 

@@ -26,6 +26,10 @@ MonoBehaviour:
     rightTile: {fileID: 11400000}
     rightTileOrientation: 1
   - leftTile: {fileID: 11400000}
+    leftTileOrientation: 1
+    rightTile: {fileID: 11400000}
+    rightTileOrientation: 1
+  - leftTile: {fileID: 11400000}
     leftTileOrientation: 0
     rightTile: {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
     rightTileOrientation: 0

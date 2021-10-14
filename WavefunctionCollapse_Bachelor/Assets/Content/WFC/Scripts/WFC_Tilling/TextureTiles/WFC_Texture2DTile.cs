@@ -35,7 +35,7 @@ namespace WFC.Tiling
             return output;
         }
 
-        public static (List<Texture2D>[,], int2) DebugToOutput(int2 currentCell, bool[,,] wave, WFC_Texture2DTile[] tiles, (int, int)[] orientedToTileId)
+        public static List<Texture2D>[,] DebugToOutput(bool[,,] wave, WFC_Texture2DTile[] tiles, (int, int)[] orientedToTileId)
         {
             List<Texture2D>[,] output = new List<Texture2D>[wave.GetLength(0), wave.GetLength(1)];
             for (int y = 0; y < wave.GetLength(0); y++)
@@ -53,7 +53,7 @@ namespace WFC.Tiling
                 }
             }
 
-            return (output, currentCell);
+            return output;
         }
     }
 }

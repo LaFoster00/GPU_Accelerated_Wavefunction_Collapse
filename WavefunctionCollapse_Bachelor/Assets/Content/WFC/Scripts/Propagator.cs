@@ -62,10 +62,10 @@ namespace WFC
 
             public DebugMode debug;
             public float stepInterval;
-            public Action<int2, bool[,,], (int, int)[]> debugToOutput;
+            public Action<int2, int2, bool[,,], (int, int)[]> debugToOutput;
             public (int, int)[] orientedToTileId;
 
-            public Settings(DebugMode debug, float stepInterval, Action<int2, bool[,,], (int, int)[]> debugToOutput)
+            public Settings(DebugMode debug, float stepInterval, Action<int2, int2, bool[,,], (int, int)[]> debugToOutput)
             {
                 this.debug = debug;
                 this.stepInterval = stepInterval;
@@ -188,7 +188,7 @@ namespace WFC
                             wave.Set(i2, pat, false);
                             if (_settings.debug == Settings.DebugMode.OnSet)
                             {
-                                wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x2, y2));
+                                wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x1, y1),new int2(x2, y2));
                                 yield return _settings.stepInterval == 0
                                     ? null
                                     : new WaitForSeconds(_settings.stepInterval);
@@ -197,7 +197,7 @@ namespace WFC
 
                         if (_settings.debug == Settings.DebugMode.OnChange)
                         {
-                            wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x2, y2));
+                            wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x1, y1),new int2(x2, y2));
                             yield return _settings.stepInterval == 0
                                 ? null
                                 : new WaitForSeconds(_settings.stepInterval);

@@ -17,7 +17,7 @@ namespace WFC.Tiling
         public WFC_Texture2DTile[] tiles;
 
         public (bool Success, Texture2D[,] Result) result;
-        public (List<Texture2D>[,], int2) debugOutput;
+        public (int2 currentCell, int2 targetCell, List<Texture2D>[,] debug) debugOutput;
 
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
@@ -26,6 +26,7 @@ namespace WFC.Tiling
         [SerializeField] private bool drawFrame = true;
         [SerializeField] private Texture2D frameTexture;
         [SerializeField] private Texture2D highlightTexture;
+        [SerializeField] private Texture2D greenHighlightTexture;
         [SerializeField] private Propagator.Settings.DebugMode debugMode;
         [SerializeField] private float stepInterval;
 
@@ -101,13 +102,13 @@ namespace WFC.Tiling
                     }
                 }
             }
-            else if (debugMode != Propagator.Settings.DebugMode.None && debugOutput.Item1 != null)
+            else if (debugMode != Propagator.Settings.DebugMode.None && debugOutput.debug != null)
             {
-                for (int y = 0; y < debugOutput.Item1.GetLength(0); y++)
+                for (int y = 0; y < debugOutput.debug.GetLength(0); y++)
                 {
-                    for (int x = 0; x < debugOutput.Item1.GetLength(1); x++)
+                    for (int x = 0; x < debugOutput.debug.GetLength(1); x++)
                     {
-                        List<Texture2D> currentCellTextures = debugOutput.Item1[y, x];
+                        List<Texture2D> currentCellTextures = debugOutput.debug[y, x];
                         if (currentCellTextures.Count == 0) continue;
                         int texNumSide = (int)math.ceil(math.sqrt(currentCellTextures.Count));
                         int texDisplayWidth = displayWidth / texNumSide;
@@ -142,17 +143,25 @@ namespace WFC.Tiling
                 
                 GUI.DrawTexture(
                     Rect.MinMaxRect(
-                        displayWidth * debugOutput.Item2.x,
-                        displayHeight * debugOutput.Item2.y,
-                        displayWidth + displayWidth * debugOutput.Item2.x,
-                        displayHeight + displayHeight * debugOutput.Item2.y), 
+                        displayWidth * debugOutput.currentCell.x,
+                        displayHeight * debugOutput.currentCell.y,
+                        displayWidth + displayWidth * debugOutput.currentCell.x,
+                        displayHeight + displayHeight * debugOutput.currentCell.y), 
+                    greenHighlightTexture);
+                
+                GUI.DrawTexture(
+                    Rect.MinMaxRect(
+                        displayWidth * debugOutput.targetCell.x,
+                        displayHeight * debugOutput.targetCell.y,
+                        displayWidth + displayWidth * debugOutput.targetCell.x,
+                        displayHeight + displayHeight * debugOutput.targetCell.y), 
                     highlightTexture);
             }
         }
 
-        private void DisplayWaveDebug(int2 currentCell, bool[,,] wave, (int, int)[] orientedToTileId)
+        private void DisplayWaveDebug(int2 currentCell, int2 targetCell, bool[,,] wave, (int, int)[] orientedToTileId)
         {
-            debugOutput = WFC_Texture2DTile.DebugToOutput(currentCell, wave, tiles, orientedToTileId);
+            debugOutput = (currentCell, targetCell, WFC_Texture2DTile.DebugToOutput(wave, tiles, orientedToTileId));
         }
     }
 }
