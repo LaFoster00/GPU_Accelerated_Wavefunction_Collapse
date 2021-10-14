@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using Random = Unity.Mathematics.Random;
@@ -55,15 +56,21 @@ namespace WFC
             this.periodicOutput = periodicOutput;
         }
 
-        protected void Init(double[] patternsFrequencies, List<int>[][] propagatorState)
+        protected void Init(double[] patternsFrequencies, List<int>[][] propagatorState, Propagator.Settings propagatorSettings)
         {
             this.patternsFrequencies = patternsFrequencies.Normalize();
             wave = new Wave(waveHeight, waveWidth, this.patternsFrequencies);
             nbPatterns = propagatorState.Length;
-            _propagator = new Propagator(waveHeight, waveWidth, periodicOutput, propagatorState);
+            _propagator = new Propagator(waveHeight, waveWidth, periodicOutput, propagatorState, propagatorSettings);
         }
 
-        protected (bool, int[,]) Run_Internal()
+        protected class WFC_Result
+        {
+            public bool success;
+            public int[,] result;
+        }
+        
+        protected IEnumerator Run_Internal(WFC_Result returnValue)
         {
             while (true)
             {
@@ -73,15 +80,19 @@ namespace WFC
                 // Check if the algorithm has terminated.
                 if (result == ObserveStatus.Failure)
                 {
-                    return (false, null);
+                    returnValue.success = false;
+                    returnValue.result = null;
+                    yield break;
                 }
                 else if (result == ObserveStatus.Success)
                 {
-                    return (true, WaveToOutput());
+                    returnValue.success = true;
+                    returnValue.result = WaveToOutput();
+                    yield break;
                 }
 
                 // Propagate the information.
-                Propagate();
+                yield return Propagate();
             }
         }
 
@@ -140,9 +151,9 @@ namespace WFC
         }
 
         /* Propagate the information of the wave. */
-        private void Propagate()
+        private IEnumerator Propagate()
         {
-            _propagator.Propagate(wave);
+            return _propagator.Propagate(wave);
         }
 
         /* Remove pattern from cell (y, x). */

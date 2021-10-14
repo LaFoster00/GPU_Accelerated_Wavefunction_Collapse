@@ -36,7 +36,7 @@ MonoBehaviour:
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 1
     rightTile: {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
-    rightTileOrientation: 1
+    rightTileOrientation: 3
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 0
     rightTile: {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
@@ -44,7 +44,7 @@ MonoBehaviour:
   - leftTile: {fileID: 11400000}
     leftTileOrientation: 0
     rightTile: {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
-    rightTileOrientation: 3
+    rightTileOrientation: 1
   orientations:
   - {fileID: 2800000, guid: 9a6f7407ec6c781b4ab77de988ab7d49, type: 3}
   - {fileID: 0}

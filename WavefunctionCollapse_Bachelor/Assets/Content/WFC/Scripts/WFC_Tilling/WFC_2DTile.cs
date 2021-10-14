@@ -130,6 +130,6 @@ namespace WFC.Tiling
         }
 
         /* Translate the generic WFC result into the image result */
-        public abstract T[,] ResultToOutput(int[,] wave, WFC_2DTile<T>[] tiles, (int, int)[] orientedToTileId);
+        public abstract T[,] ResultToOutput(int[,] result, WFC_2DTile<T>[] tiles, (int, int)[] orientedToTileId);
     }
 }

@@ -1,13 +1,18 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Mathematics;
+using UnityEngine;
+using WFC.Tiling;
 
 namespace WFC
 {
     public class Propagator
     {
-        /**
-   * The size of the patterns.
-   */
+        /*
+         The size of the patterns.
+        */
         private readonly int _patternsSize;
 
         /*
@@ -46,11 +51,35 @@ namespace WFC
         */
         private int[,,][] _compatible;
 
+        public class Settings
+        {
+            public enum DebugMode
+            {
+                None,
+                OnChange,
+                OnSet
+            }
+
+            public DebugMode debug;
+            public float stepInterval;
+            public Action<int2, bool[,,], (int, int)[]> debugToOutput;
+            public (int, int)[] orientedToTileId;
+
+            public Settings(DebugMode debug, float stepInterval, Action<int2, bool[,,], (int, int)[]> debugToOutput)
+            {
+                this.debug = debug;
+                this.stepInterval = stepInterval;
+                this.debugToOutput = debugToOutput;
+            }
+        }
+
+        private Settings _settings;
+
         /*
          Constructor building the propagator and initializing compatible.
         */
         public Propagator(int waveHeight, int waveWidth, bool periodicOutput,
-            List<int>[][] propagatorState)
+            List<int>[][] propagatorState, Settings settings)
         {
             _waveHeight = waveHeight;
             _waveWidth = waveWidth;
@@ -59,6 +88,7 @@ namespace WFC
             _patternsSize = propagatorState.Length;
 
             _compatible = new int[_waveHeight, _waveWidth, _patternsSize][];
+            _settings = settings;
             InitCompatible();
         }
 
@@ -85,7 +115,7 @@ namespace WFC
                 }
             }
         }
-        
+
 
         /*
          Add an element to the propagator.
@@ -99,10 +129,8 @@ namespace WFC
             _propagating.Add((y, x, pattern));
         }
 
-        /*
-         Propagate the information given with add_to_propagator.
-        */
-        public void Propagate(Wave wave)
+        /* Propagate the information given with add_to_propagator. */
+        public IEnumerator Propagate(Wave wave)
         {
             // We propagate every element while there is element to propagate.
             while (_propagating.Count != 0)
@@ -158,6 +186,21 @@ namespace WFC
                         {
                             AddToPropagator(y2, x2, pat);
                             wave.Set(i2, pat, false);
+                            if (_settings.debug == Settings.DebugMode.OnSet)
+                            {
+                                wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x2, y2));
+                                yield return _settings.stepInterval == 0
+                                    ? null
+                                    : new WaitForSeconds(_settings.stepInterval);
+                            }
+                        }
+
+                        if (_settings.debug == Settings.DebugMode.OnChange)
+                        {
+                            wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x2, y2));
+                            yield return _settings.stepInterval == 0
+                                ? null
+                                : new WaitForSeconds(_settings.stepInterval);
                         }
                     }
                 }

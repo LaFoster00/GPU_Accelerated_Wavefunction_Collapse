@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Mathematics;
+using UnityEditor;
+using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 namespace WFC
@@ -234,6 +236,11 @@ namespace WFC
             }
 
             return argmin;
+        }
+
+        public void DebugDrawCurrentState(Action<int2, bool[,,], (int, int)[]> outputCurrentState, (int, int)[] orientedToTileId, int2 currentCell)
+        {
+            outputCurrentState(currentCell, _data, orientedToTileId);
         }
     }
 }

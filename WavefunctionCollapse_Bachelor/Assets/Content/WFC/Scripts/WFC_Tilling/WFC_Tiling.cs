@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -21,16 +22,17 @@ namespace WFC.Tiling
         private WFC_2DTile<T>[] _tiles;
 
         /* Map ids of oriented tiles to tile and orientation. */
-        private (int, int)[] _idToOrientedTile;
+        private (int, int)[] _orientedToTileId;
 
         /* Map tile and orientation to oriented tile id. */
         private int[][] _orientedTileIds;
 
         public TilingWFC(WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours, int height, int width, bool periodicOutput,
-            int seed) : base(periodicOutput, seed, height, width)
+            int seed, Propagator.Settings propagatorSettings) : base(periodicOutput, seed, height, width)
         {
-            (_idToOrientedTile, _orientedTileIds) = GenerateOrientedTileIds(tiles);
-            Init(GetTileWeights(tiles), GeneratePropagator(neighbours, tiles, _idToOrientedTile, _orientedTileIds));
+            (_orientedToTileId, _orientedTileIds) = GenerateOrientedTileIds(tiles);
+            propagatorSettings.orientedToTileId = _orientedToTileId;
+            Init(GetTileWeights(tiles), GeneratePropagator(neighbours, tiles, _orientedToTileId, _orientedTileIds), propagatorSettings);
             _tiles = tiles;
         }
 
@@ -134,7 +136,7 @@ namespace WFC.Tiling
 
         void SetTile(int tileId, int y, int x)
         {
-            for (int p = 0; p < _idToOrientedTile.Length; p++)
+            for (int p = 0; p < _orientedToTileId.Length; p++)
             {
                 if (tileId != p)
                 {
@@ -162,16 +164,26 @@ namespace WFC.Tiling
             return true;
         }
 
-        /* Run the tiling wfc and return the result if the algorithm succeeded */
-        public (bool, T[,]) Run()
+        public class WFC_TypedResult
         {
-            (bool Success, int[,] Result) a = Run_Internal();
-            if (a.Success == false)
+            public bool success;
+            public T[,] result;
+        }
+        
+        /* Run the tiling wfc and return the result if the algorithm succeeded */
+        public IEnumerator Run(WFC_TypedResult returnValue)
+        {
+            WFC_Result result = new WFC_Result();
+            yield return Run_Internal(result);
+            if (result.success == false)
             {
-                return (false, null);
+                returnValue.success = false;
+                returnValue.result = default;
+                yield break;
             }
 
-            return (true, _tiles[0].ResultToOutput(a.Result, _tiles, _idToOrientedTile));
+            returnValue.success = true;
+            returnValue.result = _tiles[0].ResultToOutput(result.result, _tiles, _orientedToTileId);
         }
     }
 }
