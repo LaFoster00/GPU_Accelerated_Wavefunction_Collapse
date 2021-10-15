@@ -46,11 +46,18 @@ namespace WFC
          opposite direction of direction without being in contradiction with pattern
          placed in (y,x). If wave.get(y, x, pattern) is set to false, then
          compatible.get(y, x, pattern) has every element negative or null
-         
-         TODO I have no idea why this would be interesting and what the implication of this data is
         */
         private int[,,][] _compatible;
 
+        public class StepInfo
+        {
+            public (int y, int x, int pattern) currentTile;
+            public (int y, int x, int pattern) targetTile;
+            public List<(int, int, int)> propagatingCells;
+        }
+
+        public StepInfo stepInfo;
+        
         public class Settings
         {
             public enum DebugMode
@@ -62,10 +69,10 @@ namespace WFC
 
             public DebugMode debug;
             public float stepInterval;
-            public Action<int2, int2, bool[,,], (int, int)[]> debugToOutput;
+            public Action<StepInfo, bool[,,], (int, int)[]> debugToOutput;
             public (int, int)[] orientedToTileId;
 
-            public Settings(DebugMode debug, float stepInterval, Action<int2, int2, bool[,,], (int, int)[]> debugToOutput)
+            public Settings(DebugMode debug, float stepInterval, Action<StepInfo, bool[,,], (int, int)[]> debugToOutput)
             {
                 this.debug = debug;
                 this.stepInterval = stepInterval;
@@ -90,6 +97,10 @@ namespace WFC
             _compatible = new int[_waveHeight, _waveWidth, _patternsSize][];
             _settings = settings;
             InitCompatible();
+            stepInfo = new StepInfo()
+            {
+                propagatingCells = _propagating,
+            };
         }
 
         /* Initialize compatible. */
@@ -136,8 +147,7 @@ namespace WFC
             while (_propagating.Count != 0)
             {
                 // The cell and pattern that has been set to false.
-                int y1, x1, pattern;
-                (y1, x1, pattern) = _propagating.Last();
+                stepInfo.currentTile = _propagating.Last();
                 _propagating.RemoveAt(_propagating.Count - 1);
 
                 // We propagate the information in all 4 directions.
@@ -146,30 +156,29 @@ namespace WFC
                     // We get the next cell in the direction direction.
                     int dx = Directions.DirectionsX[direction];
                     int dy = Directions.DirectionsY[direction];
-                    int x2, y2;
                     if (_periodicOutput)
                     {
-                        x2 = (x1 + dx + wave.width) % wave.width;
-                        y2 = (y1 + dy + wave.height) % wave.height;
+                        stepInfo.targetTile.x = (stepInfo.currentTile.x + dx + wave.width) % wave.width;
+                        stepInfo.targetTile.y = (stepInfo.currentTile.y + dy + wave.height) % wave.height;
                     }
                     else
                     {
-                        x2 = x1 + dx;
-                        y2 = y1 + dy;
-                        if (x2 < 0 || x2 >= wave.width)
+                        stepInfo.targetTile.x = stepInfo.currentTile.x + dx;
+                        stepInfo.targetTile.y = stepInfo.currentTile.y + dy;
+                        if (stepInfo.targetTile.x < 0 || stepInfo.targetTile.x >= wave.width)
                         {
                             continue;
                         }
 
-                        if (y2 < 0 || y2 >= wave.height)
+                        if (stepInfo.targetTile.y < 0 || stepInfo.targetTile.y >= wave.height)
                         {
                             continue;
                         }
                     }
 
                     // The index of the second cell, and the patterns compatible with the just discarded pattern
-                    int i2 = x2 + y2 * wave.width;
-                    List<int> patterns = _propagatorState[pattern][direction];
+                    int i2 = stepInfo.targetTile.x + stepInfo.targetTile.y * wave.width;
+                    List<int> patterns = _propagatorState[stepInfo.currentTile.pattern][direction];
 
                     /* For every pattern that could be placed in that cell without being in contradiction with pattern1 */
                     foreach (var pat in patterns)
@@ -177,31 +186,31 @@ namespace WFC
                         // We decrease the number of compatible patterns in the opposite
                         // direction If the pattern was discarded from the wave, the element
                         // is still negative, which is not a problem
-                        int[] compatible = _compatible[y2, x2, pat];
+                        int[] compatible = _compatible[stepInfo.targetTile.y, stepInfo.targetTile.x, pat];
                         compatible[direction]--;
 
                         // If the element was set to 0 with this operation, we need to remove
                         // the pattern from the wave, and propagate the information
                         if (compatible[direction] == 0)
                         {
-                            AddToPropagator(y2, x2, pat);
+                            AddToPropagator(stepInfo.targetTile.y, stepInfo.targetTile.x, pat);
                             wave.Set(i2, pat, false);
                             if (_settings.debug == Settings.DebugMode.OnSet)
                             {
-                                wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x1, y1),new int2(x2, y2));
+                                wave.DebugDrawCurrentState();
                                 yield return _settings.stepInterval == 0
                                     ? null
                                     : new WaitForSeconds(_settings.stepInterval);
                             }
                         }
-
-                        if (_settings.debug == Settings.DebugMode.OnChange)
-                        {
-                            wave.DebugDrawCurrentState(_settings.debugToOutput, _settings.orientedToTileId, new int2(x1, y1),new int2(x2, y2));
-                            yield return _settings.stepInterval == 0
-                                ? null
-                                : new WaitForSeconds(_settings.stepInterval);
-                        }
+                    }
+                    
+                    if (_settings.debug == Settings.DebugMode.OnChange)
+                    {
+                        wave.DebugDrawCurrentState();
+                        yield return _settings.stepInterval == 0
+                            ? null
+                            : new WaitForSeconds(_settings.stepInterval);
                     }
                 }
             }

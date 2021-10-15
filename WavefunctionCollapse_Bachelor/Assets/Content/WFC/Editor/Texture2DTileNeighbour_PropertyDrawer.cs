@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using WFC.Tiling;
@@ -12,6 +13,15 @@ public class Texture2DTileNeighbour_PropertyDrawer : PropertyDrawer
     {
         EditorGUI.BeginProperty(position, label, property);
 
+        bool active = EditorGUI.Toggle(
+            new Rect(
+                position.center.x - EditorGUIUtility.singleLineHeight,
+                position.yMin,
+                EditorGUIUtility.singleLineHeight, 
+                EditorGUIUtility.singleLineHeight),
+            property.FindPropertyRelative("active").boolValue);
+        property.FindPropertyRelative("active").SetValue(active);
+        
         Rect leftTilePos = new Rect(position.x, position.y, position.width / 2, EditorGUIUtility.singleLineHeight);
 
         var leftTile = EditorGUI.ObjectField(new Rect(leftTilePos.x, leftTilePos.y + EditorGUIUtility.singleLineHeight, 

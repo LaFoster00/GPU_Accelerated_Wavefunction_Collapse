@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 namespace WFC
@@ -63,9 +64,9 @@ namespace WFC
         {
             debug = propagatorSettings.debug != Propagator.Settings.DebugMode.None;
             this.patternsFrequencies = patternsFrequencies.Normalize();
-            wave = new Wave(waveHeight, waveWidth, this.patternsFrequencies);
             nbPatterns = propagatorState.Length;
             _propagator = new Propagator(waveHeight, waveWidth, periodicOutput, propagatorState, propagatorSettings);
+            wave = new Wave(waveHeight, waveWidth, this.patternsFrequencies, _propagator.stepInfo, propagatorSettings);
         }
 
         protected class WFC_Result
@@ -78,6 +79,8 @@ namespace WFC
         {
             while (true)
             {
+                if (debug) yield return new WaitForSeconds(0.5f);
+                
                 // Define the value of an undefined cell.
                 ObserveStatus result = Observe();
 

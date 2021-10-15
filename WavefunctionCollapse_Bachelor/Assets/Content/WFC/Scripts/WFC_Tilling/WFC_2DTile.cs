@@ -29,6 +29,8 @@ namespace WFC.Tiling
     [Serializable]
     public class TileNeighbour<T> : Neighbour<T>
     {
+        public bool active = true;
+        
         // The tile describing its neighbour
         public WFC_2DTile<T> leftTile;
 

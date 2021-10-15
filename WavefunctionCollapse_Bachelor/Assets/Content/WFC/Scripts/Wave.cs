@@ -62,6 +62,13 @@ namespace WFC
         */
         private bool[,,] _data;
 
+        /*
+         * Debug data
+         */
+        private Propagator.StepInfo _stepInfo;
+        private Propagator.Settings _settings;
+        private bool _impossibleDebugDisplayed;
+        
         #endregion
 
         #region Public
@@ -95,7 +102,11 @@ namespace WFC
             );
         }
 
-        public Wave(int height, int width, double[] patternFrequencies)
+        public Wave(
+            int height, int width,
+            double[] patternFrequencies,
+            Propagator.StepInfo stepInfo,
+            Propagator.Settings settings)
         {
             #region Init Members
 
@@ -116,6 +127,9 @@ namespace WFC
                 int pattern = (index % widthNbPatterns) % _nbPatterns;
                 _data[y,x,pattern] = true;
             });
+
+            _stepInfo = stepInfo;
+            _settings = settings;
 
             #endregion
 
@@ -163,6 +177,18 @@ namespace WFC
                 return;
             }
 
+            // If there is no patterns possible in the cell, then there is a
+            // contradiction.
+            if (_memoisation.nbPatterns[index] - 1 == 0)
+            {
+                _isImpossible = true;
+                if (_impossibleDebugDisplayed == false)
+                {
+                    DebugDrawCurrentState();
+                    _impossibleDebugDisplayed = true;
+                }
+            }
+            
             // Otherwise, the memoisation should be updated.
             _data[y, x, pattern] = value;
             _memoisation.plogpSum[index] -= _plogPatternFrequencies[pattern];
@@ -172,12 +198,6 @@ namespace WFC
             _memoisation.entropy[index] =
                 _memoisation.logSum[index] -
                 _memoisation.plogpSum[index] / _memoisation.sum[index];
-            // If there is no patterns possible in the cell, then there is a
-            // contradiction.
-            if (_memoisation.nbPatterns[index] == 0)
-            {
-                _isImpossible = true;
-            }
         }
 
         /* Set the value of pattern in cell (i,j). */
@@ -238,9 +258,9 @@ namespace WFC
             return argmin;
         }
 
-        public void DebugDrawCurrentState(Action<int2, int2, bool[,,], (int, int)[]> outputCurrentState, (int, int)[] orientedToTileId, int2 currentCell, int2 targetCell)
+        public void DebugDrawCurrentState()
         {
-            outputCurrentState(currentCell, targetCell, _data, orientedToTileId);
+            _settings.debugToOutput(_stepInfo, _data, _settings.orientedToTileId);
         }
     }
 }

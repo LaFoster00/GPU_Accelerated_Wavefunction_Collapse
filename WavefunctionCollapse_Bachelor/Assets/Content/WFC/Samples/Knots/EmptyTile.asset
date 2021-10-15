@@ -17,7 +17,8 @@ MonoBehaviour:
   symmetry: 0
   weight: 1
   neighbours:
-  - leftTile: {fileID: 11400000}
+  - active: 1
+    leftTile: {fileID: 11400000}
     leftTileOrientation: 0
     rightTile: {fileID: 11400000}
     rightTileOrientation: 0
