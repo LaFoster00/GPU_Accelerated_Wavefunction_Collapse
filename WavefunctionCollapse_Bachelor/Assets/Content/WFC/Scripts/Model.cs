@@ -1,188 +1,379 @@
+using System;
 using System.Collections;
-using System.Collections.Generic;
-using Unity.Mathematics;
+using System.ComponentModel;
+using System.Security;
+using System.Threading.Tasks;
 using UnityEngine;
+using USCSL;
 using Random = Unity.Mathematics.Random;
 
 namespace WFC
 {
     public class Model
     {
-        #region Properties
+        /* Wave data, wave[node][pattern] */
+        protected bool[][] wave;
 
-        #region Private
-
-        /* The random number generator. */
-        private Random _gen;
-
-        /* The distribution of the patterns as given in input. */
-        protected double[] patternsFrequencies;
-
-        /* The wave, indicating which patterns can be put in which cell. */
-        protected Wave wave;
-
-        /* The number of distinct patterns. */
-        protected int nbPatterns;
-
-        /* The propagator, used to propagate the information in the wave. */
-        private Propagator _propagator;
-
-        /* Wave output dimensions */
-        protected readonly int waveHeight, waveWidth;
-
-        /* If the ouput will be periodic */
-        protected readonly bool periodicOutput;
-
-        /* Debug mode */
-        protected bool debug;
+        /*
+         Which patterns can be placed in which direction of the current node
+         propagator[pattern][direction] : int[] possibilities
+         */
+        protected int[][][] propagator;
         
-        #endregion
+        /*  */
+        private int[][][] _compatible;
+        
+        /* Which cells are fully observed. */
+        protected int[] observed;
 
-        #region Public
+        /* Contains node and the deleted pattern */
+        private (int, int)[] _stack;
+        private int _stackSize, _observedSoFar;
 
-        /* Return value of observe. */
-        public enum ObserveStatus
+        
+        protected readonly int width, height, nbPatterns, patternSize;
+        protected bool periodic;
+
+        protected double[] weights;
+        private double[] _weightLogWeights, _distribution;
+
+        private int[] _numPossiblePatterns;
+        private double _totalSumOfWeights, _totalSumOfWeightLogWeights, _startingEntropy;
+        private double[] _sumsOfWeights, _sumsOfWeightLogWeights, _entropies;
+
+        public enum Heuristic
         {
-            Success, // WFC has finished and has succeeded.
-            Failure, // WFC has finished and failed.
-            ToContinue // WFC isn't finished.
+            Entropy,
+            MostRemainingPatterns,
+            Scanline
         };
 
-        #endregion
+        Heuristic heuristic;
 
-        #endregion
-
-        public Model(bool periodicOutput, int seed, int waveHeight, int waveWidth)
+        public class PropagatorSettings
         {
-            _gen = Random.CreateFromIndex((uint) seed);
-            this.waveHeight = waveHeight;
-            this.waveWidth = waveWidth;
-            this.periodicOutput = periodicOutput;
+            public enum DebugMode
+            {
+                None,
+                OnChange,
+                OnSet
+            }
+
+            public DebugMode debug;
+            public float stepInterval;
+            public Action<StepInfo, bool[][], (int, int)[]> debugToOutput;
+            public (int, int)[] orientedToTileId;
+
+            public PropagatorSettings(DebugMode debug, float stepInterval, Action<StepInfo, bool[][], (int, int)[]> debugToOutput)
+            {
+                this.debug = debug;
+                this.stepInterval = stepInterval;
+                this.debugToOutput = debugToOutput;
+            }
         }
 
-        protected void Init(double[] patternsFrequencies, List<int>[][] propagatorState, Propagator.Settings propagatorSettings)
+        protected PropagatorSettings propagatorSettings;
+        
+        public class StepInfo
         {
-            debug = propagatorSettings.debug != Propagator.Settings.DebugMode.None;
-            this.patternsFrequencies = patternsFrequencies.Normalize();
-            nbPatterns = propagatorState.Length;
-            _propagator = new Propagator(waveHeight, waveWidth, periodicOutput, propagatorState, propagatorSettings);
-            wave = new Wave(waveHeight, waveWidth, this.patternsFrequencies, _propagator.stepInfo, propagatorSettings);
+            public int width, height;
+            public (int y, int x) currentTile;
+            public (int y, int x) targetTile;
+            public (int, int)[] propagatingCells;
+            public int numPropagatingCells;
         }
 
-        protected class WFC_Result
+        protected StepInfo stepInfo = new StepInfo();
+        
+        protected Model(int width, int height, int patternSize, bool periodic, Heuristic heuristic, PropagatorSettings propagatorSettings)
         {
-            public bool success;
-            public int[,] result;
+            this.width = width;
+            this.height = height;
+            stepInfo.width = width;
+            stepInfo.height = height;
+            this.patternSize = patternSize;
+            this.periodic = periodic;
+            this.heuristic = heuristic;
+            this.propagatorSettings = propagatorSettings;
+        }
+
+        void Init()
+        {
+            wave = new bool[width * height][];
+            _compatible = new int[wave.Length][][];
+            for (int i = 0; i < wave.Length; i++)
+            {
+                wave[i] = new bool[nbPatterns];
+                _compatible[i] = new int[nbPatterns][];
+                for (int t = 0; t < nbPatterns; t++) 
+                    _compatible[i][t] = new int[4];
+            }
+
+            _distribution = new double[nbPatterns];
+            observed = new int[width * height];
+
+            _weightLogWeights = new double[nbPatterns];
+            _totalSumOfWeights = 0;
+            _totalSumOfWeightLogWeights = 0;
+
+            for (int t = 0; t < nbPatterns; t++)
+            {
+                _weightLogWeights[t] = weights[t] * Math.Log(weights[t]);
+                _totalSumOfWeights += weights[t];
+                _totalSumOfWeightLogWeights += _weightLogWeights[t];
+            }
+
+            _startingEntropy = Math.Log(_totalSumOfWeights) - _totalSumOfWeightLogWeights / _totalSumOfWeights;
+
+            _numPossiblePatterns = new int[width * height];
+            _sumsOfWeights = new double[width * height];
+            _sumsOfWeightLogWeights = new double[width * height];
+            _entropies = new double[width * height];
+
+            _stack = new (int, int)[wave.Length * nbPatterns];
+            _stackSize = 0;
+            stepInfo.propagatingCells = _stack;
         }
         
-        protected IEnumerator Run_Internal(WFC_Result returnValue)
+        public class WFC_Result
         {
-            while (true)
+            public bool finished;
+            public bool success;
+            public int[,] output;
+        }
+
+        public IEnumerator Run(uint seed, int limit, WFC_Result result)
+        {
+            if (wave == null) Init();
+
+            Clear();
+            Random random = new Random(seed);
+
+            if (limit < 0)
             {
-                if (debug) yield return new WaitForSeconds(0.5f);
-                
-                // Define the value of an undefined cell.
-                ObserveStatus result = Observe();
-
-                // Check if the algorithm has terminated.
-                if (result == ObserveStatus.Failure)
+                while (!result.finished)
                 {
-                    returnValue.success = false;
-                    returnValue.result = null;
-                    yield break;
-                }
-                else if (result == ObserveStatus.Success)
-                {
-                    returnValue.success = true;
-                    returnValue.result = WaveToOutput();
-                    yield break;
-                }
-
-                if (debug)
-                {
-                    // Propagate the information.
-                    yield return Propagate();
-                }
-                else
-                {
-                    var propagate = Propagate();
-                    propagate.MoveNext();
-                    while (propagate.Current != null)
+                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
                     {
-                        propagate.MoveNext();
+                        Run_Internal(random, result).MoveNext();
+                    }
+                    else
+                    {
+                        yield return Run_Internal(random, result);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < limit; i++)
+                {
+                    if (result.finished) break;
+                    
+                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
+                    {
+                        Run_Internal(random, result).MoveNext();
+                    }
+                    else
+                    {
+                        yield return Run_Internal(random, result);
                     }
                 }
             }
         }
 
-        /* Define the value of the cell with lowest entropy. */
-        public ObserveStatus Observe()
+        private IEnumerator Run_Internal(Random random, WFC_Result result)
         {
-            /* Get the cell with lowest entropy. */
-            int argmin = wave.GetMinEntropy(ref _gen);
-
-            /* If there is a contradiction, the algorithm has failed. */
-            if (argmin == -2)
+            int node = NextUnobservedNode(random);
+            if (node >= 0)
             {
-                return ObserveStatus.Failure;
-            }
-
-            /* If the lowest entropy is 0, then the algorithm has succeeded and finished. */
-            if (argmin == -1)
-            {
-                //WaveToOutput(); // TODO this seems rather useless
-                return ObserveStatus.Success;
-            }
-
-            /* Choose an element according to the pattern distribution */
-            double s = 0;
-            for (int k = 0; k < nbPatterns; k++)
-            {
-                s += wave.Get(argmin, k) ? patternsFrequencies[k] : 0;
-            }
-
-            double randomValue = math.remap(0, 1, 0, s, _gen.NextDouble());
-            int chosenValue = nbPatterns - 1;
-
-            for (int k = 0; k < nbPatterns; k++)
-            {
-                randomValue -= wave.Get(argmin, k) ? patternsFrequencies[k] : 0;
-                if (randomValue <= 0)
+                Observe(node, random);
+                var propagationResult = new PropagatorResult();
+                
+                var propagation = Propagate(propagationResult);
+                propagation.MoveNext();
+                while (propagation.MoveNext())
                 {
-                    chosenValue = k;
-                    break;
+                    yield return propagation.Current;
+                }
+
+                if (!propagationResult.success)
+                {
+                    result.output = null;
+                    result.success =  false;
+                    result.finished = true;
+                }
+            }
+            else
+            {
+                result.output = WaveToOutput();
+                result.success =  true;
+                result.finished = true;
+            }
+        }
+
+        protected int NextUnobservedNode(Random random)
+        {
+            if (heuristic == Heuristic.Scanline)
+            {
+                for (int i = _observedSoFar; i < wave.Length; i++)
+                {
+                    if (!periodic && (i % width + patternSize > width || i / width + patternSize > height)) continue;
+                    if (_numPossiblePatterns[i] > 1)
+                    {
+                        _observedSoFar = i + 1;
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+
+            double min = Double.MaxValue;
+            int argmin = -1;
+            for (int node = 0; node < wave.Length; node++)
+            {
+                if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
+                int remainingValues = _numPossiblePatterns[node];
+                double entropy = heuristic == Heuristic.Entropy ? _entropies[node] : remainingValues;
+                if (remainingValues > 1 && entropy <= min)
+                {
+                    double noise = 1E-6 * random.NextDouble();
+                    if (entropy + noise < min)
+                    {
+                        min = entropy + noise;
+                        argmin = node;
+                    }
                 }
             }
 
-            /* And define the cell with the pattern. */
-            for (int k = 0; k < nbPatterns; k++)
+            return argmin;
+        }
+
+        void Observe(int node, Random random)
+        {
+            // Choose an element according to the pattern distribution
+            bool[] w = wave[node];
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
             {
-                /* Set all patterns except the desired one to false */
-                if (wave.Get(argmin, k) != (k == chosenValue))
+                _distribution[pattern] = w[pattern] ? weights[pattern] : 0.0;
+            }
+
+            int r = _distribution.RandomFromDistribution(random.NextDouble());
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
+                if (w[pattern] != (pattern == r))
+                    Ban(node, pattern);
+        }
+
+        protected class PropagatorResult
+        {
+            public bool success;
+            
+            public static implicit operator bool(PropagatorResult x)
+            {
+                return x.success;
+            }
+        }
+
+        protected IEnumerator Propagate(PropagatorResult result)
+        {
+            while (_stackSize > 0)
+            {
+                /* Remove all incompatible patterns resulting from previously collapsed nodes. */
+                (int node, int pattern) = _stack[_stackSize - 1];
+                _stackSize--;
+                stepInfo.numPropagatingCells = _stackSize;
+
+                stepInfo.currentTile.x = node % width;
+                stepInfo.currentTile.y = node / width;
+                
+                for (int direction = 0; direction < 4; direction++)
                 {
-                    _propagator.AddToPropagator(argmin / wave.width, argmin % wave.width,
-                        k);
-                    wave.Set(argmin, k, false);
+                    stepInfo.targetTile.x = stepInfo.currentTile.x + Directions.DirectionsX[direction];
+                    stepInfo.targetTile.y = stepInfo.currentTile.y + Directions.DirectionsY[direction];
+                    if (periodic)
+                    {
+                       stepInfo.targetTile.x %= width;
+                       stepInfo.targetTile.y %= height;
+                    }
+                    else if (!periodic && (stepInfo.targetTile.x < 0
+                                           || stepInfo.targetTile.y < 0
+                                           || stepInfo.targetTile.x + patternSize > width 
+                                           || stepInfo.targetTile.y + patternSize > height))
+                    {
+                        continue;
+                    }
+                    
+                    int node2 = stepInfo.targetTile.x + stepInfo.targetTile.y * width;
+                    int[] patterns = propagator[pattern][direction];
+                    int[][] compatiblePatterns = _compatible[node2];
+
+                    foreach (var pat in patterns)
+                    {
+                        int[] compatPattern = compatiblePatterns[pat];
+
+                        compatPattern[direction]--;
+                        /*
+                         If the element was set to 0 with this operation, we need to remove
+                         the pattern from the wave, and propagate the information
+                         */
+                        if (compatPattern[direction] == 0)
+                        {
+                            Ban(node2, pat);
+                            if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
+                            {
+                                yield return DebugDrawCurrentState();
+                            }
+                        }
+
+                        if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
+                        {
+                            yield return DebugDrawCurrentState();
+                        }
+                    }
                 }
             }
 
-            return ObserveStatus.ToContinue;
+            result.success = _numPossiblePatterns[0] > 0;
         }
 
-        /* Propagate the information of the wave. */
-        private IEnumerator Propagate()
+        protected void Ban(int node, int pattern)
         {
-            return _propagator.Propagate(wave);
+            wave[node][pattern] = false;
+
+            int[] comp = _compatible[node][pattern];
+            for (int d = 0; d < 4; d++)
+                comp[d] = 0;
+            _stack[_stackSize] = (node, pattern);
+            _stackSize++;
+
+            _numPossiblePatterns[node] -= 1;
+            _sumsOfWeights[node] -= weights[pattern];
+            _sumsOfWeightLogWeights[node] -= _weightLogWeights[pattern];
+
+            double sum = _sumsOfWeights[node];
+            _entropies[node] = Math.Log(sum) - _sumsOfWeightLogWeights[node] / sum;
         }
 
-        /* Remove pattern from cell (y, x). */
-        public void RemoveWavePattern(int y, int x, int pattern)
+        protected virtual void Clear()
         {
-            if (wave.Get(y, x, pattern))
+            Parallel.For(0, wave.Length, node =>
             {
-                wave.Set(y, x, pattern, false);
-                _propagator.AddToPropagator(y, x, pattern);
-            }
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                {
+                    wave[node][pattern] = true;
+                    for (int direction = 0; direction < 4; direction++)
+                        _compatible[node][pattern][direction] =
+                            propagator[pattern][Directions.GetOppositeDirection(direction)].Length;
+                }
+
+                _numPossiblePatterns[node] = weights.Length;
+                _sumsOfWeights[node] = _totalSumOfWeights;
+                _sumsOfWeightLogWeights[node] = _totalSumOfWeightLogWeights;
+                _entropies[node] = _startingEntropy;
+                observed[node] = -1;
+            });
+            
+            _observedSoFar = 0;
         }
 
         /*
@@ -192,22 +383,31 @@ namespace WFC
         */
         private int[,] WaveToOutput()
         {
-            int[,] outputPatterns = new int[waveHeight, waveWidth];
-            for (int y = 0; y < waveHeight; y++)
+            int[,] outputPatterns = new int[height, width];
+            Parallel.For(0, wave.Length, node =>
             {
-                for (int x = 0; x < waveWidth; x++)
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
-                    for (int pattern = 0; pattern < nbPatterns; pattern++)
+                    if (wave[node][pattern])
                     {
-                        if (wave.Get(y, x, pattern))
-                        {
-                            outputPatterns[y, x] = pattern;
-                        }
+                        observed[node] = pattern;
+                        int x = node % width;
+                        int y = node / width;
+                        outputPatterns[y, x] = observed[node];
+                        break;
                     }
                 }
-            }
+            });
 
             return outputPatterns;
+        }
+        
+        public IEnumerator DebugDrawCurrentState()
+        {
+            propagatorSettings.debugToOutput(stepInfo, wave, propagatorSettings.orientedToTileId);
+            yield return propagatorSettings.stepInterval == 0
+                ? null
+                : new WaitForSeconds(propagatorSettings.stepInterval);
         }
     }
 }

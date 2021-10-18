@@ -34,17 +34,18 @@ namespace WFC.Tiling
             return output;
         }
 
-        public static List<Texture2D>[,] DebugToOutput(bool[,,] wave, WFC_Texture2DTile[] tiles, (int, int)[] orientedToTileId)
+        public static List<Texture2D>[,] DebugToOutput(Model.StepInfo stepInfo, bool[][] wave, WFC_Texture2DTile[] tiles, (int, int)[] orientedToTileId)
         {
             List<Texture2D>[,] output = new List<Texture2D>[wave.GetLength(0), wave.GetLength(1)];
-            for (int y = 0; y < wave.GetLength(0); y++)
+            for (int y = 0; y < stepInfo.height; y++)
             {
-                for (int x = 0; x < wave.GetLength(1); x++)
+                for (int x = 0; x < stepInfo.width; x++)
                 {
+                    int node = x + y * stepInfo.width;
                     output[y, x] = new List<Texture2D>();
-                    for (int p = 0; p < wave.GetLength(2); p++)
+                    for (int p = 0; p < wave[node].Length; p++)
                     {
-                        if (!wave[y, x, p]) continue;
+                        if (!wave[node][p]) continue;
                         
                         (int Tile, int Orientation) currentTile = orientedToTileId[p];
                         output[y, x].Add(tiles[currentTile.Tile].orientations[currentTile.Orientation]);

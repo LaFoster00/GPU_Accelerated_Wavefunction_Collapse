@@ -17,11 +17,12 @@ namespace WFC.Tiling
         public WFC_Texture2DTile[] tiles;
 
         public (bool Success, Texture2D[,] Result) result;
-        public (Propagator.StepInfo stepInfo, List<Texture2D>[,] debug) debugOutput;
+        public (Model.StepInfo stepInfo, List<Texture2D>[,] debug) debugOutput;
 
         [SerializeField] private bool periodic = true;
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
+        [SerializeField] private int maxNumIterations = -1;
         [SerializeField] private int width;
         [SerializeField] private int height;
         [SerializeField] private bool drawFrame = true;
@@ -29,10 +30,10 @@ namespace WFC.Tiling
         [SerializeField] private Texture2D highlightTexture;
         [SerializeField] private Texture2D greenHighlightTexture;
         [SerializeField] private Texture2D yellowFrameTexture;
-        [SerializeField] private Propagator.Settings.DebugMode debugMode;
+        [SerializeField] private Model.PropagatorSettings.DebugMode debugMode;
         [SerializeField] private float stepInterval;
 
-        private Propagator.Settings _settings;
+        private Model.PropagatorSettings _settings;
 
         private void Start()
         {
@@ -47,7 +48,7 @@ namespace WFC.Tiling
                 }
             }
 
-            _settings = new Propagator.Settings(debugMode, stepInterval, DisplayWaveDebug);
+            _settings = new Model.PropagatorSettings(debugMode, stepInterval, DisplayWaveDebug);
 
             StartCoroutine(ExecuteWfc(neighbours));
         }
@@ -65,12 +66,12 @@ namespace WFC.Tiling
             while (!result.Success)
             {
                 TilingWFC<Texture2D> tilingWfc = new TilingWFC<Texture2D>(tiles.Cast<WFC_2DTile<Texture2D>>().ToArray(),
-                    neighbours.Cast<Neighbour<Texture2D>>().ToArray(), height, width, periodic,
-                    Random.Range(Int32.MinValue, Int32.MaxValue), _settings);
+                    neighbours.Cast<Neighbour<Texture2D>>().ToArray(), height, width, periodic, _settings);
                 
                 TilingWFC<Texture2D>.WFC_TypedResult wfcResult = new TilingWFC<Texture2D>.WFC_TypedResult();
 
-                yield return tilingWfc.Run(wfcResult);
+                Unity.Mathematics.Random random = Unity.Mathematics.Random.CreateFromIndex((uint)Random.Range(Int32.MinValue, Int32.MaxValue));
+                yield return tilingWfc.Run(random.NextUInt(), maxNumIterations, wfcResult);
 
                 result.Result = wfcResult.result;
                 result.Success = wfcResult.success;
@@ -142,14 +143,15 @@ namespace WFC.Tiling
                     }
                 }
 
-                foreach (var propagatingCell in debugOutput.stepInfo.propagatingCells)
+                for (int node = 0; node < debugOutput.stepInfo.numPropagatingCells; node++)
                 {
+                    var coord = debugOutput.stepInfo.propagatingCells[node].Item1.IdToXY(debugOutput.stepInfo.width);
                     GUI.DrawTexture(
                         Rect.MinMaxRect(
-                            displayWidth * propagatingCell.Item2,
-                            displayHeight * propagatingCell.Item1,
-                            displayWidth + displayWidth * propagatingCell.Item2,
-                            displayHeight + displayHeight * propagatingCell.Item1),
+                            displayWidth * coord.x,
+                            displayHeight * coord.y,
+                            displayWidth + displayWidth * coord.x,
+                            displayHeight + displayHeight * coord.y),
                         yellowFrameTexture);
                 }
 
@@ -171,9 +173,9 @@ namespace WFC.Tiling
             }
         }
 
-        private void DisplayWaveDebug(Propagator.StepInfo stepInfo, bool[,,] wave, (int, int)[] orientedToTileId)
+        private void DisplayWaveDebug(Model.StepInfo stepInfo, bool[][] wave, (int, int)[] orientedToTileId)
         {
-            debugOutput = (stepInfo, WFC_Texture2DTile.DebugToOutput(wave, tiles, orientedToTileId));
+            debugOutput = (stepInfo, WFC_Texture2DTile.DebugToOutput(stepInfo, wave, tiles, orientedToTileId));
         }
     }
 }
