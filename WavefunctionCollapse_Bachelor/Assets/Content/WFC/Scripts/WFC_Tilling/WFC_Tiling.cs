@@ -12,9 +12,9 @@ namespace WFC.Tiling
         public AddToPropagator Add { get; }
     }
 
-/*
- Class generating a new image with the tiling WFC algorithm.
- */
+    /*
+     Class generating a new image with the tiling WFC algorithm.
+     */
     public class TilingWFC<T> : Model
     {
         /* The distinct tiles. */
@@ -31,6 +31,7 @@ namespace WFC.Tiling
         {
             _tiles = tiles;
             (_orientedToTileId, _orientedTileIds) = GenerateOrientedTileIds(tiles);
+            nbPatterns = _orientedToTileId.Length;
             propagatorSettings.orientedToTileId = _orientedToTileId;
             weights = GetTileWeights(tiles);
             propagator = GeneratePropagator(neighbours, tiles, _orientedToTileId, _orientedTileIds);

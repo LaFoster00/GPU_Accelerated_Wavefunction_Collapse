@@ -59,7 +59,6 @@ public static class Utils
         {
             x += distribution[pattern];
             if (threshold <= x) return pattern;
-            pattern++;
         }
         
         return 0;

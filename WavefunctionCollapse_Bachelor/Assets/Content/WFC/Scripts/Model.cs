@@ -31,12 +31,14 @@ namespace WFC
         private int _stackSize, _observedSoFar;
 
         
-        protected readonly int width, height, nbPatterns, patternSize;
+        protected readonly int width, height, patternSize;
+        protected int nbPatterns;
         protected bool periodic;
 
         protected double[] weights;
         private double[] _weightLogWeights, _distribution;
 
+        private bool _isPossible;
         private int[] _numPossiblePatterns;
         private double _totalSumOfWeights, _totalSumOfWeightLogWeights, _startingEntropy;
         private double[] _sumsOfWeights, _sumsOfWeightLogWeights, _entropies;
@@ -142,12 +144,20 @@ namespace WFC
             public int[,] output;
         }
 
+        private class WFC_Objects
+        {
+            public Random random;
+        }
+        
         public IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
             if (wave == null) Init();
 
             Clear();
-            Random random = new Random(seed);
+            WFC_Objects objects = new WFC_Objects()
+            {
+                random = new Random(seed),
+            };
 
             if (limit < 0)
             {
@@ -155,11 +165,11 @@ namespace WFC
                 {
                     if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
                     {
-                        Run_Internal(random, result).MoveNext();
+                        Run_Internal(objects, result).MoveNext();
                     }
                     else
                     {
-                        yield return Run_Internal(random, result);
+                        yield return Run_Internal(objects, result);
                     }
                 }
             }
@@ -171,32 +181,36 @@ namespace WFC
                     
                     if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
                     {
-                        Run_Internal(random, result).MoveNext();
+                        Run_Internal(objects, result).MoveNext();
                     }
                     else
                     {
-                        yield return Run_Internal(random, result);
+                        yield return Run_Internal(objects, result);
                     }
                 }
             }
+
+            if (!_isPossible)
+            {
+                yield return DebugDrawCurrentState();
+            }
         }
 
-        private IEnumerator Run_Internal(Random random, WFC_Result result)
+        private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
         {
-            int node = NextUnobservedNode(random);
+            int node = NextUnobservedNode(objects.random);
             if (node >= 0)
             {
-                Observe(node, random);
-                var propagationResult = new PropagatorResult();
-                
-                var propagation = Propagate(propagationResult);
+                Observe(node, ref objects.random);
+
+                var propagation = Propagate();
                 propagation.MoveNext();
                 while (propagation.MoveNext())
                 {
                     yield return propagation.Current;
                 }
 
-                if (!propagationResult.success)
+                if (!_isPossible)
                 {
                     result.output = null;
                     result.success =  false;
@@ -249,7 +263,7 @@ namespace WFC
             return argmin;
         }
 
-        void Observe(int node, Random random)
+        void Observe(int node, ref Random random)
         {
             // Choose an element according to the pattern distribution
             bool[] w = wave[node];
@@ -264,17 +278,7 @@ namespace WFC
                     Ban(node, pattern);
         }
 
-        protected class PropagatorResult
-        {
-            public bool success;
-            
-            public static implicit operator bool(PropagatorResult x)
-            {
-                return x.success;
-            }
-        }
-
-        protected IEnumerator Propagate(PropagatorResult result)
+        protected IEnumerator Propagate()
         {
             while (_stackSize > 0)
             {
@@ -292,8 +296,8 @@ namespace WFC
                     stepInfo.targetTile.y = stepInfo.currentTile.y + Directions.DirectionsY[direction];
                     if (periodic)
                     {
-                       stepInfo.targetTile.x %= width;
-                       stepInfo.targetTile.y %= height;
+                       stepInfo.targetTile.x = (stepInfo.targetTile.x + width) % width;
+                       stepInfo.targetTile.y = (stepInfo.targetTile.y + height) % height;
                     }
                     else if (!periodic && (stepInfo.targetTile.x < 0
                                            || stepInfo.targetTile.y < 0
@@ -319,6 +323,10 @@ namespace WFC
                         if (compatPattern[direction] == 0)
                         {
                             Ban(node2, pat);
+                            if (!_isPossible)
+                            {
+                                yield break;
+                            }
                             if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
                             {
                                 yield return DebugDrawCurrentState();
@@ -332,8 +340,6 @@ namespace WFC
                     }
                 }
             }
-
-            result.success = _numPossiblePatterns[0] > 0;
         }
 
         protected void Ban(int node, int pattern)
@@ -352,9 +358,10 @@ namespace WFC
 
             double sum = _sumsOfWeights[node];
             _entropies[node] = Math.Log(sum) - _sumsOfWeightLogWeights[node] / sum;
+            _isPossible = _numPossiblePatterns[node] > 0;
         }
 
-        protected virtual void Clear()
+        protected void Clear()
         {
             Parallel.For(0, wave.Length, node =>
             {
@@ -374,6 +381,7 @@ namespace WFC
             });
             
             _observedSoFar = 0;
+            _isPossible = true;
         }
 
         /*

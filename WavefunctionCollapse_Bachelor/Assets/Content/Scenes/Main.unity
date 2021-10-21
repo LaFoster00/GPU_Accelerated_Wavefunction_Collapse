@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028334, g: 0.22571343, b: 0.30692208, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -274,15 +274,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
   - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
   periodic: 1
-  displayHeight: 20
-  displayWidth: 20
-  width: 32
-  height: 32
+  displayHeight: 10
+  displayWidth: 10
+  maxNumIterations: -1
+  width: 64
+  height: 64
   drawFrame: 0
   frameTexture: {fileID: 2800000, guid: 8ba78a6717d99e7149284a6b51708efa, type: 3}
   highlightTexture: {fileID: 2800000, guid: 0de633a87b1dea303864f5f317515aa2, type: 3}
   greenHighlightTexture: {fileID: 2800000, guid: c1576c538e7b231b09a74843580fa775, type: 3}
-  yellowFrameTexture: {fileID: 0}
+  yellowFrameTexture: {fileID: 2800000, guid: bbf75ad0f97e440dcbb4c322d391d38e, type: 3}
   debugMode: 0
   stepInterval: 0
 --- !u!4 &291630408

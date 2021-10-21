@@ -26,8 +26,8 @@ namespace WFC.Tiling
             {
                 for (int x = 0; x < result.GetLength(1); x++)
                 {
-                    (int Tile, int Orientation) currentTile = orientedToTileId[result[y, x]];
-                    output[y, x] = tiles[currentTile.Tile].orientations[currentTile.Orientation];
+                    var (tile, orientation) = orientedToTileId[result[y, x]];
+                    output[y, x] = tiles[tile].orientations[orientation];
                 }
             }
             Debug.Log("Such texture, much wow!");
@@ -36,7 +36,7 @@ namespace WFC.Tiling
 
         public static List<Texture2D>[,] DebugToOutput(Model.StepInfo stepInfo, bool[][] wave, WFC_Texture2DTile[] tiles, (int, int)[] orientedToTileId)
         {
-            List<Texture2D>[,] output = new List<Texture2D>[wave.GetLength(0), wave.GetLength(1)];
+            List<Texture2D>[,] output = new List<Texture2D>[stepInfo.height, stepInfo.width];
             for (int y = 0; y < stepInfo.height; y++)
             {
                 for (int x = 0; x < stepInfo.width; x++)
