@@ -1,0 +1,43 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "GPU_WFC_Utils.cginc"
+
+uniform int nbPatterns;
+uniform int width, height;
+uniform Texture2D<int> node_ids; // node id;
+
+/* Actual wave result */
+Texture3D<bool> inputWave; //TODO see if you can pack this info into int8 reducing memory usage
+
+
+/*
+ Which patterns can be placed in which direction of the current node
+ propagator[pattern][direction] : bool[nbPatterns] compatibles
+*/
+Texture3D<bool> propagator;
+
+/*  */
+Buffer<int> compatible;
+
+inline int GetCompatible(int node, int pattern, int direction)
+{
+    return compatible[node + pattern * 4 + direction];
+}
+
+
+/* Cells in which the patterns changed */
+Texture2D<bool> inPattensChanged;
+
+
+RWTexture3D<bool> outputWave;
+RWTexture2D<bool> outPatternsChanged;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    for (int pattern = 0; pattern < nbPatterns; pattern++)
+    {
+        const float3 location = float3(id.xy, pattern);
+        outputWave[location] = inputWave[location];
+    }
+}

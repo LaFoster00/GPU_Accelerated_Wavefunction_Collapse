@@ -16,8 +16,14 @@ namespace WFC
          propagator[pattern][direction] : int[] possibilities
          */
         protected int[][][] propagator;
+
+        /*
+         Which patterns can be placed in which direction of the current node
+         propagator[pattern][direction] : bool[] compatibles
+         */
+        protected bool[][][] densePropagator;
         
-        /*  */
+        /* int[wave.length][nbPatterns][4 : direction] */
         protected int[][][] compatible;
         
         /* Which cells are fully observed. */
