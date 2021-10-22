@@ -75,6 +75,16 @@ MonoBehaviour:
   - active: 1
     leftTile: {fileID: 11400000}
     leftTileOrientation: 3
+    rightTile: {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
+    rightTileOrientation: 0
+  - active: 1
+    leftTile: {fileID: 11400000}
+    leftTileOrientation: 3
+    rightTile: {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
+    rightTileOrientation: 3
+  - active: 1
+    leftTile: {fileID: 11400000}
+    leftTileOrientation: 3
     rightTile: {fileID: 11400000, guid: bc39127be4d8d86589893ba21f50325f, type: 2}
     rightTileOrientation: 0
   orientations:

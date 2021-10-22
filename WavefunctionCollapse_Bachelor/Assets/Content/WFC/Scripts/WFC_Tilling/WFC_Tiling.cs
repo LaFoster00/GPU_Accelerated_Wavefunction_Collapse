@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 namespace WFC.Tiling
 {
@@ -15,7 +16,7 @@ namespace WFC.Tiling
     /*
      Class generating a new image with the tiling WFC algorithm.
      */
-    public class TilingWFC<T> : Model
+    public class TilingWFC<T>
     {
         /* The distinct tiles. */
         private WFC_2DTile<T>[] _tiles;
@@ -26,15 +27,15 @@ namespace WFC.Tiling
         /* Map tile and orientation to oriented tile id. */
         private int[][] _orientedTileIds;
 
-        public TilingWFC(WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours, int height, int width, bool periodicOutput, PropagatorSettings propagatorSettings) : 
-            base(width, height, 1, periodicOutput, Heuristic.Entropy, propagatorSettings)
+        private Model _model;
+        
+        public TilingWFC(WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours, int height, int width, bool periodicOutput, Model.PropagatorSettings propagatorSettings)
         {
             _tiles = tiles;
             (_orientedToTileId, _orientedTileIds) = GenerateOrientedTileIds(tiles);
-            nbPatterns = _orientedToTileId.Length;
             propagatorSettings.orientedToTileId = _orientedToTileId;
-            weights = GetTileWeights(tiles);
-            propagator = GeneratePropagator(neighbours, tiles, _orientedToTileId, _orientedTileIds);
+            _model = new CPU_Model(width, height, 1, periodicOutput, _orientedToTileId.Length, GetTileWeights(tiles),
+                GeneratePropagator(neighbours, tiles, _orientedToTileId, _orientedTileIds), propagatorSettings);
         }
 
         /* Generate id and mapping from id to oriented tiles and vice versa.*/
@@ -143,7 +144,7 @@ namespace WFC.Tiling
             {
                 if (tileId != p)
                 {
-                    Ban(x + y * width, p);
+                    _model.Ban(x + y * _model.width, p);
                 }
             }
         }
@@ -156,8 +157,8 @@ namespace WFC.Tiling
         bool SetTile(int tileId, int orientation, int y, int x)
         {
             if (tileId >= _orientedTileIds.Length || orientation >= _orientedTileIds[tileId].Length ||
-                y >= height ||
-                x >= width)
+                y >= _model.height ||
+                x >= _model.width)
             {
                 return false;
             }
@@ -176,8 +177,8 @@ namespace WFC.Tiling
         /* Run the tiling wfc and return the result if the algorithm succeeded */
         public IEnumerator Run(uint seed, int limit, WFC_TypedResult returnValue)
         {
-            WFC_Result result = new WFC_Result();
-            yield return base.Run(seed, limit, result);
+            Model.WFC_Result result = new Model.WFC_Result();
+            yield return _model.Run(seed, limit, result);
             if (result.success == false)
             {
                 returnValue.success = false;
