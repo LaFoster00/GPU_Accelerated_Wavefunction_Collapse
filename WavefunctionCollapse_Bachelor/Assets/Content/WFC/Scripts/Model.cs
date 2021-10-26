@@ -1,8 +1,5 @@
 using System;
 using System.Collections;
-using System.Threading.Tasks;
-using UnityEngine;
-using Random = Unity.Mathematics.Random;
 
 namespace WFC
 {
@@ -12,7 +9,7 @@ namespace WFC
         protected bool[][] wave;
 
         /*
-         Which patterns can be placed in which direction of the current node
+         Which patterns can be placed in which direction of the current pattern
          propagator[pattern][direction] : int[] possibilities
          */
         protected int[][][] propagator;

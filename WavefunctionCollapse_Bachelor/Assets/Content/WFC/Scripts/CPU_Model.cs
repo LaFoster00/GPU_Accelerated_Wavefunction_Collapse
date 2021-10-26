@@ -174,7 +174,7 @@ public class CPU_Model : Model
             while (stackSize > 0)
             {
                 /* Remove all incompatible patterns resulting from previously collapsed nodes. */
-                (int node, int pattern) = stack[stackSize - 1];
+                (int node, int removedPattern) = stack[stackSize - 1];
                 stackSize--;
                 stepInfo.numPropagatingCells = stackSize;
 
@@ -199,19 +199,16 @@ public class CPU_Model : Model
                     }
                     
                     int node2 = stepInfo.targetTile.x + stepInfo.targetTile.y * width;
-                    int[] patterns = propagator[pattern][direction];
-                    int[][] compatiblePatterns = compatible[node2];
+                    int[] patterns = propagator[removedPattern][direction];
 
                     foreach (var pat in patterns)
                     {
-                        int[] compatPattern = compatiblePatterns[pat];
-
-                        compatPattern[direction]--;
                         /*
+                         Decrement compatible patterns then compare.
                          If the element was set to 0 with this operation, we need to remove
                          the pattern from the wave, and propagate the information
                          */
-                        if (compatPattern[direction] == 0)
+                        if (--compatible[node2][pat][direction] == 0)
                         {
                             Ban(node2, pat);
                             if (!isPossible)
