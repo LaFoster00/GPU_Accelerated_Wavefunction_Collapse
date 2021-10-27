@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 
 namespace WFC
 {
@@ -26,11 +27,7 @@ namespace WFC
         /* Which cells are fully observed. */
         protected int[] observed;
 
-        /* Contains node and the deleted pattern */
-        protected (int, int)[] stack;
-        protected int stackSize, observedSoFar;
 
-        
         public readonly int width, height, patternSize;
         protected int nbPatterns;
         protected bool periodic;
@@ -77,8 +74,9 @@ namespace WFC
         }
 
         protected StepInfo stepInfo = new StepInfo();
-        
-        protected Model(int width, int height, int patternSize, bool periodic, int nbPatterns, double[] weights, int[][][] propagator, PropagatorSettings propagatorSettings)
+
+        protected Model(int width, int height, int patternSize, bool periodic, int nbPatterns, double[] weights,
+            (bool[][][] dense, int[][][] standard) propagator, PropagatorSettings propagatorSettings)
         {
             this.width = width;
             this.height = height;
@@ -89,7 +87,8 @@ namespace WFC
             this.propagatorSettings = propagatorSettings;
             this.nbPatterns = nbPatterns;
             this.weights = weights;
-            this.propagator = propagator;
+            this.propagator = propagator.standard;
+            densePropagator = propagator.dense;
         }
 
         public class WFC_Result
@@ -101,23 +100,62 @@ namespace WFC
 
         public abstract IEnumerator Run(uint seed, int limit, WFC_Result result);
 
-        public void Ban(int node, int pattern)
+        public abstract void Ban(int node, int pattern);
+
+        protected virtual void Init()
         {
-            wave[node][pattern] = false;
+            wave = new bool[width * height][];
+            compatible = new int[wave.Length][][];
+            for (int i = 0; i < wave.Length; i++)
+            {
+                wave[i] = new bool[nbPatterns];
+                compatible[i] = new int[nbPatterns][];
+                for (int t = 0; t < nbPatterns; t++)
+                    compatible[i][t] = new int[4];
+            }
 
-            int[] comp = compatible[node][pattern];
-            for (int d = 0; d < 4; d++)
-                comp[d] = 0;
-            stack[stackSize] = (node, pattern);
-            stackSize++;
+            distribution = new double[nbPatterns];
+            observed = new int[width * height];
 
-            numPossiblePatterns[node] -= 1;
-            sumsOfWeights[node] -= weights[pattern];
-            sumsOfWeightLogWeights[node] -= weightLogWeights[pattern];
+            weightLogWeights = new double[nbPatterns];
+            totalSumOfWeights = 0;
+            totalSumOfWeightLogWeights = 0;
 
-            double sum = sumsOfWeights[node];
-            entropies[node] = Math.Log(sum) - sumsOfWeightLogWeights[node] / sum;
-            isPossible = numPossiblePatterns[node] > 0;
+            for (int t = 0; t < nbPatterns; t++)
+            {
+                weightLogWeights[t] = weights[t] * Math.Log(weights[t]);
+                totalSumOfWeights += weights[t];
+                totalSumOfWeightLogWeights += weightLogWeights[t];
+            }
+
+            startingEntropy = Math.Log(totalSumOfWeights) - totalSumOfWeightLogWeights / totalSumOfWeights;
+
+            numPossiblePatterns = new int[width * height];
+            sumsOfWeights = new double[width * height];
+            sumsOfWeightLogWeights = new double[width * height];
+            entropies = new double[width * height];
+        }
+
+        protected virtual void Clear()
+        {
+            Parallel.For(0, wave.Length, node =>
+            {
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                {
+                    wave[node][pattern] = true;
+                    for (int direction = 0; direction < 4; direction++)
+                        compatible[node][pattern][direction] =
+                            propagator[pattern][Directions.GetOppositeDirection(direction)].Length;
+                }
+
+                numPossiblePatterns[node] = weights.Length;
+                sumsOfWeights[node] = totalSumOfWeights;
+                sumsOfWeightLogWeights[node] = totalSumOfWeightLogWeights;
+                entropies[node] = startingEntropy;
+                observed[node] = -1;
+            });
+            
+            isPossible = true;
         }
     }
 }

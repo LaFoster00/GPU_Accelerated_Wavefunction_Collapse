@@ -7,43 +7,24 @@ using Random = Unity.Mathematics.Random;
 
 public class CPU_Model : Model
 {
-    public CPU_Model(int width, int height, int patternSize, bool periodic, int nbPatterns, double[] weights, int[][][] propagator, PropagatorSettings propagatorSettings) 
+    /* Contains node and the deleted pattern */
+    protected (int, int)[] stack;
+    protected int stackSize, observedSoFar;
+    
+    public CPU_Model(int width, int height, int patternSize, bool periodic, int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator, PropagatorSettings propagatorSettings) 
         : base(width, height, patternSize, periodic, nbPatterns, weights, propagator, propagatorSettings)
     {
     }
 
-    private void Init()
+    protected override void Clear()
     {
-        wave = new bool[width * height][];
-        compatible = new int[wave.Length][][];
-        for (int i = 0; i < wave.Length; i++)
-        {
-            wave[i] = new bool[nbPatterns];
-            compatible[i] = new int[nbPatterns][];
-            for (int t = 0; t < nbPatterns; t++)
-                compatible[i][t] = new int[4];
-        }
+        base.Clear();
+        observedSoFar = 0;
+    }
 
-        distribution = new double[nbPatterns];
-        observed = new int[width * height];
-
-        weightLogWeights = new double[nbPatterns];
-        totalSumOfWeights = 0;
-        totalSumOfWeightLogWeights = 0;
-
-        for (int t = 0; t < nbPatterns; t++)
-        {
-            weightLogWeights[t] = weights[t] * Math.Log(weights[t]);
-            totalSumOfWeights += weights[t];
-            totalSumOfWeightLogWeights += weightLogWeights[t];
-        }
-
-        startingEntropy = Math.Log(totalSumOfWeights) - totalSumOfWeightLogWeights / totalSumOfWeights;
-
-        numPossiblePatterns = new int[width * height];
-        sumsOfWeights = new double[width * height];
-        sumsOfWeightLogWeights = new double[width * height];
-        entropies = new double[width * height];
+    protected override void Init()
+    {
+        base.Init();
 
         stack = new (int, int)[wave.Length * nbPatterns];
         stackSize = 0;
@@ -101,7 +82,26 @@ public class CPU_Model : Model
             yield return DebugDrawCurrentState();
         }
     }
-    
+
+    public override void Ban(int node, int pattern)
+    {
+        wave[node][pattern] = false;
+
+        int[] comp = compatible[node][pattern];
+        for (int d = 0; d < 4; d++)
+            comp[d] = 0;
+        stack[stackSize] = (node, pattern);
+        stackSize++;
+
+        numPossiblePatterns[node] -= 1;
+        sumsOfWeights[node] -= weights[pattern];
+        sumsOfWeightLogWeights[node] -= weightLogWeights[pattern];
+
+        double sum = sumsOfWeights[node];
+        entropies[node] = Math.Log(sum) - sumsOfWeightLogWeights[node] / sum;
+        isPossible = numPossiblePatterns[node] > 0;
+    }
+
     private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
         {
             int node = NextUnobservedNode(objects.random);
@@ -180,24 +180,24 @@ public class CPU_Model : Model
 
                 stepInfo.currentTile.x = node % width;
                 stepInfo.currentTile.y = node / width;
-                
+
                 for (int direction = 0; direction < 4; direction++)
                 {
                     stepInfo.targetTile.x = stepInfo.currentTile.x + Directions.DirectionsX[direction];
                     stepInfo.targetTile.y = stepInfo.currentTile.y + Directions.DirectionsY[direction];
                     if (periodic)
                     {
-                       stepInfo.targetTile.x = (stepInfo.targetTile.x + width) % width;
-                       stepInfo.targetTile.y = (stepInfo.targetTile.y + height) % height;
+                        stepInfo.targetTile.x = (stepInfo.targetTile.x + width) % width;
+                        stepInfo.targetTile.y = (stepInfo.targetTile.y + height) % height;
                     }
                     else if (!periodic && (stepInfo.targetTile.x < 0
                                            || stepInfo.targetTile.y < 0
-                                           || stepInfo.targetTile.x + patternSize > width 
+                                           || stepInfo.targetTile.x + patternSize > width
                                            || stepInfo.targetTile.y + patternSize > height))
                     {
                         continue;
                     }
-                    
+
                     int node2 = stepInfo.targetTile.x + stepInfo.targetTile.y * width;
                     int[] patterns = propagator[removedPattern][direction];
 
@@ -215,6 +215,7 @@ public class CPU_Model : Model
                             {
                                 yield break;
                             }
+
                             if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
                             {
                                 yield return DebugDrawCurrentState();
@@ -229,30 +230,7 @@ public class CPU_Model : Model
                 }
             }
         }
-        
-        private void Clear()
-        {
-            Parallel.For(0, wave.Length, node =>
-            {
-                for (int pattern = 0; pattern < nbPatterns; pattern++)
-                {
-                    wave[node][pattern] = true;
-                    for (int direction = 0; direction < 4; direction++)
-                        compatible[node][pattern][direction] =
-                            propagator[pattern][Directions.GetOppositeDirection(direction)].Length;
-                }
 
-                numPossiblePatterns[node] = weights.Length;
-                sumsOfWeights[node] = totalSumOfWeights;
-                sumsOfWeightLogWeights[node] = totalSumOfWeightLogWeights;
-                entropies[node] = startingEntropy;
-                observed[node] = -1;
-            });
-            
-            observedSoFar = 0;
-            isPossible = true;
-        }
-        
         /*
          Transform the wave to a valid output (a 2d array of patterns that aren't in
          contradiction). This function should be used only when all cell of the wave

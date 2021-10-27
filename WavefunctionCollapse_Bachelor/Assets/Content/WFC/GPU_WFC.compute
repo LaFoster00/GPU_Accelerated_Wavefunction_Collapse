@@ -7,10 +7,10 @@ uniform int width, height;
 uniform bool is_periodic;
 
 /*
- Actual wave result
- wave[int3(nodeX, nodeY, pattern)]
- */
-RWTexture3D<bool> wave; //TODO see if you can pack this info into int8 reducing memory usage
+Actual wave result
+wave[int3(nodeX, nodeY, pattern)]
+*/
+RWTexture3D<bool> wave;
 
 //TODO: these textures should be doubles. Would need packing into separate channels.
 struct Weight
@@ -21,50 +21,51 @@ struct Weight
 
 StructuredBuffer<Weight> weight;
 
+/* Packed in order to use less registers */
 RWTexture2DArray<float> memoisation;
 #define sum_of_weights(node) memoisation[uint3(node.x,  node.y, 0)]
 #define sums_of_weight_log_weights(node) memoisation[uint3(node.x,  node.y, 1)]
 #define entropies(node) memoisation[uint3(node.x, node.y, 2)]
 
+/* Holds the number of possible pattern for each cell */
 RWTexture2D<int> num_possible_patterns;
 
-/* Needed for interlocked counter increase. */
-RWStructuredBuffer<uint> open_cells;
-RWStructuredBuffer<bool> is_possible;
-
 /*
-Which pattern changed.
-input_pattern_change[uint3(nodeX, nodeY, pattern)]
-*/
-uniform Texture3D<bool> in_pattern_change;
-
-/* Neighbours of cells that changed. */
-uniform Texture2D<bool> in_needs_collapse;
-
-/*
- Which patterns can be placed in which direction of the current node
- propagator[uint3(pattern, otherPattern, direction)]
+Which patterns can be placed in which direction of the current node
+propagator[uint3(pattern, otherPattern, direction)]
 */
 uniform Texture3D<bool> propagator;
 
 /*
- How many patterns in specific direction of cell are compatible.
- Use GetCompatible and SetCompatible for convinience
- compatible[int3(nodeX, nodeY, pattern-direction]
- */
+How many patterns in specific direction of cell are compatible.
+Use GetCompatible and SetCompatible for convinience
+compatible[int3(nodeX, nodeY, pattern-direction] (see GeneratePatternDirectionCoords)
+*/
 RWTexture3D<int> compatible;
+
+/* Neighbours of cells that changed. */
+uniform Texture2D<bool> in_needs_collapse;
+RWTexture2D<bool> out_needs_collapse;
 
 /* Cells in which the patterns changed. */
 uniform Texture2D<bool> in_is_collapsed;
+RWTexture2D<bool> out_is_collapsed;
 
 /*
 Which pattern changed.
 input_pattern_change[uint3(nodeX, nodeY, pattern)]
 */
-RWTexture2D<bool> out_is_collapsed;
-RWTexture2D<bool> out_needs_collapse;
+uniform Texture3D<bool> in_pattern_collapsed;
+RWTexture3D<bool> out_pattern_collapsed;
 
-inline uint3 GenerateCompatibleDirectCoords(uint x, uint y, uint pattern, uint direction)
+struct Result
+{
+    bool is_possible;
+    bool open_nodes;
+};
+RWStructuredBuffer<Result> result;
+
+inline uint3 GeneratePatternDirectionCoords(uint x, uint y, uint pattern, uint direction)
 {
     return uint3(x, y, pattern * 4 + direction);
 }
@@ -75,6 +76,7 @@ inline void Ban(uint2 node, int pattern)
     if (!wave[uint3(node, pattern)]) return;
     
     wave[uint3(node, pattern)] = false;
+    out_pattern_collapsed[uint3(node, pattern)] = true;
 
     num_possible_patterns[node] -= 1;
     sum_of_weights(node) -= weight[pattern].weight;
@@ -84,7 +86,7 @@ inline void Ban(uint2 node, int pattern)
     entropies(node) = log(sum) - sums_of_weight_log_weights(node) / sum;
     if (num_possible_patterns[node] <= 0)
     {
-        //propagator_info[0].is_possible = false;
+        result[0].is_possible = false;
     }
     
     /* Mark the neighbouring nodes for collapse and update info */
@@ -110,19 +112,19 @@ inline void Ban(uint2 node, int pattern)
 
         out_needs_collapse[uint2(x2, y2)] = true;
     }
-    InterlockedAdd(open_cells[0], 4);
+    result[0].open_nodes = true;
 }
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+[numthreads(16,16,1)]
+void CSMain (uint3 node : SV_DispatchThreadID)
 {
-    if (!in_needs_collapse[id.xy]) return;
+    if (!in_needs_collapse[node.xy]) return;
     
     for (uint direction = 0; direction < 4; direction++)
     {
         /* Generate neighbour coordinate */
-        int x2 = id.x + directions_x[direction];
-        int y2 = id.y + directions_y[direction];
+        int x2 = node.x + directions_x[direction];
+        int y2 = node.y + directions_y[direction];
 
         if (is_periodic)
         {
@@ -143,7 +145,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         for (int removed_pattern = 0; removed_pattern < nb_patterns; removed_pattern++)
         {
             /* Check if the pattern was removed from the neighbouring node. */
-            if (in_pattern_change[uint3(x2, y2, removed_pattern)])
+            if (in_pattern_collapsed[uint3(x2, y2, removed_pattern)])
             {
                 /* Go through all compatible patterns of this cell and decrease them accordingly. */
                 for (int compatiblePattern = 0; compatiblePattern < nb_patterns; compatiblePattern++)
@@ -151,9 +153,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
                     if (propagator[uint3(removed_pattern, compatiblePattern, opposite_direction[direction])])
                     {
                         /* Ban pattern from node when it comes incompatible with other node. */
-                        if (--compatible[GenerateCompatibleDirectCoords(id.x, id.y, compatiblePattern, direction)] == 0)
+                        if (--compatible[GeneratePatternDirectionCoords(node.x, node.y, compatiblePattern, direction)] == 0)
                         {
-                            Ban(id.xy, compatiblePattern);
+                            Ban(node.xy, compatiblePattern);
                         }
                     }
                 }

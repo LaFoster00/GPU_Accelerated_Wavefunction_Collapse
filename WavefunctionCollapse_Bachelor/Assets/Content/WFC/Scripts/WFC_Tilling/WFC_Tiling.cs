@@ -64,9 +64,10 @@ namespace WFC.Tiling
 
         /*
          Generate the propagator which will be used in the wfc algorithm.
-         The propagator holds information on which tile can lie in which direction of all the oriented tiles
+         The propagator holds information on which tile can lie in which direction of all the oriented tiles.
+         Bool Array holds the dense propagator, int array the standard one.
         */
-        static int[][][] GeneratePropagator(
+        static (bool[][][], int[][][]) GeneratePropagator(
             Neighbour<T>[] neighbors,
             WFC_2DTile<T>[] tiles,
             (int, int)[] idToOrientedTile,
@@ -120,7 +121,7 @@ namespace WFC.Tiling
                 }
             }
 
-            return propagator;
+            return (densePropagator, propagator);
         }
 
         /* Get probability of presence of tiles. */
