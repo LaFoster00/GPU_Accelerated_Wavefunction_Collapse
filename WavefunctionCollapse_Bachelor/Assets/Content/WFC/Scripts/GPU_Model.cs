@@ -105,7 +105,7 @@ public class GPU_Model : Model, IDisposable
         _inPatternCollapsedTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
         _outPatternCollapsedTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
         
-        _resultBuf = new ComputeBuffer(1, sizeof(bool) * 2);
+        _resultBuf = new ComputeBuffer(1, sizeof(bool) + sizeof(uint));
 
         _collapseClearData = new bool[wave.Length];
         _patternCollapseClearData = new bool[wave.Length * nbPatterns];
@@ -132,6 +132,8 @@ public class GPU_Model : Model, IDisposable
                 }
                 _weightBuf.SetData(weightBufData);
             }
+            
+            _resultBuf.SetData(new []{ new PropagatorResults() });
 
             {
                 bool[] propagatorData = new bool[nbPatterns * nbPatterns * 4];
