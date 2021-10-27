@@ -150,6 +150,15 @@ public class GPU_Model : Model, IDisposable
                 _propagatorTex.SetPixelData(propagatorData, 0);
                 _propagatorTex.Apply();
             }
+            
+            _inIsCollapsedTex.SetPixelData(_collapseClearData, 0);
+            _inNeedsCollapseTex.SetPixelData(_collapseClearData, 0);
+            _inPatternCollapsedTex.SetPixelData(_patternCollapseClearData, 0);
+
+            _inIsCollapsedTex.Apply();
+            _inNeedsCollapseTex.Apply();
+            _inPatternCollapsedTex.Apply();
+            ClearOutBuffers();
         }
     }
 
