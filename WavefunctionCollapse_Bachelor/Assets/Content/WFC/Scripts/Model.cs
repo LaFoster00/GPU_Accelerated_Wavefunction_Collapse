@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using Random = Unity.Mathematics.Random;
 
 namespace WFC
 {
@@ -100,7 +101,37 @@ namespace WFC
 
         public abstract IEnumerator Run(uint seed, int limit, WFC_Result result);
 
-        public abstract void Ban(int node, int pattern);
+        protected virtual void Observe(int node, ref Random random)
+        {
+            // Choose an element according to the pattern distribution
+            bool[] w = wave[node];
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
+            {
+                distribution[pattern] = w[pattern] ? weights[pattern] : 0.0;
+            }
+
+            int r = distribution.RandomFromDistribution(random.NextDouble());
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
+                if (w[pattern] != (pattern == r))
+                    Ban(node, pattern);
+        }
+        
+        public virtual void Ban(int node, int pattern)
+        {
+            wave[node][pattern] = false;
+
+            int[] comp = compatible[node][pattern];
+            for (int d = 0; d < 4; d++)
+                comp[d] = 0;
+
+            numPossiblePatterns[node] -= 1;
+            sumsOfWeights[node] -= weights[pattern];
+            sumsOfWeightLogWeights[node] -= weightLogWeights[pattern];
+
+            double sum = sumsOfWeights[node];
+            entropies[node] = Math.Log(sum) - sumsOfWeightLogWeights[node] / sum;
+            isPossible = numPossiblePatterns[node] > 0;
+        }
 
         protected virtual void Init()
         {
