@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
@@ -13,67 +11,65 @@ public class GPU_Model : Model, IDisposable
 
     #region ShaderResources
 
+    private bool[] _waveCopyBuffer;
     /*
     Actual wave result
     wave[int3(nodeX, nodeY, pattern)]
     */
-    private Texture3D _waveTex;
+    private RenderTexture _waveTex;
 
+    /*
+     * weightBufData[pattern * 2] : weight
+     * weightBufData[pattern * 2 + 1] : log_weight
+     */
     private ComputeBuffer _weightBuf;
-    
+
+    private float[] _sumOfWeightsFloat;
+    private float[] _sumsOfWeightLogWeightsFloat;
+    private float[] _entropiesFloat;
     /*
     Packed textures holding
     depth 0 : sumOfWeights
     depth 1 : sumsOfWeightLogWeights
     depth 2 : entropies
     */
-    private Texture2DArray _memoisationTex;
+    private RenderTexture _memoisationTex;
 
-    private Texture2D _numPossiblePatternsTex;
+    private RenderTexture _numPossiblePatternsTex;
     
     /* propagator[uint3(pattern, otherPattern, direction)] */
     private Texture3D _propagatorTex;
     
     /* compatible[int3(nodeX, nodeY, pattern-direction] */
-    private Texture3D _compatibleTex;
+    private RenderTexture _compatibleTex;
     
+    /*
+     * _resultBuf[0] : (bool) isPossible
+     * _resultBuf[1] : (bool) openNodes
+     */
     private ComputeBuffer _resultBuf;
     
     /* Neighbours of cells that changed. */
-    Texture2D _inNeedsCollapseTex;
-    Texture2D _outNeedsCollapseTex;
+    RenderTexture _inNeedsCollapseTex;
+    RenderTexture _outNeedsCollapseTex;
 
     /* Cells in which the patterns changed. */
-    Texture2D _inIsCollapsedTex;
-    Texture2D _outIsCollapsedTex;
+    RenderTexture _inIsCollapsedTex;
+    RenderTexture _outIsCollapsedTex;
 
     /*
     Which pattern changed.
     input_pattern_change[uint3(nodeX, nodeY, pattern)]
     */
-    Texture3D _inPatternCollapsedTex;
-    Texture3D _outPatternCollapsedTex;
+    RenderTexture _inPatternCollapsedTex;
+    RenderTexture _outPatternCollapsedTex;
 
 
     private bool[] _collapseClearData;
     private bool[] _patternCollapseClearData;
-    #endregion
-    
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct PropagatorResults
-    {
-        public bool isPossible;
-        public bool openCells;
-    }
-    
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Weight
-    {
-        public float weight;
-        public float logWeight;
-    };
-    
+    private bool openCells = true;
+    #endregion
 
     public GPU_Model(
         ComputeShader propagatorShader,
@@ -82,37 +78,91 @@ public class GPU_Model : Model, IDisposable
     {
         _propagatorShader = propagatorShader;
 
-        _memoisationTex = new Texture2DArray(width, height, 3, TextureFormat.RFloat, false);
-        _numPossiblePatternsTex = new Texture2D(width, height, TextureFormat.RFloat, false);
-        
-        _inIsCollapsedTex = new Texture2D(width, height, TextureFormat.R8, false);
-        _outIsCollapsedTex = new Texture2D(width, height, TextureFormat.R8, false);
-        _inNeedsCollapseTex = new Texture2D(width, height, TextureFormat.R8, false);
-        _outNeedsCollapseTex = new Texture2D(width, height, TextureFormat.R8, false);
+        _sumOfWeightsFloat = new float[width * height];
+        _sumsOfWeightLogWeightsFloat = new float[width * height];
+        _entropiesFloat = new float[width * height];
+        //_memoisationTex = new Texture2DArray(width, height, 3, TextureFormat.RFloat, false);
+        _memoisationTex =
+            new RenderTexture(width, height, 1, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+        _numPossiblePatternsTex =
+            new RenderTexture(width, height, 1, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
 
-        _resultBuf = new ComputeBuffer(1, sizeof(bool) * 2);
+        _inIsCollapsedTex =
+            new RenderTexture(width, height, 1, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+        _outIsCollapsedTex =
+            new RenderTexture(width, height, 1, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+        _inNeedsCollapseTex = 
+            new RenderTexture(width, height, 1, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+        _outNeedsCollapseTex =
+            new RenderTexture(width, height, 1, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
 
-        _collapseClearData = new bool[wave.Length];
+        _resultBuf = new ComputeBuffer(2, sizeof(bool), ComputeBufferType.Structured);
+
+        _collapseClearData = new bool[height * width];
     }
 
     public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
         PropagatorSettings propagatorSettings)
     {
         base.SetData(nbPatterns, weights, propagator, propagatorSettings);
-        
-        _waveTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
-        
-        _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 2);
+
+        _waveCopyBuffer = new bool[width * height];
+        _waveTex = 
+            new RenderTexture(width, height, nbPatterns, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+
+        _weightBuf = new ComputeBuffer(weights.Length * 2, sizeof(float), ComputeBufferType.Structured);
         
         _propagatorTex = new Texture3D(nbPatterns, nbPatterns, 4, TextureFormat.R8, false);
-        
+
         _compatibleTex =
-            new Texture3D(width, height, nbPatterns * 4, GraphicsFormat.R32_SInt, TextureCreationFlags.None);
+            new RenderTexture(width, height, nbPatterns * 4, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+
+        _inPatternCollapsedTex =
+            new RenderTexture(width, height, nbPatterns, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
+        _outPatternCollapsedTex =
+            new RenderTexture(width, height, nbPatterns, RenderTextureFormat.R8, RenderTextureReadWrite.Linear)
+            {
+                useMipMap = false,
+                enableRandomWrite = true
+            };
         
-        _inPatternCollapsedTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
-        _outPatternCollapsedTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
-        
-        _patternCollapseClearData = new bool[wave.Length * nbPatterns];
+        _patternCollapseClearData = new bool[height * width * nbPatterns];
     }
 
     ~GPU_Model()
@@ -122,54 +172,53 @@ public class GPU_Model : Model, IDisposable
 
     protected override void Init()
     {
-        if (wave == null)
+        base.Init();
+
         {
-            base.Init();
-            base.Clear();
-
+            float[] weightBufData = new float[weights.Length * 2];
+            for (int pattern = 0; pattern < weights.Length; pattern++)
             {
-                Weight[] weightBufData = new Weight[weights.Length];
-                for (int pattern = 0; pattern < weights.Length; pattern++)
-                {
-                    weightBufData[pattern].weight = (float) weights[pattern];
-                    weightBufData[pattern].logWeight = (float) weightLogWeights[pattern];
-                }
-                _weightBuf.SetData(weightBufData);
+                weightBufData[pattern * 2] = (float) weights[pattern];
+                weightBufData[pattern * 2 + 1] = (float) weightLogWeights[pattern];
             }
-            
-            _resultBuf.SetData(new []{ new PropagatorResults() });
 
-            {
-                bool[] propagatorData = new bool[nbPatterns * nbPatterns * 4];
-                Parallel.For(0, 4, dir =>
-                {
-                    int dirOffset = dir * nbPatterns * nbPatterns;
-                    for (int pattern = 0; pattern < nbPatterns; pattern++)
-                    {
-                        int patternOffset = pattern * nbPatterns;
-                        for (int otherPattern = 0; otherPattern < nbPatterns; otherPattern++)
-                        {
-                            propagatorData[otherPattern + patternOffset + dirOffset] = densePropagator[pattern][otherPattern][dir];
-                        }
-                    }
-                });
-                _propagatorTex.SetPixelData(propagatorData, 0);
-                _propagatorTex.Apply();
-            }
-            
-            _inIsCollapsedTex.SetPixelData(_collapseClearData, 0);
-            _inNeedsCollapseTex.SetPixelData(_collapseClearData, 0);
-            _inPatternCollapsedTex.SetPixelData(_patternCollapseClearData, 0);
-
-            _inIsCollapsedTex.Apply();
-            _inNeedsCollapseTex.Apply();
-            _inPatternCollapsedTex.Apply();
-            ClearOutBuffers();
-            
-            BindResources();
+            _weightBuf.SetData(weightBufData);
         }
+
+        byte[] resultBufData = {Convert.ToByte(isPossible), Convert.ToByte(openCells)};
+        _resultBuf.SetData(resultBufData);
+
+        {
+            bool[] propagatorData = new bool[nbPatterns * nbPatterns * 4];
+            Parallel.For(0, 4, dir =>
+            {
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                {
+                    int patternDirOffset = (pattern * 4 + dir) * nbPatterns;
+                    for (int otherPattern = 0; otherPattern < nbPatterns; otherPattern++)
+                    {
+                        propagatorData[otherPattern + patternDirOffset] = densePropagator[pattern][dir][otherPattern];
+                    }
+                }
+            });
+            _propagatorTex.SetPixelData(propagatorData, 0);
+            _propagatorTex.Apply();
+        }
+
+        var pixel = _inIsCollapsedTex.GetNativeTexturePtr();
+        _inIsCollapsedTex.get
+        _inIsCollapsedTex.SetPixelData(_collapseClearData, 0);
+        _inNeedsCollapseTex.SetPixelData(_collapseClearData, 0);
+        _inPatternCollapsedTex.SetPixelData(_patternCollapseClearData, 0);
+
+        _inIsCollapsedTex.Apply();
+        _inNeedsCollapseTex.Apply();
+        _inPatternCollapsedTex.Apply();
+        ClearOutBuffers();
+
+        BindResources();
     }
-    
+
     private void BindInOutBuffers(bool swap)
     {
         if (swap)
@@ -207,8 +256,9 @@ public class GPU_Model : Model, IDisposable
 
     protected override void Clear()
     {
+        base.Clear();
         {
-            bool[] waveTexData = new bool[wave.Length * nbPatterns];
+            var waveTexData = _waveTex.GetPixelData<bool>(0);
             Parallel.For(0, nbPatterns, pattern =>
             {
                 int patternOffset = pattern * width * height;
@@ -226,20 +276,17 @@ public class GPU_Model : Model, IDisposable
         }
 
         {
-            float[] sumOfWeightsData = new float[nbPatterns];
-            float[] sumsOfWeightLogWeightsData = new float[nbPatterns];
-            float[] entropiesData = new float[nbPatterns];
+            var sumOfWeightsTexData = _memoisationTex.GetPixelData<float>(0, 0);
+            var sumsOfWeightLogWeightsTexData = _memoisationTex.GetPixelData<float>(0, 1);
+            var entropiesTexData = _memoisationTex.GetPixelData<float>(0, 2);
 
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
+            for (int node = 0; node < wave.Length; node++)
             {
-                sumOfWeightsData[pattern] = (float) sumsOfWeights[pattern];
-                sumsOfWeightLogWeightsData[pattern] = (float) sumsOfWeightLogWeights[pattern];
-                entropiesData[pattern] = (float) entropies[pattern];
+                sumOfWeightsTexData[node] = (float) sumsOfWeights[node];
+                sumsOfWeightLogWeightsTexData[node] = (float) sumsOfWeightLogWeights[node];
+                entropiesTexData[node] = (float) entropies[node];
             }
             
-            _memoisationTex.SetPixelData(sumOfWeightsData, 0, 0);
-            _memoisationTex.SetPixelData(sumsOfWeightLogWeightsData, 0, 1);
-            _memoisationTex.SetPixelData(entropiesData, 0, 2);
             _memoisationTex.Apply();
         }
         
@@ -248,7 +295,7 @@ public class GPU_Model : Model, IDisposable
         }
 
         {
-            int[] compatibleData = new int[wave.Length * (nbPatterns * 4)];
+            var compatibleTexData = _compatibleTex.GetPixelData<int>(0);
             Parallel.For(0, nbPatterns * 4, patternDir =>
             {
                 int pattern = patternDir / 4;
@@ -259,11 +306,10 @@ public class GPU_Model : Model, IDisposable
                     int yOffset = y * width;
                     for (int x = 0; x < width; x++)
                     {
-                        compatibleData[x + yOffset + patternDirOffset] = compatible[x + yOffset][pattern][dir];
+                        compatibleTexData[x + yOffset + patternDirOffset] = compatible[x + yOffset][pattern][dir];
                     }
                 }
             });
-            _compatibleTex.SetPixelData(compatibleData, 0);
             _compatibleTex.Apply();
         }
         
@@ -298,18 +344,16 @@ public class GPU_Model : Model, IDisposable
     private class WFC_Objects
     {
         public Random random;
-        public PropagatorResults[] propagatorResult;
     }
     
     public override IEnumerator Run(uint seed, int limit, WFC_Result result)
     {
-        Init();
+        if (wave == null) Init();
         Clear();
 
         WFC_Objects objects = new WFC_Objects()
         {
-            random = new Random(seed),
-            propagatorResult = new PropagatorResults[1],
+            random = new Random(seed)
         };
         
         while (!result.finished)
@@ -360,7 +404,7 @@ public class GPU_Model : Model, IDisposable
     
     private IEnumerator Propagate(WFC_Objects objects)
     {
-        while (objects.propagatorResult[0].openCells)
+        while (openCells)
         {
             _propagatorShader.Dispatch(
                 0,
@@ -369,7 +413,10 @@ public class GPU_Model : Model, IDisposable
                 1);
             
             /* Copy result of Compute operation back to CPU buffer. */
-            _resultBuf.GetData(objects.propagatorResult);
+            byte[] result = new byte[2];
+            _resultBuf.GetData(result);
+            isPossible = Convert.ToBoolean(result[0]);
+            openCells = Convert.ToBoolean(result[1]);
             
             if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
             {
@@ -408,12 +455,16 @@ public class GPU_Model : Model, IDisposable
         return argmin;
     }
 
+    private int oberseCount = 0;
     protected override void Observe(int node, ref Random random)
     {
+        Debug.Log($"Observe : {oberseCount++}");
         base.Observe(node, ref random);
         ApplyBanTextures();
     }
-    
+
+    private int banCount = 0;
+    //TODO: Check if accessing the PixelData over the span of multiple function calls causes problems https://docs.unity3d.com/2020.1/Documentation/ScriptReference/Texture2D.GetPixelData.html
     /// <summary>
     /// This call will Ban a pattern from the specified node, but WONT upload those changes to the GPU.
     /// See BanAndApply() or ApplyBanTextures()
@@ -425,34 +476,61 @@ public class GPU_Model : Model, IDisposable
         base.Ban(node, pattern);
 
         int nbNodes = wave.Length;
+        var waveTexData = _waveTex.GetPixelData<bool>( 0);
+        waveTexData[pattern * nbNodes + node] = false;
         
-        _waveTex.SetPixelData(new []{false}, 0, pattern * nbNodes + node);
-
-        _compatibleTex.SetPixelData(new []{0}, 0, (pattern * 4 + 0) * nbNodes + node);
-        _compatibleTex.SetPixelData(new []{0}, 0, (pattern * 4 + 1) * nbNodes + node);
-        _compatibleTex.SetPixelData(new []{0}, 0, (pattern * 4 + 2) * nbNodes + node);
-        _compatibleTex.SetPixelData(new []{0}, 0, (pattern * 4 + 3) * nbNodes + node);
+        var compatibleTexData = _compatibleTex.GetPixelData<int>(0);
+        compatibleTexData[(pattern * 4 + 0) * nbNodes + node] = 0;
+        compatibleTexData[(pattern * 4 + 1) * nbNodes + node] = 0;
+        compatibleTexData[(pattern * 4 + 2) * nbNodes + node] = 0;
+        compatibleTexData[(pattern * 4 + 3) * nbNodes + node] = 0;
         
-        _numPossiblePatternsTex.SetPixelData(new []{numPossiblePatterns[node]}, 0, node);
-
-        _memoisationTex.SetPixelData(new []{(float)sumsOfWeights[node]}, 0, 0,node);
-        _memoisationTex.SetPixelData(new []{(float)sumsOfWeightLogWeights[node]}, 0, 1, node);
-        _memoisationTex.SetPixelData(new []{(float)entropies[node]}, 0, 2, node);
+        Debug.Log($"{banCount++}");
+        
+        var numPossiblePatternTexData = _numPossiblePatternsTex.GetPixelData<int>(0);
+        int doesThisHelp = numPossiblePatterns[node];
+        numPossiblePatternTexData[node] = doesThisHelp;
+        
+        var memoisationTexData = _memoisationTex.GetPixelData<float>(0, 0);
+        memoisationTexData[node] = (float)sumsOfWeights[node];
+        memoisationTexData = _memoisationTex.GetPixelData<float>(0, 1);
+        memoisationTexData[node] = (float) sumsOfWeightLogWeights[node];
+        memoisationTexData = _memoisationTex.GetPixelData<float>( 0, 2);
+        memoisationTexData[node] = (float) entropies[node];
         
         /* Update the collapse information for the compute shader. */
-        _inIsCollapsedTex.SetPixelData(new []{true}, 0, node);
+        var inIsCollapsedTexData = _inIsCollapsedTex.GetPixelData<bool>(0);
+        inIsCollapsedTexData[node] = true;
 
+        var inNeedsCollapseTexData = _inNeedsCollapseTex.GetPixelData<bool>( 0);
         int x = node % width;
         int y = node / width;
         for (int dir = 0; dir < 4; dir++)
         {
             int x2 = x + Directions.DirectionsX[dir];
             int y2 = y + Directions.DirectionsY[dir];
+            if (periodic)
+            {
+                x2 = (x2 + width) % width;
+                y2 = (y2 + height) % height;
+            }
+            else if (!periodic && (x2 < 0
+                                   || y2 < 0
+                                   || x2 + patternSize > width
+                                   || y2 + patternSize > height))
+            {
+                continue;
+            }
+            
             int node2 = x2 + y2 * width;
-            _inNeedsCollapseTex.SetPixelData(new[] {true}, 0, node2);
+            inNeedsCollapseTexData[node2] = true;
         }
 
-        _inPatternCollapsedTex.SetPixelData(new []{true}, 0, pattern * width * height + node);
+        var inPatternCollapsedTex = _inPatternCollapsedTex.GetPixelData<bool>(0);
+        inPatternCollapsedTex[pattern * width * height + node] = true;
+        openCells = true;
+        byte[] resultBufData = {Convert.ToByte(isPossible), Convert.ToByte(openCells)};
+        _resultBuf.SetData(resultBufData);
     }
 
     /// <summary>
@@ -473,59 +551,43 @@ public class GPU_Model : Model, IDisposable
     /// </summary>
     private void ApplyBanTextures()
     {
-        /* TODO: This could be slower and cause problems. Check that. */
-        Parallel.Invoke(
-            _waveTex.Apply,
-            _compatibleTex.Apply, 
-            _numPossiblePatternsTex.Apply, 
-            _memoisationTex.Apply,
-            _inIsCollapsedTex.Apply,
-            _inNeedsCollapseTex.Apply,
-            _inPatternCollapsedTex.Apply);
+        _waveTex.Apply();
+        _compatibleTex.Apply();
+        _numPossiblePatternsTex.Apply();
+        _memoisationTex.Apply();
+        _inIsCollapsedTex.Apply();
+        _inNeedsCollapseTex.Apply();
+        _inPatternCollapsedTex.Apply();
     }
 
     private void CopyGpuWaveToCpu()
-    {
-        var waveTexData = _waveTex.GetPixelData<bool>(0);
+    { 
+        _waveTex.GetPixelData<bool>(0).CopyTo(_waveCopyBuffer);
         
         Parallel.For(0, nbPatterns, pattern =>
         {
             int patternOffset = pattern * width * height;
             for (int node = 0; node < wave.Length; node++)
             {
-                wave[node][pattern] = waveTexData[node * patternOffset];
+                wave[node][pattern] = _waveCopyBuffer[node * patternOffset];
             }
         });
-        
-        waveTexData.Dispose();
     }
 
     private void CopyGpuMemoisationToCpu()
     {
-        var sumOfWeightsTexData = _memoisationTex.GetPixelData<float>(0, 0);
-        var sumsOfWeightLogWeightsTexData = _memoisationTex.GetPixelData<float>(0, 1);
-        var entropiesTexData = _memoisationTex.GetPixelData<float>(0, 2);
+        _memoisationTex.GetPixelData<float>(0, 0).CopyTo(_sumOfWeightsFloat);
+        _memoisationTex.GetPixelData<float>(0, 1).CopyTo(_sumsOfWeightLogWeightsFloat);
+        _memoisationTex.GetPixelData<float>(0, 2).CopyTo(_entropiesFloat);
 
         for (int pattern = 0; pattern < nbPatterns; pattern++)
         {
-            sumsOfWeights[pattern] = sumOfWeightsTexData[pattern];
-            sumsOfWeightLogWeights[pattern] = sumsOfWeightLogWeightsTexData[pattern];
-            entropies[pattern] = entropiesTexData[pattern];
+            sumsOfWeights[pattern] = _sumOfWeightsFloat[pattern];
+            sumsOfWeightLogWeights[pattern] = _sumsOfWeightLogWeightsFloat[pattern];
+            entropies[pattern] = _entropiesFloat[pattern];
         }
 
-        sumOfWeightsTexData.Dispose();
-        sumsOfWeightLogWeightsTexData.Dispose();
-        entropiesTexData.Dispose();
-
-        var numPossiblePatternsTexData = _numPossiblePatternsTex.GetPixelData<int>(0);
-        
-        //TODO: Timer test these loops against Parallel.For loops to see what would be faster.
-        for (int node = 0; node < wave.Length; node++)
-        {
-            numPossiblePatterns[node] = numPossiblePatternsTexData[node];
-        }
-        
-        numPossiblePatternsTexData.Dispose();
+        _numPossiblePatternsTex.GetPixelData<int>(0).CopyTo(numPossiblePatterns);
     }
 
     /*
@@ -566,7 +628,17 @@ public class GPU_Model : Model, IDisposable
     
     public void Dispose()
     {
-        _weightBuf?.Dispose();
-        _resultBuf?.Dispose();
+        _weightBuf?.Release();
+        _resultBuf?.Release();
+        _waveTex.Release();
+        _memoisationTex.Release();
+        _numPossiblePatternsTex.Release();
+        _compatibleTex.Release();
+        _inNeedsCollapseTex.Release();
+        _outNeedsCollapseTex.Release();
+        _inIsCollapsedTex.Release();
+        _outIsCollapsedTex.Release();
+        _inPatternCollapsedTex.Release();
+        _outPatternCollapsedTex.Release();
     }
 }
