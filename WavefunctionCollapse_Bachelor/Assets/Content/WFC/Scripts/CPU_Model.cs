@@ -11,9 +11,8 @@ public class CPU_Model : Model
     protected (int, int)[] stack;
     protected int stackSize, observedSoFar;
 
-    public CPU_Model(int width, int height, int patternSize, bool periodic, int nbPatterns, double[] weights,
-        (bool[][][] dense, int[][][] standard) propagator, PropagatorSettings propagatorSettings)
-        : base(width, height, patternSize, periodic, nbPatterns, weights, propagator, propagatorSettings)
+    public CPU_Model(int width, int height, int patternSize, bool periodic)
+        : base(width, height, patternSize, periodic)
     {
     }
 

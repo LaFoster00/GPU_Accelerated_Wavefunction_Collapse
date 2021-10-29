@@ -2,17 +2,14 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using USCSL;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
 public class GPU_Model : Model, IDisposable
 {
     private ComputeShader _propagatorShader;
-    private ComputeShader _clearDataShader;
 
     #region ShaderResources
 
@@ -79,38 +76,42 @@ public class GPU_Model : Model, IDisposable
     
 
     public GPU_Model(
-        ComputeShader propagatorShader, 
-        ComputeShader clearDataShader,
-        int width, int height, int patternSize, bool periodic, int nbPatterns, 
-        double[] weights,
-        (bool[][][] dense, int[][][] standard) propagator,
-        PropagatorSettings propagatorSettings) : 
-        base(width, height, patternSize, periodic, nbPatterns, weights, propagator, propagatorSettings)
+        ComputeShader propagatorShader,
+        int width, int height, int patternSize, bool periodic) : 
+        base(width, height, patternSize, periodic)
     {
         _propagatorShader = propagatorShader;
-        _clearDataShader = clearDataShader;
+
+        _memoisationTex = new Texture2DArray(width, height, 3, TextureFormat.RFloat, false);
+        _numPossiblePatternsTex = new Texture2D(width, height, TextureFormat.RFloat, false);
+        
+        _inIsCollapsedTex = new Texture2D(width, height, TextureFormat.R8, false);
+        _outIsCollapsedTex = new Texture2D(width, height, TextureFormat.R8, false);
+        _inNeedsCollapseTex = new Texture2D(width, height, TextureFormat.R8, false);
+        _outNeedsCollapseTex = new Texture2D(width, height, TextureFormat.R8, false);
+
+        _resultBuf = new ComputeBuffer(1, sizeof(bool) * 2);
+
+        _collapseClearData = new bool[wave.Length];
+    }
+
+    public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
+        PropagatorSettings propagatorSettings)
+    {
+        base.SetData(nbPatterns, weights, propagator, propagatorSettings);
         
         _waveTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
         
         _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 2);
-        _memoisationTex = new Texture2DArray(width, height, 3, TextureFormat.RFloat, false);
-        _numPossiblePatternsTex = new Texture2D(width, height, TextureFormat.RFloat, false);
         
         _propagatorTex = new Texture3D(nbPatterns, nbPatterns, 4, TextureFormat.R8, false);
         
         _compatibleTex =
             new Texture3D(width, height, nbPatterns * 4, GraphicsFormat.R32_SInt, TextureCreationFlags.None);
         
-        _inIsCollapsedTex = new Texture2D(width, height, TextureFormat.R8, false);
-        _outIsCollapsedTex = new Texture2D(width, height, TextureFormat.R8, false);
-        _inNeedsCollapseTex = new Texture2D(width, height, TextureFormat.R8, false);
-        _outNeedsCollapseTex = new Texture2D(width, height, TextureFormat.R8, false);
         _inPatternCollapsedTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
         _outPatternCollapsedTex = new Texture3D(width, height, nbPatterns, TextureFormat.R8, false);
         
-        _resultBuf = new ComputeBuffer(1, sizeof(bool) * 2);
-
-        _collapseClearData = new bool[wave.Length];
         _patternCollapseClearData = new bool[wave.Length * nbPatterns];
     }
 
@@ -323,6 +324,7 @@ public class GPU_Model : Model, IDisposable
             }
         }
         
+        /* Preparing for next run. This should be done now before the user collapses tiles by hand for the next run. */
         ClearInBuffers();
     }
 
@@ -371,9 +373,7 @@ public class GPU_Model : Model, IDisposable
             
             if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
             {
-                yield return propagatorSettings.stepInterval == 0
-                    ? null
-                    : new WaitForSeconds(propagatorSettings.stepInterval);
+                yield return DebugDrawCurrentState();
             }
             
             /* Swap the in out buffers. */

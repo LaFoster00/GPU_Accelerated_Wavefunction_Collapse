@@ -65,11 +65,6 @@ struct Result
 };
 RWStructuredBuffer<Result> result;
 
-inline uint3 GeneratePatternDirectionCoords(uint x, uint y, uint pattern, uint direction)
-{
-    return uint3(x, y, pattern * 4 + direction);
-}
-
  /* Removes pattern from cell and marks the surrounding cells for update. */
 inline void Ban(uint2 node, int pattern)
 {

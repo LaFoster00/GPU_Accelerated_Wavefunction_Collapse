@@ -76,8 +76,7 @@ namespace WFC
 
         protected StepInfo stepInfo = new StepInfo();
 
-        protected Model(int width, int height, int patternSize, bool periodic, int nbPatterns, double[] weights,
-            (bool[][][] dense, int[][][] standard) propagator, PropagatorSettings propagatorSettings)
+        protected Model(int width, int height, int patternSize, bool periodic)
         {
             this.width = width;
             this.height = height;
@@ -85,13 +84,18 @@ namespace WFC
             stepInfo.height = height;
             this.patternSize = patternSize;
             this.periodic = periodic;
+        }
+
+        public virtual void SetData(int nbPatterns, double[] weights,
+            (bool[][][] dense, int[][][] standard) propagator, PropagatorSettings propagatorSettings)
+        {
             this.propagatorSettings = propagatorSettings;
             this.nbPatterns = nbPatterns;
             this.weights = weights;
             this.propagator = propagator.standard;
             densePropagator = propagator.dense;
         }
-
+        
         public class WFC_Result
         {
             public bool finished;
@@ -177,6 +181,7 @@ namespace WFC
                     for (int direction = 0; direction < 4; direction++)
                         compatible[node][pattern][direction] =
                             propagator[pattern][Directions.GetOppositeDirection(direction)].Length;
+                    //TODO: Check if OppositeDirection is the right one for the gpu solver
                 }
 
                 numPossiblePatterns[node] = weights.Length;

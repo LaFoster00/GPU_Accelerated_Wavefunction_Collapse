@@ -19,23 +19,27 @@ namespace WFC.Tiling
     public class TilingWFC<T>
     {
         /* The distinct tiles. */
-        private WFC_2DTile<T>[] _tiles;
+        protected WFC_2DTile<T>[] tiles;
 
         /* Map ids of oriented tiles to tile and orientation. */
-        private (int, int)[] _orientedToTileId;
+        protected (int, int)[] orientedToTileId;
 
         /* Map tile and orientation to oriented tile id. */
-        private int[][] _orientedTileIds;
+        protected int[][] orientedTileIds;
 
-        private Model _model;
+        protected Model model;
         
-        public TilingWFC(WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours, int height, int width, bool periodicOutput, Model.PropagatorSettings propagatorSettings)
+        public TilingWFC(Model solver, WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours, Model.PropagatorSettings propagatorSettings)
         {
-            _tiles = tiles;
-            (_orientedToTileId, _orientedTileIds) = GenerateOrientedTileIds(tiles);
-            propagatorSettings.orientedToTileId = _orientedToTileId;
-            _model = new CPU_Model(width, height, 1, periodicOutput, _orientedToTileId.Length, GetTileWeights(tiles),
-                GeneratePropagator(neighbours, tiles, _orientedToTileId, _orientedTileIds), propagatorSettings);
+            model = solver;
+            this.tiles = tiles;
+            (orientedToTileId, orientedTileIds) = GenerateOrientedTileIds(tiles);
+            propagatorSettings.orientedToTileId = orientedToTileId;
+            solver.SetData(
+                orientedToTileId.Length,
+                GetTileWeights(tiles),
+                GeneratePropagator(neighbours, tiles, orientedToTileId, orientedTileIds),
+                propagatorSettings);
         }
 
         /* Generate id and mapping from id to oriented tiles and vice versa.*/
@@ -67,13 +71,13 @@ namespace WFC.Tiling
          The propagator holds information on which tile can lie in which direction of all the oriented tiles.
          Bool Array holds the dense propagator, int array the standard one.
         */
-        static (bool[][][], int[][][]) GeneratePropagator(
+        protected static (bool[][][], int[][][]) GeneratePropagator(
             Neighbour<T>[] neighbors,
             WFC_2DTile<T>[] tiles,
-            (int, int)[] idToOrientedTile,
+            (int, int)[] orientedToTileId,
             int[][] orientedTileIds)
         {
-            int nbOrientedTiles = idToOrientedTile.Length;
+            int nbOrientedTiles = orientedToTileId.Length;
             /* Create #nbOrientedTiles arrays filled with 4 arrays filled with #nbOrientedTiles false values */
             bool[][][] densePropagator = new bool[nbOrientedTiles][][];
             for (int i = 0; i < nbOrientedTiles; i++)
@@ -125,7 +129,7 @@ namespace WFC.Tiling
         }
 
         /* Get probability of presence of tiles. */
-        static double[] GetTileWeights(WFC_2DTile<T>[] tiles)
+        protected static double[] GetTileWeights(WFC_2DTile<T>[] tiles)
         {
             List<double> frequencies = new List<double>(tiles.Length);
             for (int i = 0; i < tiles.Length; ++i)
@@ -139,13 +143,13 @@ namespace WFC.Tiling
             return frequencies.ToArray();
         }
 
-        void SetTile(int tileId, int y, int x)
+        protected void SetTile(int tileId, int y, int x)
         {
-            for (int p = 0; p < _orientedToTileId.Length; p++)
+            for (int p = 0; p < orientedToTileId.Length; p++)
             {
                 if (tileId != p)
                 {
-                    _model.Ban(x + y * _model.width, p);
+                    model.Ban(x + y * model.width, p);
                 }
             }
         }
@@ -155,16 +159,16 @@ namespace WFC.Tiling
          Returns false if the given tile and orientation does not exist,
          or if the coordinates are not in the wave
         */
-        bool SetTile(int tileId, int orientation, int y, int x)
+        protected bool SetTile(int tileId, int orientation, int y, int x)
         {
-            if (tileId >= _orientedTileIds.Length || orientation >= _orientedTileIds[tileId].Length ||
-                y >= _model.height ||
-                x >= _model.width)
+            if (tileId >= orientedTileIds.Length || orientation >= orientedTileIds[tileId].Length ||
+                y >= model.height ||
+                x >= model.width)
             {
                 return false;
             }
 
-            int orientedTileID = _orientedTileIds[tileId][orientation];
+            int orientedTileID = orientedTileIds[tileId][orientation];
             SetTile(orientedTileID, y, x);
             return true;
         }
@@ -179,7 +183,7 @@ namespace WFC.Tiling
         public IEnumerator Run(uint seed, int limit, WFC_TypedResult returnValue)
         {
             Model.WFC_Result result = new Model.WFC_Result();
-            yield return _model.Run(seed, limit, result);
+            yield return model.Run(seed, limit, result);
             if (result.success == false)
             {
                 returnValue.success = false;
@@ -188,7 +192,7 @@ namespace WFC.Tiling
             }
 
             returnValue.success = true;
-            returnValue.result = _tiles[0].ResultToOutput(result.output, _tiles, _orientedToTileId);
+            returnValue.result = tiles[0].ResultToOutput(result.output, tiles, orientedToTileId);
         }
     }
 }

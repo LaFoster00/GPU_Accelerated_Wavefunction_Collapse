@@ -6,3 +6,8 @@ static int directions_x[4] =  {0, -1, 1, 0};
 static int directions_y[4] =  {-1, 0, 0, 1};
 
 static int opposite_direction[4] = { 3, 2, 1, 0 };
+
+inline uint3 GeneratePatternDirectionCoords(uint x, uint y, uint pattern, uint direction)
+{
+    return uint3(x, y, pattern * 4 + direction);
+}
