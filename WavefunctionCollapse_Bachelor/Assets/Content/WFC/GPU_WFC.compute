@@ -8,24 +8,36 @@ uniform bool is_periodic;
 
 /*
 Actual wave result
-wave(uint2(node, pattern))
+wave(node, pattern)
 */
 RWStructuredBuffer<bool> wave_data;
 #define wave(node, pattern) wave_data[node * nb_patterns + pattern]
 
+
+struct Weighting
+{
+    float weight_d;
+    float log_weight_d;
+};
+
 //TODO: these textures should be doubles. Would need packing into separate channels.
-StructuredBuffer<float> weighting;
-#define weight(pattern) weighting[pattern * 2]
-#define log_weight(pattern) weighting[pattern * 2 + 1]
+StructuredBuffer<Weighting> weighting;
+#define weight(pattern) weighting[pattern].weight_d
+#define log_weight(pattern) weighting[pattern].weight_d
 
-/* Packed in order to use less registers */
-RWStructuredBuffer<float> memoisation;
-#define sum_of_weights(node) memoisation[node]
-#define sums_of_weight_log_weights(node) memoisation[node + width * height]
-#define entropies(node) memoisation[node + width * height * 2]
+struct Memoisation
+{
+    float sums_of_weights_d;
+    float sums_of_weight_log_weights_d;
+    float entropies_d;
+    int num_possible_patterns_d;
+};
+RWStructuredBuffer<Memoisation> memoisation;
+#define sum_of_weights(node) memoisation[node].sums_of_weights_d
+#define sums_of_weight_log_weights(node) memoisation[node].sums_of_weight_log_weights_d
+#define entropies(node) memoisation[node].entropies_d
+#define num_possible_patterns(node) memoisation[node].num_possible_patterns_d
 
-/* Holds the number of possible pattern for each cell */
-RWStructuredBuffer<int> num_possible_patterns;
 
 /*
 Which patterns can be placed in which direction of the current node
@@ -39,21 +51,29 @@ How many patterns in specific direction of cell are compatible.
 RWStructuredBuffer<int> compatible_data;
 #define compatible(node, pattern, direction) compatible_data[node * nb_patterns * 4 + pattern * 4 + direction]
 
-/* Neighbours of cells that changed. */
-uniform StructuredBuffer<bool> in_needs_collapse;
-RWStructuredBuffer<bool> out_needs_collapse;
+struct Collapse
+{
+    bool is_collapsed;
+    bool needs_collapse;
+};
 
-/* Cells in which the patterns changed. */
-uniform StructuredBuffer<bool> in_is_collapsed;
-RWStructuredBuffer<bool> out_is_collapsed;
+/* Neighbours of cells that changed. */
+uniform StructuredBuffer<Collapse> in_collapse;
+#define in_is_collapsed(node) in_collapse[node].is_collapsed
+#define in_needs_collapse(node) in_collapse[node].needs_collapse
+
+RWStructuredBuffer<Collapse> out_collapse;
+#define out_is_collapsed(node) out_collapse[node].is_collapsed
+#define out_needs_collapse(node) out_collapse[node].needs_collapse
 
 /*
 Which pattern changed.
-input_pattern_change[uint3(nodeX, nodeY, pattern)]
+input_pattern_change[]
 */
 uniform StructuredBuffer<bool> in_pattern_collapsed_data;
-RWStructuredBuffer<bool> out_pattern_collapsed_data;
 #define in_pattern_collapsed(node, pattern) in_pattern_collapsed_data[node * nb_patterns + pattern]
+
+RWStructuredBuffer<bool> out_pattern_collapsed_data;
 #define out_pattern_collapsed(node, pattern) out_pattern_collapsed_data[node * nb_patterns + pattern]
 
 RWStructuredBuffer<bool> result;
@@ -68,19 +88,19 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
     wave(node, pattern) = false;
     out_pattern_collapsed(node, pattern) = true;
 
-    num_possible_patterns[node] -= 1;
+    num_possible_patterns(node) -= 1;
     sum_of_weights(node) -= weight(pattern);
     sums_of_weight_log_weights(node) -= log_weight(pattern);
 
     const float sum = sum_of_weights(node);
     entropies(node) = log(sum) - sums_of_weight_log_weights(node) / sum;
-    if (num_possible_patterns[node] <= 0)
+    if (num_possible_patterns(node) <= 0)
     {
         is_possible = false;
     }
     
     /* Mark the neighbouring nodes for collapse and update info */
-    out_is_collapsed[node] = true;
+    out_is_collapsed(node) = true;
     for (int direction = 0; direction < 4; direction++)
     {
         /* Generate neighbour coordinate */
@@ -101,7 +121,7 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
         }
 
         const uint node2 = y2 * width + x2;
-        out_needs_collapse[node2] = true;
+        out_needs_collapse(node2) = true;
     }
     open_nodes = true;
 }
@@ -109,8 +129,10 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
 [numthreads(16,16,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
+    if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy > uint2(width, height))) return;
+    
     const int node =  nodeCoord.y * width + nodeCoord.x;
-    if (!in_needs_collapse[node]) return;
+    if (!in_needs_collapse(node)) return;
     for (uint direction = 0; direction < 4; direction++)
     {
         /* Generate neighbour coordinate */
@@ -131,7 +153,7 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
         }
 
         const int node2 = y2 * width + x2;
-        if (!in_is_collapsed[node2]) continue;
+        if (!in_is_collapsed(node2)) continue;
         
         /* Update compatibility with all removed patterns from the neighbouring node. */
         for (int removed_pattern = 0; removed_pattern < nb_patterns; removed_pattern++)

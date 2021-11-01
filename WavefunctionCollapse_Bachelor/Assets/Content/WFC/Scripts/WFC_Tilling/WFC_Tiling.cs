@@ -143,7 +143,7 @@ namespace WFC.Tiling
             return frequencies.ToArray();
         }
 
-        protected void SetTile(int tileId, int y, int x)
+        protected virtual void SetTile(int tileId, int y, int x)
         {
             for (int p = 0; p < orientedToTileId.Length; p++)
             {
