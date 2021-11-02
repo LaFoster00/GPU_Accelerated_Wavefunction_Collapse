@@ -98,6 +98,16 @@ namespace WFC.Tiling
                 result.Success = wfcResult.success;
                 iteration++;
             }
+            
+            switch (solver)
+            {
+                case Solver.GPU:
+                    if (model is GPU_Model gpuModel)
+                    {
+                        gpuModel.Dispose();
+                    }
+                    break;
+            }
 
             print(
                 result.Success
@@ -164,22 +174,21 @@ namespace WFC.Tiling
                     }
                 }
 
+                for (int node = 0; node < debugOutput.stepInfo.numPropagatingCells; node++)
+                {
+                    var (x, y) = debugOutput.stepInfo.propagatingCells[node].Item1
+                        .IdToXY(debugOutput.stepInfo.width);
+                    GUI.DrawTexture(
+                        Rect.MinMaxRect(
+                            displayWidth * x,
+                            displayHeight * y,
+                            displayWidth + displayWidth * x,
+                            displayHeight + displayHeight * y),
+                        yellowFrameTexture);
+                }
+
                 if (solver == Solver.CPU)
                 {
-
-                    for (int node = 0; node < debugOutput.stepInfo.numPropagatingCells; node++)
-                    {
-                        var (x, y) = debugOutput.stepInfo.propagatingCells[node].Item1
-                            .IdToXY(debugOutput.stepInfo.width);
-                        GUI.DrawTexture(
-                            Rect.MinMaxRect(
-                                displayWidth * x,
-                                displayHeight * y,
-                                displayWidth + displayWidth * x,
-                                displayHeight + displayHeight * y),
-                            yellowFrameTexture);
-                    }
-
                     GUI.DrawTexture(
                         Rect.MinMaxRect(
                             displayWidth * debugOutput.stepInfo.currentTile.x,

@@ -45,11 +45,16 @@ propagator[uint3(pattern, otherPattern, direction)]
 */
 uniform Texture3D<bool> propagator;
 
+struct Compatible
+{
+    int compatibleDir[4];
+};
+
 /*
 How many patterns in specific direction of cell are compatible.
 */
-RWStructuredBuffer<int> compatible_data;
-#define compatible(node, pattern, direction) compatible_data[node * nb_patterns * 4 + pattern * 4 + direction]
+RWStructuredBuffer<Compatible> compatible_data;
+#define compatible(node, pattern, direction) compatible_data[node * nb_patterns + pattern].compatibleDir[direction]
 
 struct Collapse
 {
@@ -129,6 +134,7 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
 [numthreads(16,16,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
+    /* Return execution if node is outside of working grid. */
     if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy > uint2(width, height))) return;
     
     const int node =  nodeCoord.y * width + nodeCoord.x;
