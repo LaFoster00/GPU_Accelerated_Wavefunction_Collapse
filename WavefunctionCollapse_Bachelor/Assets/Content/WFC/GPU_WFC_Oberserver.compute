@@ -1,0 +1,19 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "GpuRandom.cginc"
+
+struct ObserverParams
+{
+    uint in_random_seed;
+    uint out_random_state;
+    float some_float;
+};
+RWStructuredBuffer<ObserverParams> observer_params;
+
+// Start only one thread when executing this as it is a single threaded calculation and should be treated as such.
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    random_init_state(observer_params[0].in_random_seed);
+}

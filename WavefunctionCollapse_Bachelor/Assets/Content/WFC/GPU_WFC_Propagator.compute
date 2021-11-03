@@ -154,6 +154,8 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
         const int node2 = y2 * width + x2;
         if (IN_IS_COLLAPSED(node2) == FALSE) continue;
 
+        //TODO: Maybe this can be done with compatible lookup. Bug was actually related to wrong config of tilemap
+        //not actual bug in solver. Recover old version for release and discuss advantages of both.
         /*
          * Go over all still possible patterns in the current node and check if the are compatible
          * with the still possible patterns of the other node.
