@@ -80,12 +80,12 @@ namespace WFC.Tiling
             int nbOrientedTiles = orientedToTileId.Length;
             /* Create #nbOrientedTiles arrays filled with 4 arrays filled with #nbOrientedTiles false values */
             bool[][][] densePropagator = new bool[nbOrientedTiles][][];
-            for (int i = 0; i < nbOrientedTiles; i++)
+            for (int pattern = 0; pattern < nbOrientedTiles; pattern++)
             {
-                densePropagator[i] = new bool[4][];
-                for (var j = 0; j < 4; j++)
+                densePropagator[pattern] = new bool[4][];
+                for (var dir = 0; dir < 4; dir++)
                 {
-                    densePropagator[i][j] = new bool[nbOrientedTiles];
+                    densePropagator[pattern][dir] = new bool[nbOrientedTiles];
                 }
             }
 

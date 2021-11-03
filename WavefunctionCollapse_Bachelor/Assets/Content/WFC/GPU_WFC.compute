@@ -12,7 +12,7 @@ uniform bool is_periodic;
 Actual wave result
 wave(node, pattern)
 */
-RWStructuredBuffer<bool> wave_data;
+RWStructuredBuffer<uint> wave_data;
 #define WAVE(node, pattern) wave_data[node * nb_patterns + pattern]
 
 
@@ -41,11 +41,16 @@ RWStructuredBuffer<Memoisation> memoisation;
 #define NUM_POSSIBLE_PATTERNS(node) memoisation[node].num_possible_patterns_d
 
 
+struct Propagator
+{
+    uint propagatorDir[4];
+};
 /*
 Which patterns can be placed in which direction of the current node
 propagator[uint3(pattern, otherPattern, direction)]
 */
-uniform Texture3D<bool> propagator;
+uniform StructuredBuffer<Propagator> propagator;
+#define PROPAGATOR(pattern, otherPattern, direction) propagator[pattern * nb_patterns + otherPattern].propagatorDir[direction]
 
 struct Compatible
 {
@@ -60,8 +65,8 @@ RWStructuredBuffer<Compatible> compatible;
 
 struct Collapse
 {
-    int is_collapsed;
-    int needs_collapse;
+    uint is_collapsed;
+    uint needs_collapse;
 };
 
 /* Neighbours of cells that changed. */
@@ -77,28 +82,31 @@ RWStructuredBuffer<Collapse> out_collapse;
 Which pattern changed.
 input_pattern_change[]
 */
-uniform StructuredBuffer<bool> in_pattern_collapsed_data;
+uniform StructuredBuffer<uint> in_pattern_collapsed_data;
 #define IN_PATTERN_COLLAPSED(node, pattern) in_pattern_collapsed_data[node * nb_patterns + pattern]
 
-RWStructuredBuffer<bool> out_pattern_collapsed_data;
+RWStructuredBuffer<uint> out_pattern_collapsed_data;
 #define OUT_PATTERN_COLLAPSED(node, pattern) out_pattern_collapsed_data[node * nb_patterns + pattern]
 
 struct Result
 {
-    int is_possible;
-    int open_nodes;
+    uint is_possible;
+    uint open_nodes;
 };
 RWStructuredBuffer<Result> result;
 #define IS_POSSIBLE result[0].is_possible
 #define OPEN_NODES result[0].open_nodes
 
+#define TRUE 1u
+#define FALSE 0u
+
  /* Removes pattern from cell and marks the surrounding cells for update. */
 inline void Ban(uint node, uint2 nodeCoord, int pattern)
 {
-    if (!WAVE(node, pattern)) return;
+    if (WAVE(node, pattern) == FALSE) return;
     
-    WAVE(node, pattern) = false;
-    OUT_PATTERN_COLLAPSED(node, pattern) = true;
+    WAVE(node, pattern) = FALSE;
+    OUT_PATTERN_COLLAPSED(node, pattern) = TRUE;
 
     NUM_POSSIBLE_PATTERNS(node) -= 1;
     SUM_OF_WEIGHTS(node) -= WEIGHT(pattern);
@@ -108,11 +116,11 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
     ENTROPIES(node) = log(sum) - SUMS_OF_WEIGHT_LOG_WEIGHTS(node) / sum;
     if (NUM_POSSIBLE_PATTERNS(node) <= 0)
     {
-        IS_POSSIBLE = false;
+        IS_POSSIBLE = FALSE;
     }
     
     /* Mark the neighbouring nodes for collapse and update info */
-    OUT_IS_COLLAPSED(node) = true;
+    OUT_IS_COLLAPSED(node) = TRUE;
     for (int direction = 0; direction < 4; direction++)
     {
         /* Generate neighbour coordinate */
@@ -133,9 +141,9 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
         }
 
         const uint node2 = y2 * width + x2;
-        OUT_NEEDS_COLLAPSE(node2) = true;
+        OUT_NEEDS_COLLAPSE(node2) = TRUE;
     }
-    OPEN_NODES = true;
+    OPEN_NODES = TRUE;
 }
 
 [numthreads(16,16,1)]
@@ -145,7 +153,10 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
     if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy > uint2(width, height))) return;
     
     const int node =  nodeCoord.y * width + nodeCoord.x;
-    if (!IN_NEEDS_COLLAPSE(node)) return;
+    if (IN_NEEDS_COLLAPSE(node) == FALSE) return;
+
+    OPEN_NODES = TRUE;
+    
     for (uint direction = 0; direction < 4; direction++)
     {
         /* Generate neighbour coordinate */
@@ -166,18 +177,18 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
         }
 
         const int node2 = y2 * width + x2;
-        if (!IN_IS_COLLAPSED(node2)) continue;
+        if (IN_IS_COLLAPSED(node2) == FALSE) continue;
         
         /* Update compatibility with all removed patterns from the neighbouring node. */
         for (int removed_pattern = 0; removed_pattern < nb_patterns; removed_pattern++)
         {
             /* Check if the pattern was removed from the neighbouring node. */
-            if (IN_PATTERN_COLLAPSED(node2, removed_pattern))
+            if (IN_PATTERN_COLLAPSED(node2, removed_pattern) == TRUE)
             {
                 /* Go through all compatible patterns of this cell and decrease them accordingly. */
                 for (int compatiblePattern = 0; compatiblePattern < nb_patterns; compatiblePattern++)
                 {
-                    if (propagator[uint3(removed_pattern, compatiblePattern, opposite_direction[direction])])
+                    if (PROPAGATOR(removed_pattern, compatiblePattern, opposite_direction[direction]))
                     {
                         /* Ban pattern from node when it comes incompatible with other node. */
                         if (--COMPATIBLE(node, compatiblePattern, direction) == 0)
