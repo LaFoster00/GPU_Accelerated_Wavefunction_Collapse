@@ -68,16 +68,6 @@ RWStructuredBuffer<Collapse> out_collapse;
 #define OUT_IS_COLLAPSED(node) out_collapse[node].is_collapsed
 #define OUT_NEEDS_COLLAPSE(node) out_collapse[node].needs_collapse
 
-/*
-Which pattern changed.
-input_pattern_change[]
-*/
-uniform StructuredBuffer<uint> in_pattern_collapsed_data;
-#define IN_PATTERN_COLLAPSED(node, pattern) in_pattern_collapsed_data[node * nb_patterns + pattern]
-
-RWStructuredBuffer<uint> out_pattern_collapsed_data;
-#define OUT_PATTERN_COLLAPSED(node, pattern) out_pattern_collapsed_data[node * nb_patterns + pattern]
-
 struct Result
 {
     uint is_possible;
@@ -95,7 +85,6 @@ void Ban(uint node, uint2 nodeCoord, int pattern)
 {
     OPEN_NODES = TRUE;
     WAVE(node, pattern) = FALSE;
-    OUT_PATTERN_COLLAPSED(node, pattern) = TRUE;
     
     NUM_POSSIBLE_PATTERNS(node) -= 1;
     SUM_OF_WEIGHTS(node) -= WEIGHT(pattern);

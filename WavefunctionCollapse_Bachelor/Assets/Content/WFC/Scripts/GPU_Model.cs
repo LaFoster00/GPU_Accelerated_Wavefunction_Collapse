@@ -53,20 +53,6 @@ public class GPU_Model : Model, IDisposable
     private Propagator[] _propagatorCopyBuffer;
     private ComputeBuffer _propagatorBuf;
 
-    [StructLayout(LayoutKind.Sequential)]
-    struct Compatible
-    {
-        /* Array inside GPU struct */
-        public int compatibleDown;
-        public int compatibleLeft;
-        public int compatibleRight;
-        public int compatibleUp;
-
-    }
-    /* compatible[int3(nodeX, nodeY, pattern-direction] */
-    private Compatible[] _compatibleCopyBuffer;
-    private ComputeBuffer _compatibleBuf;
-
     struct Result
     {
         public uint isPossible;
@@ -86,15 +72,6 @@ public class GPU_Model : Model, IDisposable
     /* Cells in which the patterns changed. */
     private ComputeBuffer _inCollapseBuf;
     private ComputeBuffer _outCollapseBuf;
-
-    /*
-    Which pattern changed.
-    input_pattern_change[uint3(nodeX, nodeY, pattern)]
-    */
-    private uint[] _patternCollapseClearData;
-    private uint[] _patternCollapseCopyBuffer;
-    private ComputeBuffer _inPatternCollapsedBuf;
-    private ComputeBuffer _outPatternCollapsedBuf;
 
     private bool _openCells = true;
     #endregion
@@ -130,16 +107,6 @@ public class GPU_Model : Model, IDisposable
         
         _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 2);
         
-        _compatibleBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(int) * 4);
-        _compatibleCopyBuffer = new Compatible[width * height * nbPatterns];
-        
-        _inPatternCollapsedBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
-        _outPatternCollapsedBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
-        
-        _patternCollapseClearData = new uint[height * width * nbPatterns];
-        _patternCollapseCopyBuffer = new uint[height * width * nbPatterns];
-        
-        _compatibleBuf.SetData(_compatibleCopyBuffer);
         ClearInBuffers();
         ClearOutBuffers();
         
@@ -184,14 +151,10 @@ public class GPU_Model : Model, IDisposable
         if (swap)
         {
             USCSL.Extensions.Swap(ref _inCollapseBuf, ref _outCollapseBuf);
-            USCSL.Extensions.Swap(ref _inPatternCollapsedBuf, ref _outPatternCollapsedBuf);
         }
         
         _propagatorShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
         _propagatorShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
-        
-        _propagatorShader.SetBuffer(0, "in_pattern_collapsed_data", _inPatternCollapsedBuf);
-        _propagatorShader.SetBuffer(0, "out_pattern_collapsed_data", _outPatternCollapsedBuf);
     }
     
     private void BindResources()
@@ -254,27 +217,12 @@ public class GPU_Model : Model, IDisposable
             _memoisationBuf.SetData(_memoisationCopyBuffer);
         }
         
-        /* Clear compatibleBuf data. */
-        {
-            Parallel.For(0,  wave.Length, node =>
-            {
-                for (int pattern = 0; pattern < nbPatterns; pattern++)
-                {
-                    _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleDown = compatible[node][pattern][0];
-                    _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleLeft = compatible[node][pattern][1];
-                    _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleRight = compatible[node][pattern][2];
-                    _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleUp = compatible[node][pattern][3];
-                }
-            });
-            _compatibleBuf.SetData(_compatibleCopyBuffer);
-        }
         ClearOutBuffers();
     }
 
     private void ClearOutBuffers()
     {
         _outCollapseBuf.SetData(_collapseClearData);
-        _outPatternCollapsedBuf.SetData(_patternCollapseClearData);
     }
 
      /// <summary>
@@ -283,7 +231,6 @@ public class GPU_Model : Model, IDisposable
     private void ClearInBuffers()
     {
         _inCollapseBuf.SetData(_collapseClearData);
-        _inPatternCollapsedBuf.SetData(_patternCollapseClearData);
     }
 
     private class WFC_Objects
@@ -391,7 +338,6 @@ public class GPU_Model : Model, IDisposable
 
             if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
             {
-                _compatibleBuf.GetData(_compatibleCopyBuffer);
                 yield return DebugDrawCurrentState();
             }
         }
@@ -434,7 +380,6 @@ public class GPU_Model : Model, IDisposable
         CopyGpuWaveToCpu();
         CopyGpuMemoisationToCpu();
         CopyGpuCollapseToCpu();
-        CopyGpuCompatibleToCpu();
     }
 
     //TODO: Check if accessing the PixelData over the span of multiple function calls causes problems https://docs.unity3d.com/2020.1/Documentation/ScriptReference/Texture2D.GetPixelData.html
@@ -450,12 +395,6 @@ public class GPU_Model : Model, IDisposable
         base.Ban(node, pattern);
 
         _waveCopyBuffer[node * nbPatterns + pattern] = Convert.ToUInt32(false);
-
-        ref var comp = ref _compatibleCopyBuffer[(node * nbPatterns) + pattern];
-        comp.compatibleDown = 0;
-        comp.compatibleLeft = 0;
-        comp.compatibleRight = 0;
-        comp.compatibleUp = 0;
 
         _memoisationCopyBuffer[node].sums_of_weights = (float)sumsOfWeights[node];
         _memoisationCopyBuffer[node].sums_of_weight_log_weights = (float) sumsOfWeightLogWeights[node];
@@ -488,7 +427,6 @@ public class GPU_Model : Model, IDisposable
             _collapseCopyBuffer[node2].needs_collapse = Convert.ToUInt32(true);
         }
         
-        _patternCollapseCopyBuffer[node * nbPatterns + pattern] = Convert.ToUInt32(true);
         _openCells = true;
     }
 
@@ -513,9 +451,7 @@ public class GPU_Model : Model, IDisposable
     {
         _waveBuf.SetData(_waveCopyBuffer); 
         _memoisationBuf.SetData(_memoisationCopyBuffer);
-        _compatibleBuf.SetData(_compatibleCopyBuffer);
         _inCollapseBuf.SetData(_collapseCopyBuffer);
-        _inPatternCollapsedBuf.SetData(_patternCollapseCopyBuffer);
         
         Result[] resultBufData = {new Result
         {
@@ -549,27 +485,10 @@ public class GPU_Model : Model, IDisposable
             numPossiblePatterns[node] = _memoisationCopyBuffer[node].num_possible_patterns;
         }
     }
-    
-    private void CopyGpuCompatibleToCpu()
-    {
-        _compatibleBuf.GetData(_compatibleCopyBuffer);
 
-        Parallel.For(0, wave.Length, node =>
-        {
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
-            {
-                compatible[node][pattern][0] = _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleDown;
-                compatible[node][pattern][1] = _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleLeft;
-                compatible[node][pattern][2] = _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleRight;
-                compatible[node][pattern][3] = _compatibleCopyBuffer[node * nbPatterns + pattern].compatibleUp;
-            }
-        });
-    }
-    
     private void CopyGpuCollapseToCpu()
     {
         _inCollapseBuf.GetData(_collapseCopyBuffer);
-        _inPatternCollapsedBuf.GetData(_patternCollapseCopyBuffer);
     }
 
     /*
@@ -627,10 +546,7 @@ public class GPU_Model : Model, IDisposable
         _waveBuf?.Release();
         _memoisationBuf?.Release();
         _propagatorBuf?.Release();
-        _compatibleBuf?.Release();
         _inCollapseBuf?.Release();
         _outCollapseBuf?.Release();
-        _inPatternCollapsedBuf?.Release();
-        _outPatternCollapsedBuf?.Release();
     }
 }
