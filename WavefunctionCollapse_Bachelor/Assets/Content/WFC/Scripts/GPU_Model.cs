@@ -205,7 +205,6 @@ public class GPU_Model : Model, IDisposable
         _propagatorShader.SetBuffer(0, "weighting", _weightBuf);
         _propagatorShader.SetBuffer(0, "memoisation", _memoisationBuf);
         _propagatorShader.SetBuffer(0, "propagator", _propagatorBuf);
-        _propagatorShader.SetBuffer(0, "compatible", _compatibleBuf);
         _propagatorShader.SetBuffer(0, "result", _resultBuf);
         BindInOutBuffers(false);
     }
@@ -438,7 +437,6 @@ public class GPU_Model : Model, IDisposable
         CopyGpuCompatibleToCpu();
     }
 
-    private int banCount = 0;
     //TODO: Check if accessing the PixelData over the span of multiple function calls causes problems https://docs.unity3d.com/2020.1/Documentation/ScriptReference/Texture2D.GetPixelData.html
     /// <summary>
     /// Call FillBanCopyBuffers() before using this function first time after a propagation iteration.
