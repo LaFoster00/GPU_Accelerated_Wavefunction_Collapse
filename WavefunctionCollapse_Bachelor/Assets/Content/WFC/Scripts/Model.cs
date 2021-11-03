@@ -174,7 +174,7 @@ namespace WFC
         protected virtual void Clear()
         {
             Parallel.For(0, wave.Length, node =>
-            /*for (int node = 0; node < wave.Length; node++) */
+            /* for (int node = 0; node < wave.Length; node++) */
             {
                 for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {

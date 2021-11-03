@@ -382,13 +382,17 @@ public class GPU_Model : Model, IDisposable
             _resultBuf.GetData(resultBufData);
             isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
             _openCells = Convert.ToBoolean(resultBufData[0].openNodes);
-            Debug.Log(_openCells);
+            
+            Debug.Log($"Open Cells: {_openCells}");
+
             /* Swap the in out buffers. */
             BindInOutBuffers(true);
             ClearOutBuffers();
             
+
             if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
             {
+                _compatibleBuf.GetData(_compatibleCopyBuffer);
                 yield return DebugDrawCurrentState();
             }
         }
@@ -624,6 +628,7 @@ public class GPU_Model : Model, IDisposable
         _resultBuf?.Release();
         _waveBuf?.Release();
         _memoisationBuf?.Release();
+        _propagatorBuf?.Release();
         _compatibleBuf?.Release();
         _inCollapseBuf?.Release();
         _outCollapseBuf?.Release();

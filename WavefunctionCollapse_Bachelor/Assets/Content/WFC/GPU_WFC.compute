@@ -62,6 +62,7 @@ How many patterns in specific direction of cell are compatible.
 */
 RWStructuredBuffer<Compatible> compatible;
 #define COMPATIBLE(node, pattern, direction) compatible[node * nb_patterns + pattern].compatibleDir[direction]
+#define COMPATIBLE_RAW(node, pattern) compatible[node * nb_patterns + pattern].compatibleDir
 
 struct Collapse
 {
@@ -101,13 +102,14 @@ RWStructuredBuffer<Result> result;
 #define FALSE 0u
 
  /* Removes pattern from cell and marks the surrounding cells for update. */
-inline void Ban(uint node, uint2 nodeCoord, int pattern)
+void Ban(uint node, uint2 nodeCoord, int pattern)
 {
-    if (WAVE(node, pattern) == FALSE) return;
-    
+    OPEN_NODES = TRUE;
     WAVE(node, pattern) = FALSE;
     OUT_PATTERN_COLLAPSED(node, pattern) = TRUE;
-
+    
+    COMPATIBLE_RAW(node, pattern) = all_dir_int_null;
+    
     NUM_POSSIBLE_PATTERNS(node) -= 1;
     SUM_OF_WEIGHTS(node) -= WEIGHT(pattern);
     SUMS_OF_WEIGHT_LOG_WEIGHTS(node) -= LOG_WEIGHT(pattern);
@@ -143,19 +145,16 @@ inline void Ban(uint node, uint2 nodeCoord, int pattern)
         const uint node2 = y2 * width + x2;
         OUT_NEEDS_COLLAPSE(node2) = TRUE;
     }
-    OPEN_NODES = TRUE;
 }
 
 [numthreads(16,16,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
     /* Return execution if node is outside of working grid. */
-    if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy > uint2(width, height))) return;
+    if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy >= uint2(width, height))) return;
     
     const int node =  nodeCoord.y * width + nodeCoord.x;
     if (IN_NEEDS_COLLAPSE(node) == FALSE) return;
-
-    OPEN_NODES = TRUE;
     
     for (uint direction = 0; direction < 4; direction++)
     {
@@ -191,7 +190,8 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
                     if (PROPAGATOR(removed_pattern, compatiblePattern, opposite_direction[direction]))
                     {
                         /* Ban pattern from node when it comes incompatible with other node. */
-                        if (--COMPATIBLE(node, compatiblePattern, direction) == 0)
+                        COMPATIBLE(node, compatiblePattern, direction)--;
+                        if (COMPATIBLE(node, compatiblePattern, direction) == 0)
                         {
                             Ban(node, nodeCoord.xy, compatiblePattern);
                         }
