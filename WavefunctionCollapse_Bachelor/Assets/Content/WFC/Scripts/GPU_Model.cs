@@ -131,9 +131,7 @@ public class GPU_Model : Model, IDisposable
         _waveBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
         _propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(uint) * 4);
         _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 4);
-        
-        ClearInBuffers();
-        
+
         {
             _propagatorCopyBuffer = new Propagator[nbPatterns * nbPatterns];
             Parallel.For(0, nbPatterns, pattern =>
@@ -172,18 +170,12 @@ public class GPU_Model : Model, IDisposable
 
         startingEntropy = Math.Log(totalSumOfWeights) - totalSumOfWeightLogWeights / totalSumOfWeights;
 
-        Result[] resultBufData = {new Result
-        {
-            isPossible = Convert.ToUInt32(isPossible),
-            openNodes = Convert.ToUInt32(_openNodes)
-        }};
-        _resultBuf.SetData(resultBufData);
-        
         _collapseClearData = new Collapse[height * width];
         _collapseCopyBuffer = new Collapse[height * width];
         
         _memoisationCopyBuffer = new Memoisation[width * height];
         
+        ClearInBuffers();
         BindResources();
     }
 
@@ -246,6 +238,13 @@ public class GPU_Model : Model, IDisposable
     protected override void Clear()
     {
         base.Clear();
+        
+        Result[] resultBufData = {new Result
+        {
+            isPossible = Convert.ToUInt32(isPossible),
+            openNodes = Convert.ToUInt32(_openNodes)
+        }};
+        _resultBuf.SetData(resultBufData);
 
         Parallel.For(0, nbNodes, node =>
         {
@@ -428,24 +427,6 @@ public class GPU_Model : Model, IDisposable
         
         _resultBuf.GetData(_resultCopyBuf);
         (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
-    }
-
-    /// <summary>
-    /// This NEEDS to be called AFTER Ban in order to upload all texture changes to the GPU.
-    /// Making this a separate call gives the option to first ban all wanted patterns and then upload the changes
-    /// in one go. This should be much quicker.
-    /// </summary>
-    private void ApplyBanCopyBuffers()
-    {
-        _waveBuf.SetData(_waveCopyBuffer); 
-        _memoisationBuf.SetData(_memoisationCopyBuffer);
-        _inCollapseBuf.SetData(_collapseCopyBuffer);
-        
-        Result[] resultBufData = {new Result
-        {
-            isPossible = Convert.ToUInt32(isPossible), openNodes = Convert.ToUInt32(_openNodes)
-        }};
-        _resultBuf.SetData(resultBufData);
     }
 
     private bool[][] CopyGpuWaveToCpu()
