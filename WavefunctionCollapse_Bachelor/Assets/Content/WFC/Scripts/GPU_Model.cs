@@ -9,9 +9,11 @@ using Random = Unity.Mathematics.Random;
 
 public class GPU_Model : Model, IDisposable
 {
+    private readonly ComputeShader _observerShader;
     private readonly ComputeShader _propagatorShader;
+    private readonly ComputeShader _banShader;
 
-    #region ShaderResources
+    #region CommonShaderResources
 
     private uint[] _waveCopyBuffer;
     /*
@@ -24,7 +26,10 @@ public class GPU_Model : Model, IDisposable
     {
         public float weight;
         public float logWeight;
+        public float distribution;
+        public float padding;
     }
+    private Weighting[] _weightingCopyBuffer;
     private ComputeBuffer _weightBuf;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -36,7 +41,7 @@ public class GPU_Model : Model, IDisposable
         public int num_possible_patterns;
     }
 
-    private readonly Memoisation[] _memoisationCopyBuffer;
+    private Memoisation[] _memoisationCopyBuffer;
     private readonly ComputeBuffer _memoisationBuf;
 
     /* propagator[uint3(pattern, otherPattern, direction)] */
@@ -58,7 +63,8 @@ public class GPU_Model : Model, IDisposable
         public uint isPossible;
         public uint openNodes;
     }
-    private readonly ComputeBuffer _resultBuf; // Change this to structured buffer
+    private readonly Result[] _resultCopyBuf = new Result[1];
+    private readonly ComputeBuffer _resultBuf = new ComputeBuffer(1, sizeof(uint) * 2); // Change this to structured buffer
 
     [StructLayout(LayoutKind.Sequential)]
     struct Collapse
@@ -66,33 +72,55 @@ public class GPU_Model : Model, IDisposable
         public uint is_collapsed;
         public uint needs_collapse;
     }
-    private readonly Collapse[] _collapseClearData;
-    private readonly Collapse[] _collapseCopyBuffer;
+    private Collapse[] _collapseClearData;
+    private Collapse[] _collapseCopyBuffer;
     
     /* Cells in which the patterns changed. */
     private ComputeBuffer _inCollapseBuf;
     private ComputeBuffer _outCollapseBuf;
 
-    private bool _openCells = true;
+    private bool _openNodes = true;
     #endregion
 
+    #region ObserverShaderResources
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct ObserverParams
+    {
+        public uint inRandomState;
+        public uint outRandomState;
+    }
+    private ObserverParams[] _observerParamsCopyBuffer = new ObserverParams[1];
+    private ComputeBuffer _observerParamsBuf = new ComputeBuffer(1, sizeof(uint) * 2);
+
+    #endregion
+
+    #region BanShaderResources
+
+    struct BanParams
+    {
+        public int node;
+        public int pattern;
+    }
+    private BanParams[] _banParamsCopyBuffer = new BanParams[1];
+    private ComputeBuffer _banParamsBuf = new ComputeBuffer(1, sizeof(int) * 2);
+
+    #endregion
+    
     public GPU_Model(
+        ComputeShader observerShader,
         ComputeShader propagatorShader,
+        ComputeShader banShader,
         int width, int height, int patternSize, bool periodic) : 
         base(width, height, patternSize, periodic)
     {
+        _observerShader = observerShader;
         _propagatorShader = propagatorShader;
+        _banShader = banShader;
 
         _memoisationBuf = new ComputeBuffer(width * height, sizeof(float) * 3 + sizeof(int));
-        _memoisationCopyBuffer = new Memoisation[width * height];
-        
         _inCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
-        
         _outCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
-        _collapseClearData = new Collapse[height * width];
-        _collapseCopyBuffer = new Collapse[height * width];
-        
-        _resultBuf = new ComputeBuffer(1, sizeof(int) * 2);
     }
 
     public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
@@ -101,14 +129,10 @@ public class GPU_Model : Model, IDisposable
         base.SetData(nbPatterns, weights, propagator, propagatorSettings);
         
         _waveBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
-        _waveCopyBuffer = new uint[width * height * nbPatterns];
-        
         _propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(uint) * 4);
-        
-        _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 2);
+        _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 4);
         
         ClearInBuffers();
-        ClearOutBuffers();
         
         {
             _propagatorCopyBuffer = new Propagator[nbPatterns * nbPatterns];
@@ -134,14 +158,31 @@ public class GPU_Model : Model, IDisposable
 
     protected override void Init()
     {
-        base.Init();
+        _waveCopyBuffer = new uint[width * height * nbPatterns];
+        _weightingCopyBuffer = new Weighting[nbPatterns];
+
+        for (int pattern = 0; pattern < nbPatterns; pattern++)
+        {
+            _weightingCopyBuffer[pattern].weight = (float) weights[pattern];
+            _weightingCopyBuffer[pattern].logWeight = (float) (weights[pattern] * Math.Log(weights[pattern]));
+            totalSumOfWeights += weights[pattern];
+            totalSumOfWeightLogWeights += _weightingCopyBuffer[pattern].logWeight;
+        }
+        _weightBuf.SetData(_weightingCopyBuffer);
+
+        startingEntropy = Math.Log(totalSumOfWeights) - totalSumOfWeightLogWeights / totalSumOfWeights;
 
         Result[] resultBufData = {new Result
         {
             isPossible = Convert.ToUInt32(isPossible),
-            openNodes = Convert.ToUInt32(_openCells)
+            openNodes = Convert.ToUInt32(_openNodes)
         }};
         _resultBuf.SetData(resultBufData);
+        
+        _collapseClearData = new Collapse[height * width];
+        _collapseCopyBuffer = new Collapse[height * width];
+        
+        _memoisationCopyBuffer = new Memoisation[width * height];
         
         BindResources();
     }
@@ -155,6 +196,12 @@ public class GPU_Model : Model, IDisposable
         
         _propagatorShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
         _propagatorShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+
+        _observerShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
+        _observerShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+        
+        _banShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
+        _banShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
     }
     
     private void BindResources()
@@ -169,54 +216,53 @@ public class GPU_Model : Model, IDisposable
         _propagatorShader.SetBuffer(0, "memoisation", _memoisationBuf);
         _propagatorShader.SetBuffer(0, "propagator", _propagatorBuf);
         _propagatorShader.SetBuffer(0, "result", _resultBuf);
+        
+        _observerShader.SetInt("nb_patterns", nbPatterns);
+        _observerShader.SetInt("width", width);
+        _observerShader.SetInt("height", height);
+        _observerShader.SetBool("is_periodic", periodic);
+        
+        _observerShader.SetBuffer(0, "wave_data", _waveBuf);
+        _observerShader.SetBuffer(0, "weighting", _weightBuf);
+        _observerShader.SetBuffer(0, "memoisation", _memoisationBuf);
+        _observerShader.SetBuffer(0, "propagator", _propagatorBuf);
+        _observerShader.SetBuffer(0, "result", _resultBuf);
+        _observerShader.SetBuffer(0, "observer_params", _observerParamsBuf);
+        
+        _banShader.SetInt("nb_patterns", nbPatterns);
+        _banShader.SetInt("width", width);
+        _banShader.SetInt("height", height);
+        _banShader.SetBool("is_periodic", periodic);
+        
+        _banShader.SetBuffer(0, "wave_data", _waveBuf);
+        _banShader.SetBuffer(0, "weighting", _weightBuf);
+        _banShader.SetBuffer(0, "memoisation", _memoisationBuf);
+        _banShader.SetBuffer(0, "propagator", _propagatorBuf);
+        _banShader.SetBuffer(0, "result", _resultBuf);
+        _banShader.SetBuffer(0, "ban_params", _resultBuf);
         BindInOutBuffers(false);
     }
 
     protected override void Clear()
     {
         base.Clear();
-        
-        /* Clear Wave */
+
+        Parallel.For(0, nbNodes, node =>
         {
-            Parallel.For(0, nbPatterns, pattern =>
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
             {
-                for (int y = 0; y < height; y++)
-                {
-                    int yOffset = y * width;
-                    for (int x = 0; x < width; x++)
-                    {
-                        _waveCopyBuffer[(x + yOffset) * nbPatterns + pattern] = Convert.ToUInt32(wave[x + yOffset][pattern]);
-                    }
-                }
-            });
-            _waveBuf.SetData(_waveCopyBuffer);
-        }
-        
-        /* Clear const weight data. */
-        {
-            Weighting[] weightBufData = new Weighting[weights.Length];
-            for (int pattern = 0; pattern < weights.Length; pattern++)
-            {
-                weightBufData[pattern].weight = (float) weights[pattern];
-                weightBufData[pattern].logWeight = (float) weightLogWeights[pattern];
+                _waveCopyBuffer[node * nbPatterns + pattern] = Convert.ToUInt32(true);
             }
 
-            _weightBuf.SetData(weightBufData);
-        }
+            _memoisationCopyBuffer[node].num_possible_patterns = nbPatterns;
+            _memoisationCopyBuffer[node].sums_of_weights = (float) totalSumOfWeights;
+            _memoisationCopyBuffer[node].sums_of_weight_log_weights = (float) totalSumOfWeightLogWeights;
+            _memoisationCopyBuffer[node].entropies = (float) startingEntropy;
+        });
 
-        /* Clear memoisation data. */
-        {
-            for (int node = 0; node < wave.Length; node++)
-            {
-                _memoisationCopyBuffer[node].sums_of_weights = (float) sumsOfWeights[node];
-                _memoisationCopyBuffer[node].sums_of_weight_log_weights = (float) sumsOfWeightLogWeights[node];
-                _memoisationCopyBuffer[node].entropies = (float) entropies[node];
-                _memoisationCopyBuffer[node].num_possible_patterns = numPossiblePatterns[node];
-            }
-            
-            _memoisationBuf.SetData(_memoisationCopyBuffer);
-        }
-        
+        _waveBuf.SetData(_waveCopyBuffer);
+        _memoisationBuf.SetData(_memoisationCopyBuffer);
+
         ClearOutBuffers();
     }
 
@@ -240,7 +286,8 @@ public class GPU_Model : Model, IDisposable
     
     public override IEnumerator Run(uint seed, int limit, WFC_Result result)
     {
-        if (wave == null) Init();
+        _observerParamsCopyBuffer[0].inRandomState = seed;
+        if (_waveCopyBuffer == null) Init();
         Clear();
 
         WFC_Objects objects = new WFC_Objects()
@@ -264,14 +311,32 @@ public class GPU_Model : Model, IDisposable
         ClearInBuffers();
     }
 
+    private void Observe()
+    {
+        /*
+         * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
+         * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
+         */
+        BindInOutBuffers(true);
+        
+        _observerParamsBuf.SetData(_observerParamsCopyBuffer);
+        _observerShader.Dispatch(0, 1, 1, 1);
+        
+        /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
+        BindInOutBuffers(true);
+        
+        _resultBuf.GetData(_resultCopyBuf);
+        _observerParamsBuf.GetData(_observerParamsCopyBuffer);
+        _observerParamsCopyBuffer[0].inRandomState = _observerParamsCopyBuffer[0].outRandomState;
+        (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+    }
+    
     private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
     {
-        /* Copy back memoisation data. It is needed to find the next free node. */
-        CopyGpuMemoisationToCpu();
-        int node = NextUnobservedNode(objects.random);
-        if (node >= 0)
+        Observe();
+        if (_openNodes)
         {
-            Observe(node, ref objects.random);
+            // No need to observe here as observe shader already did that
             if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
             {
                 yield return DebugDrawCurrentState();
@@ -309,12 +374,12 @@ public class GPU_Model : Model, IDisposable
     
     private IEnumerator Propagate(WFC_Objects objects)
     {
-        while (_openCells && isPossible)
+        while (_openNodes && isPossible)
         {
             Result[] resultBufData = {new Result
             {
                 isPossible = Convert.ToUInt32(isPossible),
-                openNodes = Convert.ToUInt32(_openCells = false)
+                openNodes = Convert.ToUInt32(_openNodes = false)
             }};
             _resultBuf.SetData(resultBufData);
             
@@ -327,9 +392,9 @@ public class GPU_Model : Model, IDisposable
             /* Copy result of Compute operation back to CPU buffer. */
             _resultBuf.GetData(resultBufData);
             isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
-            _openCells = Convert.ToBoolean(resultBufData[0].openNodes);
+            _openNodes = Convert.ToBoolean(resultBufData[0].openNodes);
             
-            Debug.Log($"Open Cells: {_openCells}");
+            Debug.Log($"Open Cells: {_openNodes}");
 
             /* Swap the in out buffers. */
             BindInOutBuffers(true);
@@ -343,103 +408,26 @@ public class GPU_Model : Model, IDisposable
         }
     }
 
-    private int NextUnobservedNode(Random random)
-    {
-        double min = Double.MaxValue;
-        int argmin = -1;
-        for (int node = 0; node < wave.Length; node++)
-        {
-            if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
-            int remainingValues = numPossiblePatterns[node];
-            double entropy = entropies[node];
-            if (remainingValues > 1 && entropy <= min)
-            {
-                double noise = 1E-6 * random.NextDouble();
-                if (entropy + noise < min)
-                {
-                    min = entropy + noise;
-                    argmin = node;
-                }
-            }
-        }
-
-        return argmin;
-    }
-
     private int oberseCount = 0;
-    protected override void Observe(int node, ref Random random)
-    {
-        Debug.Log($"Observe : {oberseCount++}");
-        FillBanCopyBuffers();
-        base.Observe(node, ref random);
-        ApplyBanCopyBuffers();
-    }
-
-    private void FillBanCopyBuffers()
-    {
-        CopyGpuWaveToCpu();
-        CopyGpuMemoisationToCpu();
-        CopyGpuCollapseToCpu();
-    }
-
-    //TODO: Check if accessing the PixelData over the span of multiple function calls causes problems https://docs.unity3d.com/2020.1/Documentation/ScriptReference/Texture2D.GetPixelData.html
-    /// <summary>
-    /// Call FillBanCopyBuffers() before using this function first time after a propagation iteration.
-    /// This call will Ban a pattern from the specified node, but WONT upload those changes to the GPU.
-    /// See BanAndApply() or ApplyBanTextures()
-    /// </summary>
-    /// <param name="node"></param>
-    /// <param name="pattern"></param>
+    
     public override void Ban(int node, int pattern)
     {
-        base.Ban(node, pattern);
+        /*
+         * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
+         * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
+         */
+        BindInOutBuffers(true);
 
-        _waveCopyBuffer[node * nbPatterns + pattern] = Convert.ToUInt32(false);
-
-        _memoisationCopyBuffer[node].sums_of_weights = (float)sumsOfWeights[node];
-        _memoisationCopyBuffer[node].sums_of_weight_log_weights = (float) sumsOfWeightLogWeights[node];
-        _memoisationCopyBuffer[node].entropies = (float) entropies[node];
-        _memoisationCopyBuffer[node].num_possible_patterns = numPossiblePatterns[node];
-
-        /* Update the collapse information for the compute shader. */
-        _collapseCopyBuffer[node].is_collapsed = Convert.ToUInt32(true);
-
-        int x = node % width;
-        int y = node / width;
-        for (int dir = 0; dir < 4; dir++)
-        {
-            int x2 = x + Directions.DirectionsX[dir];
-            int y2 = y + Directions.DirectionsY[dir];
-            if (periodic)
-            {
-                x2 = (x2 + width) % width;
-                y2 = (y2 + height) % height;
-            }
-            else if (!periodic && (x2 < 0
-                                   || y2 < 0
-                                   || x2 + patternSize > width
-                                   || y2 + patternSize > height))
-            {
-                continue;
-            }
-            
-            int node2 = x2 + y2 * width;
-            _collapseCopyBuffer[node2].needs_collapse = Convert.ToUInt32(true);
-        }
+        _banParamsCopyBuffer[0].node = node;
+        _banParamsCopyBuffer[0].pattern = pattern;
+        _banParamsBuf.SetData(_banParamsCopyBuffer);
+        _observerShader.Dispatch(0, 1, 1, 1);
         
-        _openCells = true;
-    }
-
-    /// <summary>
-    /// This should be called if the user wants to Ban a pattern from a node and directly upload those changes to the GPU.
-    /// </summary>
-    /// <param name="node"></param>
-    /// <param name="pattern"></param>
-    public void BanAndApply(int node, int pattern)
-    {
-        FillBanCopyBuffers();
-        Ban(node, pattern);
-        ApplyBanCopyBuffers();
+        /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
+        BindInOutBuffers(true);
+        
+        _resultBuf.GetData(_resultCopyBuf);
+        (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
     }
 
     /// <summary>
@@ -455,35 +443,25 @@ public class GPU_Model : Model, IDisposable
         
         Result[] resultBufData = {new Result
         {
-            isPossible = Convert.ToUInt32(isPossible), openNodes = Convert.ToUInt32(_openCells)
+            isPossible = Convert.ToUInt32(isPossible), openNodes = Convert.ToUInt32(_openNodes)
         }};
         _resultBuf.SetData(resultBufData);
     }
 
-    private void CopyGpuWaveToCpu()
+    private bool[][] CopyGpuWaveToCpu()
     { 
         _waveBuf.GetData(_waveCopyBuffer);
+        bool[][] wave = new bool[nbNodes][];
         
-        Parallel.For(0, nbPatterns, pattern =>
+        Parallel.For(0, nbNodes, node =>
         {
-            for (int node = 0; node < wave.Length; node++)
+            wave[node] = new bool[nbPatterns];
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
             {
                 wave[node][pattern] = Convert.ToBoolean(_waveCopyBuffer[node * nbPatterns + pattern]);
             }
         });
-    }
-
-    private void CopyGpuMemoisationToCpu()
-    {
-        _memoisationBuf.GetData(_memoisationCopyBuffer);
-
-        for (int node = 0; node < wave.Length; node++)
-        {
-            sumsOfWeights[node] = _memoisationCopyBuffer[node].sums_of_weights;
-            sumsOfWeightLogWeights[node] = _memoisationCopyBuffer[node].sums_of_weight_log_weights;
-            entropies[node] = _memoisationCopyBuffer[node].entropies;
-            numPossiblePatterns[node] = _memoisationCopyBuffer[node].num_possible_patterns;
-        }
+        return wave;
     }
 
     private void CopyGpuCollapseToCpu()
@@ -498,7 +476,7 @@ public class GPU_Model : Model, IDisposable
     */
     private int[,] WaveToOutput()
     {
-        CopyGpuWaveToCpu();
+        bool[][] wave = CopyGpuWaveToCpu();
         int[,] outputPatterns = new int[height, width];
         Parallel.For(0, wave.Length, node =>
         {
@@ -506,10 +484,9 @@ public class GPU_Model : Model, IDisposable
             {
                 if (wave[node][pattern])
                 {
-                    observed[node] = pattern;
                     int x = node % width;
                     int y = node / width;
-                    outputPatterns[y, x] = observed[node];
+                    outputPatterns[y, x] = pattern;
                     break;
                 }
             }
@@ -520,10 +497,10 @@ public class GPU_Model : Model, IDisposable
 
     private IEnumerator DebugDrawCurrentState()
     {
-        CopyGpuWaveToCpu();
+        bool[][] wave = CopyGpuWaveToCpu();
         CopyGpuCollapseToCpu();
         List<(int, int)> propagatingCells = new List<(int, int)>();
-        for (int node = 0; node < wave.Length; node++)
+        for (int node = 0; node < nbNodes; node++)
         {
             if (Convert.ToBoolean(_collapseCopyBuffer[node].needs_collapse))
             {

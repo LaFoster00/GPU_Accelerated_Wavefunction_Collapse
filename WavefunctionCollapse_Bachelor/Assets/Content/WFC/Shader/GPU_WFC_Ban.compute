@@ -1,0 +1,22 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "GPU_WFC_CommonFunctionLib.cginc"
+
+struct BanParams
+{
+    int node;
+    int pattern;
+};
+StructuredBuffer<BanParams> ban_params;
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    const uint ban_params_id = id.x;
+
+    const uint target_node = (uint)ban_params[ban_params_id].node;
+    const uint2 node_coord = uint2(target_node % (uint)width, target_node / (uint)width);
+    
+    Ban(target_node, node_coord, ban_params[ban_params_id].pattern);
+}

@@ -1,0 +1,70 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "GPU_WFC_CommonFunctionLib.cginc"
+
+[numthreads(16,16,1)]
+void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
+{
+    /* Return execution if node is outside of working grid. */
+    if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy >= uint2(width, height))) return;
+    
+    const int node =  nodeCoord.y * width + nodeCoord.x;
+    if (IN_NEEDS_COLLAPSE(node) == FALSE) return;
+    
+    for (uint direction = 0; direction < 4; direction++)
+    {
+        /* Generate neighbour coordinate */
+        int x2 = nodeCoord.x + directions_x[direction];
+        int y2 = nodeCoord.y + directions_y[direction];
+
+        if (is_periodic)
+        {
+            x2 = ((uint)(x2 + width)) % width;
+            y2 = ((uint)(y2 + height)) % height;
+        }
+        else if (!is_periodic && (x2 < 0
+                               || y2 < 0
+                               || x2 >= width 
+                               || y2 >= height))
+        {
+            continue;
+        }
+
+        const int node2 = y2 * width + x2;
+        if (IN_IS_COLLAPSED(node2) == FALSE) continue;
+
+        //TODO: Maybe this can be done with compatible lookup. Bug was actually related to wrong config of tilemap
+        //not actual bug in solver. Recover old version for release and discuss advantages of both.
+        /*
+         * Go over all still possible patterns in the current node and check if the are compatible
+         * with the still possible patterns of the other node.
+         */
+        for (int possible_node_pattern = 0; possible_node_pattern < nb_patterns; possible_node_pattern++)
+        {
+            if (WAVE(node, possible_node_pattern) == TRUE)
+            {
+                /*
+                 * Go over all possible patterns of the other cell and check if any of them are compatible
+                 * with the possibleNodePattern
+                 */
+                bool any_possible = false;
+                for (int compatible_pattern = 0; compatible_pattern < nb_patterns; compatible_pattern++)
+                {
+                   if (WAVE(node2, compatible_pattern) == TRUE)
+                   {
+                       if (PROPAGATOR(possible_node_pattern, compatible_pattern, direction) == TRUE)
+                       {
+                           any_possible = true;
+                           break;
+                       }
+                   }
+                }
+                /* If there were no compatible patterns found Ban the pattern. */
+                if (!any_possible)
+                {
+                    Ban(node, nodeCoord.xy, possible_node_pattern);
+                }
+            }
+        }
+    }
+}

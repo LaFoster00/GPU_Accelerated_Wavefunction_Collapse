@@ -23,7 +23,9 @@ namespace WFC.Tiling
         public (Model.StepInfo stepInfo, List<Texture2D>[,] debug) debugOutput;
 
         [SerializeField] private Solver solver;
+        [SerializeField] private ComputeShader observerShader;
         [SerializeField] private ComputeShader propagatorShader;
+        [SerializeField] private ComputeShader banShader;
         [SerializeField] private bool periodic = true;
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
@@ -77,7 +79,7 @@ namespace WFC.Tiling
                     break;
                 case Solver.GPU:
                 default:
-                    model = new GPU_Model(propagatorShader, width, height, 1, periodic);
+                    model = new GPU_Model(observerShader, propagatorShader, banShader, width, height, 1, periodic);
                     break;
             }
 

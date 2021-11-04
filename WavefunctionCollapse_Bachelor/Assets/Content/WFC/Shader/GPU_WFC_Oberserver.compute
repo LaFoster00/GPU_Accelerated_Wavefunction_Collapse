@@ -1,0 +1,98 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "GPU_WFC_CommonFunctionLib.cginc"
+#include "GpuRandom.cginc"
+
+struct ObserverParams
+{
+    uint in_random_state;
+    uint out_random_state;
+};
+RWStructuredBuffer<ObserverParams> observer_params;
+#define IN_RANDOM_STATE observer_params[0].in_random_state
+#define OUT_RANDOM_STATE observer_params[0].out_random_state
+
+static int random_from_distribution(RWStructuredBuffer<Weighting> weighting, const int nb_patterns, const float threshold)
+{
+    float sum = 0;
+    for (int p = 0; p < nb_patterns; p++)
+    {
+        sum += DISTRIBUTION(p);
+    }
+    
+    for (int p2 = 0; p2 < nb_patterns; p2++)
+    {
+        DISTRIBUTION(p2) /= sum;
+    }
+        
+    float x = 0;
+        
+    for (int p3 = 0; p3 < nb_patterns; p3++)
+    {
+        x += DISTRIBUTION(p3);
+        if (threshold <= x) return p3;
+    }
+        
+    return 0;
+}
+
+void observe(const uint node, const uint2 node_coord)
+{
+    for (int p1 = 0; p1 < nb_patterns; p1++)
+    {
+        DISTRIBUTION(p1) = WAVE(node, p1) == TRUE ? WEIGHT(p1) : 0.0f;
+    }
+
+    const int r = random_from_distribution(weighting, nb_patterns, random_next_float());
+    for (int p2 = 0; p2 < nb_patterns; p2++)
+    {
+        if ((WAVE(node, p2) == TRUE) != (p2 == r))
+        {
+            Ban(node, node_coord, p2);
+        }
+    }
+}
+
+int next_unobserved_node()
+{
+    float min = FLOAT_MAX;
+    int argmin = -1;
+    for (uint node = 0; node < (uint) (height * width); node++)
+    {
+        if (!is_periodic && (node % (uint)width + (uint)pattern_size > (uint)width || node / (uint)width + (uint)pattern_size > (uint)height)) continue;
+        const int remaining_values = NUM_POSSIBLE_PATTERNS(node);
+        const float entropy = ENTROPIES(node);
+        if (remaining_values > 1 && entropy <= min)
+        {
+            const float noise = 1E-6 * random_next_float();
+            if (entropy + noise < min)
+            {
+                min = entropy + noise;
+                argmin = node;
+            }
+        }
+    }
+
+    return argmin;
+}
+
+// Start only one thread when executing this as it is a single threaded calculation and should be treated as such.
+[numthreads(1,1,1)]
+void CSMain (uint3 node_coord : SV_DispatchThreadID)
+{
+    random_init_state(IN_RANDOM_STATE);
+
+    const int node = next_unobserved_node();
+    if (node >= 0)
+    {
+        observe(node, node_coord.xy);
+        OPEN_NODES = TRUE;
+    }
+    else
+    {
+        OPEN_NODES = FALSE;
+    }
+    
+    OUT_RANDOM_STATE = state;
+}

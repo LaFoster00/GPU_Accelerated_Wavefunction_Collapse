@@ -1,7 +1,5 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.UI;
 
 namespace WFC.Tiling
 {
@@ -143,11 +141,11 @@ namespace WFC.Tiling
             return frequencies.ToArray();
         }
 
-        protected virtual void SetTile(int tileId, int y, int x)
+        protected virtual void CollapseNodeToPattern( int y, int x, int pattern)
         {
             for (int p = 0; p < orientedToTileId.Length; p++)
             {
-                if (tileId != p)
+                if (pattern != p)
                 {
                     model.Ban(x + y * model.width, p);
                 }
@@ -159,17 +157,17 @@ namespace WFC.Tiling
          Returns false if the given tile and orientation does not exist,
          or if the coordinates are not in the wave
         */
-        protected bool SetTile(int tileId, int orientation, int y, int x)
+        protected bool CollapseNodeToPattern(int y, int x, int pattern, int orientation)
         {
-            if (tileId >= orientedTileIds.Length || orientation >= orientedTileIds[tileId].Length ||
+            if (pattern >= orientedTileIds.Length || orientation >= orientedTileIds[pattern].Length ||
                 y >= model.height ||
                 x >= model.width)
             {
                 return false;
             }
 
-            int orientedTileID = orientedTileIds[tileId][orientation];
-            SetTile(orientedTileID, y, x);
+            int orientedTileID = orientedTileIds[pattern][orientation];
+            CollapseNodeToPattern(y, x, orientedTileID);
             return true;
         }
 

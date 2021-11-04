@@ -273,7 +273,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
   - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
   solver: 1
+  observerShader: {fileID: 7200000, guid: 3a932dac96a290dd996b46f04717eb1e, type: 3}
   propagatorShader: {fileID: 7200000, guid: da3b8fc9175c969969a35a3cfae26785, type: 3}
+  banShader: {fileID: 7200000, guid: d90e688b67a3bce5e9ea21aec6d89f38, type: 3}
   periodic: 1
   displayHeight: 10
   displayWidth: 10
