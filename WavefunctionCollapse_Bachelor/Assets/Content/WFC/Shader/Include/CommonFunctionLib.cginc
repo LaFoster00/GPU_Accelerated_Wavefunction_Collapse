@@ -1,5 +1,5 @@
-#include "GPU_WFC_CommonInclude.cginc"
-#include "GPU_WFC_Utils.cginc"
+#include "Include/CommonInclude.cginc"
+#include "Include/Utils.cginc"
 
 /* Removes pattern from cell and marks the surrounding cells for update. */
 void Ban(uint node, uint2 nodeCoord, int pattern)

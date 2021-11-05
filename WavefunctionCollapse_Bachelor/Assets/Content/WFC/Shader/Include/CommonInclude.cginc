@@ -73,10 +73,13 @@ struct Result
 {
     uint is_possible;
     uint open_nodes;
+    uint finished;
+    uint padding;
 };
 RWStructuredBuffer<Result> result;
 #define IS_POSSIBLE result[0].is_possible
 #define OPEN_NODES result[0].open_nodes
+#define FINISHED result[0].finished
 
 #define TRUE 1u
 #define FALSE 0u

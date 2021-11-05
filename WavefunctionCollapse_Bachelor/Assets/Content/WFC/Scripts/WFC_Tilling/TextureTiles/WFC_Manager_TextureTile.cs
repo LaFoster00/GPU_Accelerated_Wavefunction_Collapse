@@ -26,10 +26,15 @@ namespace WFC.Tiling
         [SerializeField] private ComputeShader observerShader;
         [SerializeField] private ComputeShader propagatorShader;
         [SerializeField] private ComputeShader banShader;
+        [SerializeField] private ComputeShader finishIterationShader;
+        [SerializeField] private ComputeShader clearOutBuffersShader;
+        [SerializeField] private ComputeShader resetOpenNodesShader;
         [SerializeField] private bool periodic = true;
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
         [SerializeField] private int maxNumIterations = -1;
+        [SerializeField] private int totalObservePropagateIterations = 10;
+        [SerializeField] private int propagationIterations = 4;
         [SerializeField] private int width;
         [SerializeField] private int height;
         [SerializeField] private bool drawFrame = true;
@@ -79,7 +84,7 @@ namespace WFC.Tiling
                     break;
                 case Solver.GPU:
                 default:
-                    model = new GPU_Model(observerShader, propagatorShader, banShader, width, height, 1, periodic);
+                    model = new GPU_Model(observerShader, propagatorShader, banShader, finishIterationShader, clearOutBuffersShader, resetOpenNodesShader, propagationIterations, totalObservePropagateIterations,width, height, 1, periodic);
                     break;
             }
 
@@ -89,7 +94,7 @@ namespace WFC.Tiling
 
             while (!result.Success)
             {
-
+                Debug.Log("New Run");
                 TilingWFC<Texture2D>.WFC_TypedResult wfcResult = new TilingWFC<Texture2D>.WFC_TypedResult();
 
                 Unity.Mathematics.Random random =

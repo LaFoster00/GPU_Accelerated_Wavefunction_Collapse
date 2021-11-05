@@ -1,14 +1,18 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
-#include "GPU_WFC_CommonFunctionLib.cginc"
+#include "Include/CommonFunctionLib.cginc"
 
-[numthreads(16,16,1)]
+[numthreads(4,4,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
-    /* Return execution if node is outside of working grid. */
-    if (any(nodeCoord.xy < 0u) || any(nodeCoord.xy >= uint2(width, height))) return;
+    /* If there arent any open nodes dont execute. This ensures that we dont waste computational power on unnecessary iterations*/
+    if (FINISHED == TRUE || IS_POSSIBLE == FALSE) return;
     
     const int node =  nodeCoord.y * width + nodeCoord.x;
+    
+    /* Return execution if node is outside of working grid. */
+    if (node >= width * height) return;
+    
     if (IN_NEEDS_COLLAPSE(node) == FALSE) return;
     
     for (uint direction = 0; direction < 4; direction++)

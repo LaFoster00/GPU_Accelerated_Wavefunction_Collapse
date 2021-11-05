@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
@@ -12,7 +14,13 @@ public class GPU_Model : Model, IDisposable
     private readonly ComputeShader _observerShader;
     private readonly ComputeShader _propagatorShader;
     private readonly ComputeShader _banShader;
+    private readonly ComputeShader _finishIterationShader;
+    private readonly ComputeShader _clearOutBuffersShader;
+    private readonly ComputeShader _resetOpenNodesShader;
 
+    private readonly int _propagationIterations;
+    private readonly int _totalIterations;
+    
     #region CommonShaderResources
 
     private uint[] _waveCopyBuffer;
@@ -61,10 +69,12 @@ public class GPU_Model : Model, IDisposable
     struct Result
     {
         public uint isPossible;
-        public uint openNodes;
+        public uint openNodes; // Needed internally, do not remove
+        public uint finished;
+        public uint padding;
     }
     private readonly Result[] _resultCopyBuf = new Result[1];
-    private readonly ComputeBuffer _resultBuf = new ComputeBuffer(1, sizeof(uint) * 2); // Change this to structured buffer
+    private readonly ComputeBuffer _resultBuf = new ComputeBuffer(1, sizeof(uint) * 4); // Change this to structured buffer
 
     [StructLayout(LayoutKind.Sequential)]
     struct Collapse
@@ -78,8 +88,7 @@ public class GPU_Model : Model, IDisposable
     /* Cells in which the patterns changed. */
     private ComputeBuffer _inCollapseBuf;
     private ComputeBuffer _outCollapseBuf;
-
-    private bool _openNodes = true;
+    
     #endregion
 
     #region ObserverShaderResources
@@ -87,11 +96,10 @@ public class GPU_Model : Model, IDisposable
     [StructLayout(LayoutKind.Sequential)]
     struct ObserverParams
     {
-        public uint inRandomState;
-        public uint outRandomState;
+        public uint randomState;
     }
     private ObserverParams[] _observerParamsCopyBuffer = new ObserverParams[1];
-    private ComputeBuffer _observerParamsBuf = new ComputeBuffer(1, sizeof(uint) * 2);
+    private ComputeBuffer _observerParamsBuf = new ComputeBuffer(1, sizeof(uint));
 
     #endregion
 
@@ -111,12 +119,22 @@ public class GPU_Model : Model, IDisposable
         ComputeShader observerShader,
         ComputeShader propagatorShader,
         ComputeShader banShader,
+        ComputeShader finishIterationShader,
+        ComputeShader clearOutBuffersShader,
+        ComputeShader resetOpenNodesShader,
+        int propagationIterations, int totalIterations,
         int width, int height, int patternSize, bool periodic) : 
         base(width, height, patternSize, periodic)
     {
         _observerShader = observerShader;
         _propagatorShader = propagatorShader;
         _banShader = banShader;
+        _finishIterationShader = finishIterationShader;
+        _clearOutBuffersShader = clearOutBuffersShader;
+        _resetOpenNodesShader = resetOpenNodesShader;
+        
+        _propagationIterations = propagationIterations;
+        _totalIterations = totalIterations;
 
         _memoisationBuf = new ComputeBuffer(width * height, sizeof(float) * 3 + sizeof(int));
         _inCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
@@ -179,6 +197,26 @@ public class GPU_Model : Model, IDisposable
         BindResources();
     }
 
+    private void BindInOutBuffers(bool swap, CommandBuffer buffer)
+    {
+        if (swap)
+        {
+            USCSL.Extensions.Swap(ref _inCollapseBuf, ref _outCollapseBuf);
+        }
+        
+        buffer.SetComputeBufferParam(_propagatorShader, 0, "in_collapse", _inCollapseBuf);
+        buffer.SetComputeBufferParam(_propagatorShader, 0, "in_collapse", _outCollapseBuf);
+        
+        buffer.SetComputeBufferParam(_observerShader, 0, "in_collapse", _inCollapseBuf);
+        buffer.SetComputeBufferParam(_observerShader, 0, "in_collapse", _outCollapseBuf);
+        
+        buffer.SetComputeBufferParam(_banShader, 0, "in_collapse", _inCollapseBuf);
+        buffer.SetComputeBufferParam(_banShader, 0, "in_collapse", _outCollapseBuf);
+        
+        buffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "in_collapse", _inCollapseBuf);
+        buffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "in_collapse", _outCollapseBuf);
+    }
+    
     private void BindInOutBuffers(bool swap)
     {
         if (swap)
@@ -194,6 +232,9 @@ public class GPU_Model : Model, IDisposable
         
         _banShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
         _banShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+        
+        _clearOutBuffersShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
+        _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
     }
     
     private void BindResources()
@@ -232,17 +273,32 @@ public class GPU_Model : Model, IDisposable
         _banShader.SetBuffer(0, "propagator", _propagatorBuf);
         _banShader.SetBuffer(0, "result", _resultBuf);
         _banShader.SetBuffer(0, "ban_params", _resultBuf);
+        
+        _finishIterationShader.SetInt("width", width);
+        _finishIterationShader.SetInt("height", height);
+        _finishIterationShader.SetBuffer(0, "memoisation", _memoisationBuf);
+        _finishIterationShader.SetBuffer(0, "result", _resultBuf);
+        
+        _clearOutBuffersShader.SetInt("width", width);
+        _clearOutBuffersShader.SetInt("height", height);
+        _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+        
+        _resetOpenNodesShader.SetBuffer(0, "result", _resultBuf);
+        
         BindInOutBuffers(false);
     }
 
+    private double _clearTotalTime = 0;
     protected override void Clear()
     {
+        double startTime = Time.realtimeSinceStartupAsDouble;
         base.Clear();
         
         Result[] resultBufData = {new Result
         {
             isPossible = Convert.ToUInt32(isPossible),
-            openNodes = Convert.ToUInt32(_openNodes)
+            openNodes = Convert.ToUInt32(false),
+            finished = Convert.ToUInt32(false),
         }};
         _resultBuf.SetData(resultBufData);
 
@@ -263,11 +319,27 @@ public class GPU_Model : Model, IDisposable
         _memoisationBuf.SetData(_memoisationCopyBuffer);
 
         ClearOutBuffers();
+        double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
+        _clearTotalTime += executionTime;
+        Debug.Log($"Clear step took {executionTime} sec and {_clearTotalTime} sec in total.");
     }
 
+    private void ClearOutBuffers(CommandBuffer buffer)
+    {
+        buffer.DispatchCompute(_clearOutBuffersShader,
+            0,
+            (int) Math.Ceiling(width / 32.0f),
+            (int) Math.Ceiling(height / 32.0f),
+            1);
+    }
+    
     private void ClearOutBuffers()
     {
-        _outCollapseBuf.SetData(_collapseClearData);
+        _clearOutBuffersShader.Dispatch(
+            0,
+            (int) Math.Ceiling(width / 32.0f),
+            (int) Math.Ceiling(height / 32.0f),
+            1);
     }
 
      /// <summary>
@@ -282,133 +354,171 @@ public class GPU_Model : Model, IDisposable
     {
         public Random random;
     }
-    
+
+    private double _totalRunTime = 0;
     public override IEnumerator Run(uint seed, int limit, WFC_Result result)
     {
-        _observerParamsCopyBuffer[0].inRandomState = seed;
+        double startTime = Time.realtimeSinceStartupAsDouble;
+
         if (_waveCopyBuffer == null) Init();
         Clear();
-
-        WFC_Objects objects = new WFC_Objects()
-        {
-            random = new Random(seed)
-        };
+        
+        _observerParamsCopyBuffer[0].randomState = seed;
+        _observerParamsBuf.SetData(_observerParamsCopyBuffer);
         
         while (!result.finished)
         {
             if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
             {
-                Run_Internal(objects, result).MoveNext();
+                Run_Internal(result).MoveNext();
             }
             else
             {
-                yield return Run_Internal(objects, result);
+                yield return Run_Internal(result);
             }
         }
         
         /* Preparing for next run. This should be done now before the user collapses tiles by hand for the next run. */
         ClearInBuffers();
+        
+        double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
+        _totalRunTime += executionTime;
+        Debug.Log($"Run took {executionTime} sec and {_totalRunTime} sec in total.");
     }
 
-    private void Observe()
+    private double _totalObserveTime = 0;
+    private void Observe(CommandBuffer buffer)
     {
+       // double startTime = Time.realtimeSinceStartupAsDouble;
         /*
          * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
          * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
          */
-        BindInOutBuffers(true);
+        BindInOutBuffers(true, buffer);
         
-        _observerParamsBuf.SetData(_observerParamsCopyBuffer);
-        _observerShader.Dispatch(0, 1, 1, 1);
+        buffer.DispatchCompute(_observerShader, 0, 1, 1, 1);
         
         /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
-        BindInOutBuffers(true);
+        BindInOutBuffers(true, buffer);
         
-        _resultBuf.GetData(_resultCopyBuf);
-        _observerParamsBuf.GetData(_observerParamsCopyBuffer);
-        _observerParamsCopyBuffer[0].inRandomState = _observerParamsCopyBuffer[0].outRandomState;
-        (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+        /*double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
+        _totalObserveTime += executionTime;
+        Debug.Log($"Observe step took {executionTime} sec and {_totalObserveTime} sec in total.");*/
     }
     
-    private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
+    private IEnumerator Run_Internal(WFC_Result result)
     {
-        Observe();
-        if (_openNodes)
+        var propagation = Propagate(result);
+        if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
         {
-            // No need to observe here as observe shader already did that
-            if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
+            propagation.MoveNext();
+        }
+        else
+        {
+            while (propagation.MoveNext())
+            {
+                yield return propagation.Current;
+            }
+        }
+    }
+
+    
+    private IEnumerator Propagate(WFC_Result result)
+    {
+        /*
+         Get data acts as a sort of memory barrier ensuring all previous computation executed
+         before this step.
+         */
+        _resultBuf.GetData(_resultCopyBuf);
+        
+        bool finished = false;
+        Result[] resultBufData =
+        {
+            new Result
+            {
+                isPossible = Convert.ToUInt32(isPossible),
+                openNodes = Convert.ToUInt32(false),
+                finished =  Convert.ToUInt32(false)
+            }
+        };
+        _resultBuf.SetData(resultBufData);
+        
+        CommandBuffer observeBuffer = new CommandBuffer();
+        #region Fill Observe Buffer
+        
+        Observe(observeBuffer);
+            
+        #endregion
+        
+        CommandBuffer propagationBuffer = new CommandBuffer();
+        #region Fill PropagationBuffer
+
+        // Resets OpenNodes to false.
+        propagationBuffer.DispatchCompute(_resetOpenNodesShader,
+            0,
+            1,
+            1,
+            1);
+        
+        // Propagates node collapse, will set OpenNodes to true if it collapses further nodes
+        propagationBuffer.DispatchCompute(_propagatorShader, 
+            0, 
+            (int) Math.Ceiling(width / 4.0f),
+            (int) Math.Ceiling(height / 4.0f),
+            1);
+
+        /* Swap the in out buffers. */
+        BindInOutBuffers(true, propagationBuffer);
+        ClearOutBuffers(propagationBuffer);
+                
+        propagationBuffer.DispatchCompute(_finishIterationShader, 
+            0,
+            (int) Math.Ceiling(width / 4.0f),
+            (int) Math.Ceiling(height / 4.0f),
+            1);
+        
+        #endregion
+
+        while (!finished && isPossible)
+        {
+            for (int i = 0; i < _totalIterations; i++)
+            {
+                Graphics.ExecuteCommandBuffer(observeBuffer);
+                for (int y = 0; y < _propagationIterations; y++)
+                {
+                    Graphics.ExecuteCommandBuffer(propagationBuffer);
+                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
+                    {
+                        yield return DebugDrawCurrentState();
+                    }
+                }
+            }
+            if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
             {
                 yield return DebugDrawCurrentState();
             }
-
-            var propagation = Propagate(objects);
-            if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
-            {
-                propagation.MoveNext();
-            }
-            else
-            {
-                while (propagation.MoveNext())
-                {
-                    yield return propagation.Current;
-                }
-            }
-
-            if (!isPossible)
-            {
-                Debug.Log("Impossible");
-                result.output = null;
-                result.success = false;
-                result.finished = true;
-            }
+            
+            _resultBuf.GetData(_resultCopyBuf);
+            isPossible = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
+            finished = Convert.ToBoolean(_resultCopyBuf[0].finished);
         }
-        else
+        
+        if (isPossible)
         {
             result.output = WaveToOutput();
             result.success = true;
             result.finished = true;
         }
-    }
-
-    
-    private IEnumerator Propagate(WFC_Objects objects)
-    {
-        while (_openNodes && isPossible)
+        else
         {
-            Result[] resultBufData = {new Result
-            {
-                isPossible = Convert.ToUInt32(isPossible),
-                openNodes = Convert.ToUInt32(_openNodes = false)
-            }};
-            _resultBuf.SetData(resultBufData);
             
-            _propagatorShader.Dispatch(
-                0,
-                (int) Math.Ceiling(width / 16.0f),
-                (int) Math.Ceiling(height / 16.0f),
-                1);
-
-            /* Copy result of Compute operation back to CPU buffer. */
-            _resultBuf.GetData(resultBufData);
-            isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
-            _openNodes = Convert.ToBoolean(resultBufData[0].openNodes);
-            
-            Debug.Log($"Open Cells: {_openNodes}");
-
-            /* Swap the in out buffers. */
-            BindInOutBuffers(true);
-            ClearOutBuffers();
-            
-
-            if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
-            {
-                yield return DebugDrawCurrentState();
-            }
+            Debug.Log("Impossible");
+            result.output = null;
+            result.success = false;
+            result.finished = true;
         }
     }
 
-    private int oberseCount = 0;
-    
     public override void Ban(int node, int pattern)
     {
         /*
@@ -426,11 +536,11 @@ public class GPU_Model : Model, IDisposable
         BindInOutBuffers(true);
         
         _resultBuf.GetData(_resultCopyBuf);
-        (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+        (isPossible) = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
     }
 
     private bool[][] CopyGpuWaveToCpu()
-    { 
+    {
         _waveBuf.GetData(_waveCopyBuffer);
         bool[][] wave = new bool[nbNodes][];
         
@@ -480,6 +590,8 @@ public class GPU_Model : Model, IDisposable
     {
         bool[][] wave = CopyGpuWaveToCpu();
         CopyGpuCollapseToCpu();
+        _memoisationBuf.GetData(_memoisationCopyBuffer);
+        _resultBuf.GetData(_resultCopyBuf);
         List<(int, int)> propagatingCells = new List<(int, int)>();
         for (int node = 0; node < nbNodes; node++)
         {
@@ -506,5 +618,7 @@ public class GPU_Model : Model, IDisposable
         _propagatorBuf?.Release();
         _inCollapseBuf?.Release();
         _outCollapseBuf?.Release();
+        _observerParamsBuf?.Release();
+        _banParamsBuf?.Release();
     }
 }

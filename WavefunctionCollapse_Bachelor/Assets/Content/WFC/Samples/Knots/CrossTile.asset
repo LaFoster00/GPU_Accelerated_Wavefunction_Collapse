@@ -22,7 +22,7 @@ MonoBehaviour:
     leftTileOrientation: 0
     rightTile: {fileID: 11400000}
     rightTileOrientation: 0
-  - active: 1
+  - active: 0
     leftTile: {fileID: 11400000}
     leftTileOrientation: 0
     rightTile: {fileID: 11400000}

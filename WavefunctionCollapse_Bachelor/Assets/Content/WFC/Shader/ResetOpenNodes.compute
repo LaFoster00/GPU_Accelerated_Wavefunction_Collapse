@@ -1,0 +1,10 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "Include/CommonInclude.cginc"
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    OPEN_NODES = FALSE;
+}

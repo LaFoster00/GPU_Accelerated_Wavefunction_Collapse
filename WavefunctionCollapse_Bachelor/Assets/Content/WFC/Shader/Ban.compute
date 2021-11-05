@@ -1,7 +1,7 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
-#include "GPU_WFC_CommonFunctionLib.cginc"
+#include "Include/CommonFunctionLib.cginc"
 
 struct BanParams
 {
