@@ -26,7 +26,6 @@ namespace WFC.Tiling
         [SerializeField] private ComputeShader observerShader;
         [SerializeField] private ComputeShader propagatorShader;
         [SerializeField] private ComputeShader banShader;
-        [SerializeField] private ComputeShader finishIterationShader;
         [SerializeField] private ComputeShader clearOutBuffersShader;
         [SerializeField] private ComputeShader resetOpenNodesShader;
         [SerializeField] private bool periodic = true;
@@ -84,7 +83,7 @@ namespace WFC.Tiling
                     break;
                 case Solver.GPU:
                 default:
-                    model = new GPU_Model(observerShader, propagatorShader, banShader, finishIterationShader, clearOutBuffersShader, resetOpenNodesShader, propagationIterations, totalObservePropagateIterations,width, height, 1, periodic);
+                    model = new GPU_Model(observerShader, propagatorShader, banShader, clearOutBuffersShader, resetOpenNodesShader, propagationIterations, totalObservePropagateIterations,width, height, 1, periodic);
                     break;
             }
 

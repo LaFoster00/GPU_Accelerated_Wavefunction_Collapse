@@ -79,8 +79,8 @@ int next_unobserved_node()
 [numthreads(1,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    if (OPEN_NODES == TRUE || FINISHED == TRUE || IS_POSSIBLE == FALSE) return;
-    
+    if (OPEN_NODES == TRUE || FINISHED == TRUE) return;
+
     random_init_state(RANDOM_STATE);
 
     const int node = next_unobserved_node();
@@ -89,6 +89,10 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         observe(node, uint2(node % width, node / width));
         FINISHED = FALSE;
     }
-    
+    else
+    {
+        FINISHED = TRUE;
+    }
+
     RANDOM_STATE = state;
 }

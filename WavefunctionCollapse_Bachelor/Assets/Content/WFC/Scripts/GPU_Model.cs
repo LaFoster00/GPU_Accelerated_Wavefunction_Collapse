@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Rendering;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
@@ -14,7 +12,6 @@ public class GPU_Model : Model, IDisposable
     private readonly ComputeShader _observerShader;
     private readonly ComputeShader _propagatorShader;
     private readonly ComputeShader _banShader;
-    private readonly ComputeShader _finishIterationShader;
     private readonly ComputeShader _clearOutBuffersShader;
     private readonly ComputeShader _resetOpenNodesShader;
 
@@ -119,7 +116,6 @@ public class GPU_Model : Model, IDisposable
         ComputeShader observerShader,
         ComputeShader propagatorShader,
         ComputeShader banShader,
-        ComputeShader finishIterationShader,
         ComputeShader clearOutBuffersShader,
         ComputeShader resetOpenNodesShader,
         int propagationIterations, int totalIterations,
@@ -129,7 +125,6 @@ public class GPU_Model : Model, IDisposable
         _observerShader = observerShader;
         _propagatorShader = propagatorShader;
         _banShader = banShader;
-        _finishIterationShader = finishIterationShader;
         _clearOutBuffersShader = clearOutBuffersShader;
         _resetOpenNodesShader = resetOpenNodesShader;
         
@@ -197,33 +192,13 @@ public class GPU_Model : Model, IDisposable
         BindResources();
     }
 
-    private void BindInOutBuffers(bool swap, CommandBuffer buffer)
-    {
-        if (swap)
-        {
-            USCSL.Extensions.Swap(ref _inCollapseBuf, ref _outCollapseBuf);
-        }
-        
-        buffer.SetComputeBufferParam(_propagatorShader, 0, "in_collapse", _inCollapseBuf);
-        buffer.SetComputeBufferParam(_propagatorShader, 0, "in_collapse", _outCollapseBuf);
-        
-        buffer.SetComputeBufferParam(_observerShader, 0, "in_collapse", _inCollapseBuf);
-        buffer.SetComputeBufferParam(_observerShader, 0, "in_collapse", _outCollapseBuf);
-        
-        buffer.SetComputeBufferParam(_banShader, 0, "in_collapse", _inCollapseBuf);
-        buffer.SetComputeBufferParam(_banShader, 0, "in_collapse", _outCollapseBuf);
-        
-        buffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "in_collapse", _inCollapseBuf);
-        buffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "in_collapse", _outCollapseBuf);
-    }
-    
     private void BindInOutBuffers(bool swap)
     {
         if (swap)
         {
             USCSL.Extensions.Swap(ref _inCollapseBuf, ref _outCollapseBuf);
         }
-        
+
         _propagatorShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
         _propagatorShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
 
@@ -273,12 +248,7 @@ public class GPU_Model : Model, IDisposable
         _banShader.SetBuffer(0, "propagator", _propagatorBuf);
         _banShader.SetBuffer(0, "result", _resultBuf);
         _banShader.SetBuffer(0, "ban_params", _resultBuf);
-        
-        _finishIterationShader.SetInt("width", width);
-        _finishIterationShader.SetInt("height", height);
-        _finishIterationShader.SetBuffer(0, "memoisation", _memoisationBuf);
-        _finishIterationShader.SetBuffer(0, "result", _resultBuf);
-        
+
         _clearOutBuffersShader.SetInt("width", width);
         _clearOutBuffersShader.SetInt("height", height);
         _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
@@ -324,15 +294,6 @@ public class GPU_Model : Model, IDisposable
         Debug.Log($"Clear step took {executionTime} sec and {_clearTotalTime} sec in total.");
     }
 
-    private void ClearOutBuffers(CommandBuffer buffer)
-    {
-        buffer.DispatchCompute(_clearOutBuffersShader,
-            0,
-            (int) Math.Ceiling(width / 32.0f),
-            (int) Math.Ceiling(height / 32.0f),
-            1);
-    }
-    
     private void ClearOutBuffers()
     {
         _clearOutBuffersShader.Dispatch(
@@ -386,26 +347,6 @@ public class GPU_Model : Model, IDisposable
         Debug.Log($"Run took {executionTime} sec and {_totalRunTime} sec in total.");
     }
 
-    private double _totalObserveTime = 0;
-    private void Observe(CommandBuffer buffer)
-    {
-       // double startTime = Time.realtimeSinceStartupAsDouble;
-        /*
-         * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
-         * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
-         */
-        BindInOutBuffers(true, buffer);
-        
-        buffer.DispatchCompute(_observerShader, 0, 1, 1, 1);
-        
-        /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
-        BindInOutBuffers(true, buffer);
-        
-        /*double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
-        _totalObserveTime += executionTime;
-        Debug.Log($"Observe step took {executionTime} sec and {_totalObserveTime} sec in total.");*/
-    }
-    
     private IEnumerator Run_Internal(WFC_Result result)
     {
         var propagation = Propagate(result);
@@ -443,39 +384,30 @@ public class GPU_Model : Model, IDisposable
         };
         _resultBuf.SetData(resultBufData);
         
-        CommandBuffer observeBuffer = new CommandBuffer();
-        #region Fill Observe Buffer
-        
-        Observe(observeBuffer);
-            
-        #endregion
-        
-        CommandBuffer propagationBuffer = new CommandBuffer();
+
         #region Fill PropagationBuffer
-
-        // Resets OpenNodes to false.
-        propagationBuffer.DispatchCompute(_resetOpenNodesShader,
-            0,
-            1,
-            1,
-            1);
         
-        // Propagates node collapse, will set OpenNodes to true if it collapses further nodes
-        propagationBuffer.DispatchCompute(_propagatorShader, 
-            0, 
-            (int) Math.Ceiling(width / 4.0f),
-            (int) Math.Ceiling(height / 4.0f),
-            1);
-
-        /* Swap the in out buffers. */
-        BindInOutBuffers(true, propagationBuffer);
-        ClearOutBuffers(propagationBuffer);
-                
-        propagationBuffer.DispatchCompute(_finishIterationShader, 
-            0,
-            (int) Math.Ceiling(width / 4.0f),
-            (int) Math.Ceiling(height / 4.0f),
-            1);
+        Action propagation = () =>
+        {
+            // Resets OpenNodes to false.
+            _resetOpenNodesShader.Dispatch(0,
+                1,
+                1,
+                1);
+            
+            // Propagates node collapse, will set OpenNodes to true if it collapses further nodes
+            _propagatorShader.Dispatch(
+                0, 
+                (int) Math.Ceiling(width / 4.0f),
+                (int) Math.Ceiling(height / 4.0f),
+                1);
+            
+            /* Swap the in out buffers. */
+            BindInOutBuffers(true);
+            
+            /* Clear collapse out buffers for clean input in next iteration. */
+            ClearOutBuffers();
+        };
         
         #endregion
 
@@ -483,10 +415,19 @@ public class GPU_Model : Model, IDisposable
         {
             for (int i = 0; i < _totalIterations; i++)
             {
-                Graphics.ExecuteCommandBuffer(observeBuffer);
+                BindInOutBuffers(true);
+                _observerShader.Dispatch(0, 1, 1, 1);
+                BindInOutBuffers(true);
+                
+                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
+                {
+                    yield return DebugDrawCurrentState();
+                }
+                
                 for (int y = 0; y < _propagationIterations; y++)
                 {
-                    Graphics.ExecuteCommandBuffer(propagationBuffer);
+                    propagation.Invoke();
+                    
                     if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
                     {
                         yield return DebugDrawCurrentState();
