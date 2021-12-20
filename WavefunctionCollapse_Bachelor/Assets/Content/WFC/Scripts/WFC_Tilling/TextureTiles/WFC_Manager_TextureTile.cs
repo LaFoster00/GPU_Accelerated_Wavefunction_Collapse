@@ -79,11 +79,11 @@ namespace WFC.Tiling
             switch (solver)
             {
                 case Solver.CPU:
-                    model = new CPU_Model(width, height, 1, periodic);
+                    model = new CPU_Model_Sequential(width, height, 1, periodic);
                     break;
                 case Solver.GPU:
                 default:
-                    model = new GPU_Model(observerShader, propagatorShader, banShader, clearOutBuffersShader, resetOpenNodesShader, propagationIterations, totalObservePropagateIterations,width, height, 1, periodic);
+                    model = new GPU_Model_ComputeBuffer(observerShader, propagatorShader, banShader, clearOutBuffersShader, resetOpenNodesShader, propagationIterations, totalObservePropagateIterations,width, height, 1, periodic);
                     break;
             }
 

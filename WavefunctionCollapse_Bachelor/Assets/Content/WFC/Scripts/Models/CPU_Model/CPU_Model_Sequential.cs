@@ -5,40 +5,18 @@ using UnityEngine;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
-public class CPU_Model : Model
+public class CPU_Model_Sequential : CPU_Model
 {
-    /* Wave data, wave[node][pattern] */
-    protected bool[][] wave;
-
-    /*
-     Which patterns can be placed in which direction of the current pattern
-     propagator[pattern][direction] : int[] possibilities
-     */
-    protected int[][][] propagator;
-
     /* int[wave.length][nbPatterns][4 : direction] */
     protected int[][][] compatible;
-        
-    /* Which cells are fully observed. */
-    protected int[] observed;
 
-    protected int[] numPossiblePatterns;
-    protected double[] distribution, weightLogWeights, sumsOfWeights, sumsOfWeightLogWeights, entropies;
-    
     /* Contains node and the deleted pattern */
     protected (int, int)[] stack;
-    protected int stackSize, observedSoFar;
+    protected int stackSize;
 
-    public CPU_Model(int width, int height, int patternSize, bool periodic)
+    public CPU_Model_Sequential(int width, int height, int patternSize, bool periodic)
         : base(width, height, patternSize, periodic)
     {
-    }
-
-    public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
-        PropagatorSettings propagatorSettings)
-    {
-        base.SetData(nbPatterns, weights, propagator, propagatorSettings);
-        this.propagator = propagator.standard;
     }
 
     protected override void Clear()
@@ -52,7 +30,6 @@ public class CPU_Model : Model
                 for (int direction = 0; direction < 4; direction++)
                     compatible[node][pattern][direction] =
                         propagator[pattern][Directions.GetOppositeDirection(direction)].Length;
-                //TODO: Check if OppositeDirection is the right one for the gpu solver
             }
 
             numPossiblePatterns[node] = nbPatterns;
@@ -63,8 +40,6 @@ public class CPU_Model : Model
         });
         
         base.Clear();
-        
-        observedSoFar = 0;
     }
 
     protected override void Init()

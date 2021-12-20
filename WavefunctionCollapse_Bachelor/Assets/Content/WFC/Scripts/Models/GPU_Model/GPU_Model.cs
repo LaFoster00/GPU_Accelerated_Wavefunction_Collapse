@@ -5,40 +5,34 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using UnityEngine;
 using WFC;
-using Random = Unity.Mathematics.Random;
 
-public class GPU_Model : Model, IDisposable
+public abstract class GPU_Model : Model, IDisposable
 {
-    private readonly ComputeShader _observerShader;
-    private readonly ComputeShader _propagatorShader;
-    private readonly ComputeShader _banShader;
-    private readonly ComputeShader _clearOutBuffersShader;
-    private readonly ComputeShader _resetOpenNodesShader;
-
-    private readonly int _propagationIterations;
-    private readonly int _totalIterations;
+    protected readonly ComputeShader _observerShader;
+    protected readonly ComputeShader _propagatorShader;
+    protected readonly ComputeShader _banShader;
     
     #region CommonShaderResources
 
-    private uint[] _waveCopyBuffer;
+    protected uint[] _waveCopyBuffer;
     /*
     Actual wave result
     wave(node, pattern)
     */
-    private ComputeBuffer _waveBuf;
+    protected ComputeBuffer _waveBuf;
 
-    struct Weighting
+    protected struct Weighting
     {
         public float weight;
         public float logWeight;
         public float distribution;
         public float padding;
     }
-    private Weighting[] _weightingCopyBuffer;
-    private ComputeBuffer _weightBuf;
+    protected  Weighting[] _weightingCopyBuffer;
+    protected  ComputeBuffer _weightBuf;
 
     [StructLayout(LayoutKind.Sequential)]
-    struct Memoisation
+    protected struct Memoisation
     {
         public float sums_of_weights;
         public float sums_of_weight_log_weights;
@@ -46,12 +40,12 @@ public class GPU_Model : Model, IDisposable
         public int num_possible_patterns;
     }
 
-    private Memoisation[] _memoisationCopyBuffer;
-    private readonly ComputeBuffer _memoisationBuf;
+    protected  Memoisation[] _memoisationCopyBuffer;
+    protected  readonly ComputeBuffer _memoisationBuf;
 
     /* propagator[uint3(pattern, otherPattern, direction)] */
     [StructLayout(LayoutKind.Sequential)]
-    struct Propagator
+    protected struct Propagator
     {
         /* Array inside GPU struct */
         public uint propagatorDown;
@@ -60,76 +54,69 @@ public class GPU_Model : Model, IDisposable
         public uint propagatorUp;
 
     }
-    private Propagator[] _propagatorCopyBuffer;
-    private ComputeBuffer _propagatorBuf;
+    protected  Propagator[] _propagatorCopyBuffer;
+    protected  ComputeBuffer _propagatorBuf;
 
-    struct Result
+    protected struct Result
     {
         public uint isPossible;
-        public uint openNodes; // Needed internally, do not remove
+        public uint openNodes;
         public uint finished;
-        public uint padding;
+        public uint padding; 
     }
-    private readonly Result[] _resultCopyBuf = new Result[1];
-    private readonly ComputeBuffer _resultBuf = new ComputeBuffer(1, sizeof(uint) * 4); // Change this to structured buffer
+    protected  readonly Result[] _resultCopyBuf = new Result[1];
+    protected  readonly ComputeBuffer _resultBuf = new ComputeBuffer(1, sizeof(uint) * 4); // Change this to structured buffer
 
     [StructLayout(LayoutKind.Sequential)]
-    struct Collapse
+    protected struct Collapse
     {
         public uint is_collapsed;
         public uint needs_collapse;
     }
-    private Collapse[] _collapseClearData;
-    private Collapse[] _collapseCopyBuffer;
+    protected  Collapse[] _collapseClearData;
+    protected  Collapse[] _collapseCopyBuffer;
     
     /* Cells in which the patterns changed. */
-    private ComputeBuffer _inCollapseBuf;
-    private ComputeBuffer _outCollapseBuf;
-    
+    protected  ComputeBuffer _inCollapseBuf;
+    protected  ComputeBuffer _outCollapseBuf;
+
+    protected  bool _openNodes = true;
     #endregion
 
     #region ObserverShaderResources
 
     [StructLayout(LayoutKind.Sequential)]
-    struct ObserverParams
+    protected struct ObserverParams
     {
         public uint randomState;
     }
-    private ObserverParams[] _observerParamsCopyBuffer = new ObserverParams[1];
-    private ComputeBuffer _observerParamsBuf = new ComputeBuffer(1, sizeof(uint));
+    protected  ObserverParams[] _observerParamsCopyBuffer = new ObserverParams[1];
+    protected  ComputeBuffer _observerParamsBuf = new ComputeBuffer(1, sizeof(uint));
 
     #endregion
 
     #region BanShaderResources
 
-    struct BanParams
+    protected struct BanParams
     {
         public int node;
         public int pattern;
     }
-    private BanParams[] _banParamsCopyBuffer = new BanParams[1];
-    private ComputeBuffer _banParamsBuf = new ComputeBuffer(1, sizeof(int) * 2);
+    protected  BanParams[] _banParamsCopyBuffer = new BanParams[1];
+    protected  ComputeBuffer _banParamsBuf = new ComputeBuffer(1, sizeof(int) * 2);
 
     #endregion
-    
-    public GPU_Model(
+
+    public GPU_Model(   
         ComputeShader observerShader,
         ComputeShader propagatorShader,
-        ComputeShader banShader,
-        ComputeShader clearOutBuffersShader,
-        ComputeShader resetOpenNodesShader,
-        int propagationIterations, int totalIterations,
-        int width, int height, int patternSize, bool periodic) : 
-        base(width, height, patternSize, periodic)
+        ComputeShader banShader, 
+        int width, int height, int patternSize, bool periodic) 
+        : base(width, height, patternSize, periodic)
     {
         _observerShader = observerShader;
         _propagatorShader = propagatorShader;
         _banShader = banShader;
-        _clearOutBuffersShader = clearOutBuffersShader;
-        _resetOpenNodesShader = resetOpenNodesShader;
-        
-        _propagationIterations = propagationIterations;
-        _totalIterations = totalIterations;
 
         _memoisationBuf = new ComputeBuffer(width * height, sizeof(float) * 3 + sizeof(int));
         _inCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
@@ -161,12 +148,7 @@ public class GPU_Model : Model, IDisposable
             _propagatorBuf.SetData(_propagatorCopyBuffer);
         }
     }
-
-    ~GPU_Model()
-    {
-        Dispose();
-    }
-
+    
     protected override void Init()
     {
         _waveCopyBuffer = new uint[width * height * nbPatterns];
@@ -192,13 +174,13 @@ public class GPU_Model : Model, IDisposable
         BindResources();
     }
 
-    private void BindInOutBuffers(bool swap)
+    protected virtual void BindInOutBuffers(bool swap)
     {
         if (swap)
         {
             USCSL.Extensions.Swap(ref _inCollapseBuf, ref _outCollapseBuf);
         }
-
+        
         _propagatorShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
         _propagatorShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
 
@@ -207,12 +189,9 @@ public class GPU_Model : Model, IDisposable
         
         _banShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
         _banShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
-        
-        _clearOutBuffersShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
-        _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
     }
     
-    private void BindResources()
+    protected virtual void BindResources()
     {
         _propagatorShader.SetInt("nb_patterns", nbPatterns);
         _propagatorShader.SetInt("width", width);
@@ -248,27 +227,18 @@ public class GPU_Model : Model, IDisposable
         _banShader.SetBuffer(0, "propagator", _propagatorBuf);
         _banShader.SetBuffer(0, "result", _resultBuf);
         _banShader.SetBuffer(0, "ban_params", _resultBuf);
-
-        _clearOutBuffersShader.SetInt("width", width);
-        _clearOutBuffersShader.SetInt("height", height);
-        _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
-        
-        _resetOpenNodesShader.SetBuffer(0, "result", _resultBuf);
         
         BindInOutBuffers(false);
     }
-
-    private double _clearTotalTime = 0;
+    
     protected override void Clear()
     {
-        double startTime = Time.realtimeSinceStartupAsDouble;
         base.Clear();
         
         Result[] resultBufData = {new Result
         {
             isPossible = Convert.ToUInt32(isPossible),
-            openNodes = Convert.ToUInt32(false),
-            finished = Convert.ToUInt32(false),
+            openNodes = Convert.ToUInt32(_openNodes)
         }};
         _resultBuf.SetData(resultBufData);
 
@@ -289,175 +259,19 @@ public class GPU_Model : Model, IDisposable
         _memoisationBuf.SetData(_memoisationCopyBuffer);
 
         ClearOutBuffers();
-        double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
-        _clearTotalTime += executionTime;
-        Debug.Log($"Clear step took {executionTime} sec and {_clearTotalTime} sec in total.");
     }
 
-    private void ClearOutBuffers()
+    protected virtual void ClearOutBuffers()
     {
-        _clearOutBuffersShader.Dispatch(
-            0,
-            (int) Math.Ceiling(width / 32.0f),
-            (int) Math.Ceiling(height / 32.0f),
-            1);
+        _outCollapseBuf.SetData(_collapseClearData);
     }
 
-     /// <summary>
-     /// This should be called after the algorithm finishes as it will be the starting point for following runs!
-     /// </summary>
-    private void ClearInBuffers()
+    /// <summary>
+    /// This should be called after the algorithm finishes as it will be the starting point for following runs!
+    /// </summary>
+    protected virtual void ClearInBuffers()
     {
         _inCollapseBuf.SetData(_collapseClearData);
-    }
-
-    private class WFC_Objects
-    {
-        public Random random;
-    }
-
-    private double _totalRunTime = 0;
-    public override IEnumerator Run(uint seed, int limit, WFC_Result result)
-    {
-        double startTime = Time.realtimeSinceStartupAsDouble;
-
-        if (_waveCopyBuffer == null) Init();
-        Clear();
-        
-        _observerParamsCopyBuffer[0].randomState = seed;
-        _observerParamsBuf.SetData(_observerParamsCopyBuffer);
-        
-        while (!result.finished)
-        {
-            if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
-            {
-                Run_Internal(result).MoveNext();
-            }
-            else
-            {
-                yield return Run_Internal(result);
-            }
-        }
-        
-        /* Preparing for next run. This should be done now before the user collapses tiles by hand for the next run. */
-        ClearInBuffers();
-        
-        double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
-        _totalRunTime += executionTime;
-        Debug.Log($"Run took {executionTime} sec and {_totalRunTime} sec in total.");
-    }
-
-    private IEnumerator Run_Internal(WFC_Result result)
-    {
-        var propagation = Propagate(result);
-        if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
-        {
-            propagation.MoveNext();
-        }
-        else
-        {
-            while (propagation.MoveNext())
-            {
-                yield return propagation.Current;
-            }
-        }
-    }
-
-    
-    private IEnumerator Propagate(WFC_Result result)
-    {
-        /*
-         Get data acts as a sort of memory barrier ensuring all previous computation executed
-         before this step.
-         */
-        _resultBuf.GetData(_resultCopyBuf);
-        
-        bool finished = false;
-        Result[] resultBufData =
-        {
-            new Result
-            {
-                isPossible = Convert.ToUInt32(isPossible),
-                openNodes = Convert.ToUInt32(false),
-                finished =  Convert.ToUInt32(false)
-            }
-        };
-        _resultBuf.SetData(resultBufData);
-        
-
-        #region Fill PropagationBuffer
-        
-        Action propagation = () =>
-        {
-            // Resets OpenNodes to false.
-            _resetOpenNodesShader.Dispatch(0,
-                1,
-                1,
-                1);
-            
-            // Propagates node collapse, will set OpenNodes to true if it collapses further nodes
-            _propagatorShader.Dispatch(
-                0, 
-                (int) Math.Ceiling(width / 4.0f),
-                (int) Math.Ceiling(height / 4.0f),
-                1);
-            
-            /* Swap the in out buffers. */
-            BindInOutBuffers(true);
-            
-            /* Clear collapse out buffers for clean input in next iteration. */
-            ClearOutBuffers();
-        };
-        
-        #endregion
-
-        while (!finished && isPossible)
-        {
-            for (int i = 0; i < _totalIterations; i++)
-            {
-                BindInOutBuffers(true);
-                _observerShader.Dispatch(0, 1, 1, 1);
-                BindInOutBuffers(true);
-                
-                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
-                {
-                    yield return DebugDrawCurrentState();
-                }
-                
-                for (int y = 0; y < _propagationIterations; y++)
-                {
-                    propagation.Invoke();
-                    
-                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
-                    {
-                        yield return DebugDrawCurrentState();
-                    }
-                }
-            }
-            if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
-            {
-                yield return DebugDrawCurrentState();
-            }
-            
-            _resultBuf.GetData(_resultCopyBuf);
-            isPossible = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
-            finished = Convert.ToBoolean(_resultCopyBuf[0].finished);
-        }
-        
-        if (isPossible)
-        {
-            result.output = WaveToOutput();
-            result.success = true;
-            result.finished = true;
-        }
-        else
-        {
-            
-            Debug.Log("Impossible");
-            result.output = null;
-            result.success = false;
-            result.finished = true;
-        }
     }
 
     public override void Ban(int node, int pattern)
@@ -477,11 +291,11 @@ public class GPU_Model : Model, IDisposable
         BindInOutBuffers(true);
         
         _resultBuf.GetData(_resultCopyBuf);
-        (isPossible) = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
+        (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
     }
-
-    private bool[][] CopyGpuWaveToCpu()
-    {
+    
+    protected virtual bool[][] CopyGpuWaveToCpu()
+    { 
         _waveBuf.GetData(_waveCopyBuffer);
         bool[][] wave = new bool[nbNodes][];
         
@@ -506,7 +320,7 @@ public class GPU_Model : Model, IDisposable
      contradiction). This function should be used only when all cell of the wave
      are defined.
     */
-    private int[,] WaveToOutput()
+    protected virtual int[,] WaveToOutput()
     {
         bool[][] wave = CopyGpuWaveToCpu();
         int[,] outputPatterns = new int[height, width];
@@ -527,12 +341,10 @@ public class GPU_Model : Model, IDisposable
         return outputPatterns;
     }
 
-    private IEnumerator DebugDrawCurrentState()
+    protected virtual IEnumerator DebugDrawCurrentState()
     {
         bool[][] wave = CopyGpuWaveToCpu();
         CopyGpuCollapseToCpu();
-        _memoisationBuf.GetData(_memoisationCopyBuffer);
-        _resultBuf.GetData(_resultCopyBuf);
         List<(int, int)> propagatingCells = new List<(int, int)>();
         for (int node = 0; node < nbNodes; node++)
         {
@@ -549,8 +361,8 @@ public class GPU_Model : Model, IDisposable
             ? null
             : new WaitForSeconds(propagatorSettings.stepInterval);
     }
-
-    public void Dispose()
+    
+    public virtual void Dispose()
     {
         _weightBuf?.Release();
         _resultBuf?.Release();
@@ -559,7 +371,5 @@ public class GPU_Model : Model, IDisposable
         _propagatorBuf?.Release();
         _inCollapseBuf?.Release();
         _outCollapseBuf?.Release();
-        _observerParamsBuf?.Release();
-        _banParamsBuf?.Release();
     }
 }
