@@ -25,8 +25,8 @@ public class GPU_Model_Granular : GPU_Model
     
     public override IEnumerator Run(uint seed, int limit, WFC_Result result)
     {
-        _observerParamsCopyBuffer[0].randomState = seed;
-        if (_waveCopyBuffer == null) Init();
+        observerParamsCopyBuffer[0].randomState = seed;
+        if (waveCopyBuffer == null) Init();
         Clear();
 
         WFC_Objects objects = new WFC_Objects()
@@ -58,20 +58,20 @@ public class GPU_Model_Granular : GPU_Model
          */
         BindInOutBuffers(true);
         
-        _observerParamsBuf.SetData(_observerParamsCopyBuffer);
-        _observerShader.Dispatch(0, 1, 1, 1);
+        observerParamsBuf.SetData(observerParamsCopyBuffer);
+        observerShader.Dispatch(0, 1, 1, 1);
         
         /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
         BindInOutBuffers(true);
         
         _resultBuf.GetData(_resultCopyBuf);
-        (_openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+        (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
     }
     
     private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
     {
         Observe();
-        if (_openNodes)
+        if (openNodes)
         {
             // No need to observe here as observe shader already did that
             if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
@@ -111,16 +111,16 @@ public class GPU_Model_Granular : GPU_Model
     
     private IEnumerator Propagate(WFC_Objects objects)
     {
-        while (_openNodes && isPossible)
+        while (openNodes && isPossible)
         {
             Result[] resultBufData = {new Result
             {
                 isPossible = Convert.ToUInt32(isPossible),
-                openNodes = Convert.ToUInt32(_openNodes = false)
+                openNodes = Convert.ToUInt32(openNodes = false)
             }};
             _resultBuf.SetData(resultBufData);
             
-            _propagatorShader.Dispatch(
+            propagatorShader.Dispatch(
                 0,
                 (int) Math.Ceiling(width / 16.0f),
                 (int) Math.Ceiling(height / 16.0f),
@@ -129,9 +129,9 @@ public class GPU_Model_Granular : GPU_Model
             /* Copy result of Compute operation back to CPU buffer. */
             _resultBuf.GetData(resultBufData);
             isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
-            _openNodes = Convert.ToBoolean(resultBufData[0].openNodes);
+            openNodes = Convert.ToBoolean(resultBufData[0].openNodes);
             
-            Debug.Log($"Open Cells: {_openNodes}");
+            Debug.Log($"Open Cells: {openNodes}");
 
             /* Swap the in out buffers. */
             BindInOutBuffers(true);

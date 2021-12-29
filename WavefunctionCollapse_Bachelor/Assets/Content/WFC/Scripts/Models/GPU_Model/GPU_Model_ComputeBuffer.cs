@@ -37,24 +37,24 @@ public class GPU_Model_ComputeBuffer : GPU_Model
     {
         base.BindInOutBuffers(swap);
         
-        _clearOutBuffersShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
-        _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+        _clearOutBuffersShader.SetBuffer(0, "in_collapse", inCollapseBuf);
+        _clearOutBuffersShader.SetBuffer(0, "out_collapse", outCollapseBuf);
     }
-    
-    private void BindResources()
+
+    protected override void BindResources()
     {
         base.BindResources();
 
         _clearOutBuffersShader.SetInt("width", width);
         _clearOutBuffersShader.SetInt("height", height);
-        _clearOutBuffersShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+        _clearOutBuffersShader.SetBuffer(0, "out_collapse", outCollapseBuf);
         
         _resetOpenNodesShader.SetBuffer(0, "result", _resultBuf);
         
         BindInOutBuffers(false);
     }
 
-    private void ClearOutBuffers()
+    protected override void ClearOutBuffers()
     {
         _clearOutBuffersShader.Dispatch(
             0,
@@ -63,29 +63,16 @@ public class GPU_Model_ComputeBuffer : GPU_Model
             1);
     }
 
-     /// <summary>
-     /// This should be called after the algorithm finishes as it will be the starting point for following runs!
-     /// </summary>
-    private void ClearInBuffers()
-    {
-        _inCollapseBuf.SetData(_collapseClearData);
-    }
-
-    private class WFC_Objects
-    {
-        public Random random;
-    }
-
     private double _totalRunTime = 0;
     public override IEnumerator Run(uint seed, int limit, WFC_Result result)
     {
         double startTime = Time.realtimeSinceStartupAsDouble;
 
-        if (_waveCopyBuffer == null) Init();
+        if (waveCopyBuffer == null) Init();
         Clear();
         
-        _observerParamsCopyBuffer[0].randomState = seed;
-        _observerParamsBuf.SetData(_observerParamsCopyBuffer);
+        observerParamsCopyBuffer[0].randomState = seed;
+        observerParamsBuf.SetData(observerParamsCopyBuffer);
         
         while (!result.finished)
         {
@@ -156,7 +143,7 @@ public class GPU_Model_ComputeBuffer : GPU_Model
                 1);
             
             // Propagates node collapse, will set OpenNodes to true if it collapses further nodes
-            _propagatorShader.Dispatch(
+            propagatorShader.Dispatch(
                 0, 
                 (int) Math.Ceiling(width / 4.0f),
                 (int) Math.Ceiling(height / 4.0f),
@@ -176,7 +163,7 @@ public class GPU_Model_ComputeBuffer : GPU_Model
             for (int i = 0; i < _totalIterations; i++)
             {
                 BindInOutBuffers(true);
-                _observerShader.Dispatch(0, 1, 1, 1);
+                observerShader.Dispatch(0, 1, 1, 1);
                 BindInOutBuffers(true);
                 
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
@@ -228,62 +215,15 @@ public class GPU_Model_ComputeBuffer : GPU_Model
          */
         BindInOutBuffers(true);
 
-        _banParamsCopyBuffer[0].node = node;
-        _banParamsCopyBuffer[0].pattern = pattern;
-        _banParamsBuf.SetData(_banParamsCopyBuffer);
-        _observerShader.Dispatch(0, 1, 1, 1);
+        banParamsCopyBuffer[0].node = node;
+        banParamsCopyBuffer[0].pattern = pattern;
+        banParamsBuf.SetData(banParamsCopyBuffer);
+        observerShader.Dispatch(0, 1, 1, 1);
         
         /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
         BindInOutBuffers(true);
         
         _resultBuf.GetData(_resultCopyBuf);
         (isPossible) = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
-    }
-
-    private bool[][] CopyGpuWaveToCpu()
-    {
-        _waveBuf.GetData(_waveCopyBuffer);
-        bool[][] wave = new bool[nbNodes][];
-        
-        Parallel.For(0, nbNodes, node =>
-        {
-            wave[node] = new bool[nbPatterns];
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
-            {
-                wave[node][pattern] = Convert.ToBoolean(_waveCopyBuffer[node * nbPatterns + pattern]);
-            }
-        });
-        return wave;
-    }
-
-    private void CopyGpuCollapseToCpu()
-    {
-        _inCollapseBuf.GetData(_collapseCopyBuffer);
-    }
-
-    /*
-     Transform the wave to a valid output (a 2d array of patterns that aren't in
-     contradiction). This function should be used only when all cell of the wave
-     are defined.
-    */
-    private int[,] WaveToOutput()
-    {
-        bool[][] wave = CopyGpuWaveToCpu();
-        int[,] outputPatterns = new int[height, width];
-        Parallel.For(0, wave.Length, node =>
-        {
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
-            {
-                if (wave[node][pattern])
-                {
-                    int x = node % width;
-                    int y = node / width;
-                    outputPatterns[y, x] = pattern;
-                    break;
-                }
-            }
-        });
-
-        return outputPatterns;
     }
 }
