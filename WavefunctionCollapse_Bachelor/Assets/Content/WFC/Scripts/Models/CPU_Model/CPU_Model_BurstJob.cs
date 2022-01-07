@@ -6,7 +6,9 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using USCSL;
 using WFC;
+using Random = Unity.Mathematics.Random;
 
 [BurstCompile]
 public class CPU_Model_BurstJob : CPU_Model
@@ -117,6 +119,96 @@ public class CPU_Model_BurstJob : CPU_Model
     public override IEnumerator Run(uint seed, int limit, WFC_Result result)
     {
         throw new System.NotImplementedException();
+    }
+
+    [BurstCompile]
+    private struct NextUnobservedNode_Job : IJob
+    {
+        [ReadOnly] public bool periodic;
+        [ReadOnly] public int width, height;
+        [ReadOnly] public int patternSize;
+        
+        [ReadOnly] public NativeArray<bool> wave;
+        [ReadOnly] public NativeArray<Memoisation> memoisation;
+
+        [ReadOnly] public Random random;
+
+        [WriteOnly] public int result;
+        
+        public void Execute()
+        {
+            double min = Double.MaxValue;
+            int argmin = -1;
+            for (int node = 0; node < wave.Length; node++)
+            {
+                if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
+                int remainingValues = memoisation[node].numPossiblePatterns;
+                double entropy = memoisation[node].entropies;
+                if (remainingValues > 1 && entropy <= min)
+                {
+                    double noise = 1E-6 * random.NextDouble();
+                    if (entropy + noise < min)
+                    {
+                        min = entropy + noise;
+                        argmin = node;
+                    }
+                }
+            }
+
+            result = argmin;
+        }
+    }
+    
+    [BurstCompile]
+    private struct Observe_Job : IJob
+    {
+        [ReadOnly] public int node;
+        
+        [ReadOnly] public int nbPatterns;
+        [ReadOnly] public NativeArray<bool> wave;
+        [ReadOnly] public NativeArray<double> weights;
+        
+        [ReadOnly] public Random random;
+
+        public NativeArray<double> distribution;
+
+        public void Execute()
+        {
+            // Choose an element according to the pattern distribution
+            distribution = new NativeArray<double>(nbPatterns, Allocator.TempJob);
+            
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
+            {
+                distribution[pattern] = wave[node * nbPatterns + pattern] ? weights[pattern] : 0.0;
+            }
+
+            int r = RandomFromDistribution(random.NextDouble());
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
+                if (wave[node * nbPatterns + pattern] != (pattern == r))
+                    Ban(node, pattern);
+        }
+        
+        private void Ban(int node, int pattern) {}
+        
+        public int RandomFromDistribution(double threshold)
+        {
+            Extensions.GetRef(ref distribution, out var distributionRef);
+            double sum = Extensions.SumDoubles(ref distributionRef);
+            for (int i = 0; i < distribution.Length; i++)
+            {
+                distribution[i] /= sum;
+            }
+        
+            double x = 0;
+        
+            for (int pattern = 0; pattern < distribution.Length; pattern++)
+            {
+                x += distribution[pattern];
+                if (threshold <= x) return pattern;
+            }
+        
+            return 0;
+        }
     }
 
     [BurstCompile]
@@ -252,6 +344,8 @@ public class CPU_Model_BurstJob : CPU_Model
         }
     }
 
+    
+    
     public override void Ban(int node, int pattern)
     {
         throw new System.NotImplementedException();
