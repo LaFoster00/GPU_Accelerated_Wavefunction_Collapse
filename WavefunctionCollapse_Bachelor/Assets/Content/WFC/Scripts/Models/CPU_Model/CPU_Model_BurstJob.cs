@@ -10,344 +10,354 @@ using USCSL;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
-[BurstCompile]
-public class CPU_Model_BurstJob : CPU_Model
+namespace Models.CPU_Model
 {
-    private NativeArray<bool> wave;
-
-    private struct Propagator
-    {
-        [MarshalAs(UnmanagedType.I1)] public bool down;
-        [MarshalAs(UnmanagedType.I1)] public bool left;
-        [MarshalAs(UnmanagedType.I1)] public bool right;
-        [MarshalAs(UnmanagedType.I1)] public bool up;
-    };
-
     [BurstCompile]
-    private static int GetPropagatorIndex(int pattern, int otherPattern, int nbPatterns)
+    public class CPU_Model_BurstJob : global::CPU_Model, IDisposable
     {
-        return pattern * nbPatterns + otherPattern;
-    }
+        private NativeArray<bool> wave;
 
-    [BurstCompile]
-    private static bool GetPropagatorValue(in Propagator propagator, int direction)
-    {
-        switch (direction)
+        private struct Propagator
         {
-            case 0:
-                return propagator.down;
-            case 1:
-                return propagator.left;
-            case 2:
-                return propagator.right;
-            case 3:
-                return propagator.up;
-            default:
-                throw new Exception("Direction not valid");
+            [MarshalAs(UnmanagedType.I1)] public bool down;
+            [MarshalAs(UnmanagedType.I1)] public bool left;
+            [MarshalAs(UnmanagedType.I1)] public bool right;
+            [MarshalAs(UnmanagedType.I1)] public bool up;
+        };
+
+        [BurstCompile]
+        private static int GetPropagatorIndex(int pattern, int otherPattern, int nbPatterns)
+        {
+            return pattern * nbPatterns + otherPattern;
         }
-    }
 
-    private struct Weighting
-    {
-        public double weight;
-        public double logWeight;
-        public double distribution;
-    };
-    NativeArray<Weighting> weighting;
-
-    struct Memoisation
-    {
-        public double sumsOfWeights;
-        public double sumsOfWeightsLogWeights;
-        public double entropies;
-        public int numPossiblePatterns;
-    };
-    NativeArray<Memoisation> memoisation;
-    
-    public CPU_Model_BurstJob(int width, int height, int patternSize, bool periodic) : base(width, height, patternSize, periodic)
-    {
-    }
-
-    public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
-        PropagatorSettings propagatorSettings)
-    {
-        base.SetData(nbPatterns, weights, propagator, propagatorSettings);
-    }
-
-    protected override void Clear()
-    {
-        Parallel.For(0, wave.Length, node =>
-            /* for (int node = 0; node < wave.Length; node++) */
+        [BurstCompile]
+        private static bool GetPropagatorValue(in Propagator propagator, int direction)
         {
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
+            switch (direction)
             {
-                wave[node * nbPatterns + pattern] = true;
+                case 0:
+                    return propagator.down;
+                case 1:
+                    return propagator.left;
+                case 2:
+                    return propagator.right;
+                case 3:
+                    return propagator.up;
+                default:
+                    throw new Exception("Direction not valid");
+            }
+        }
+
+        private struct Weighting
+        {
+            public double weight;
+            public double logWeight;
+            public double distribution;
+        };
+        NativeArray<Weighting> weighting;
+
+        struct Memoisation
+        {
+            public double sumsOfWeights;
+            public double sumsOfWeightsLogWeights;
+            public double entropies;
+            public int numPossiblePatterns;
+        };
+        NativeArray<Memoisation> memoisation;
+    
+        public CPU_Model_BurstJob(int width, int height, int patternSize, bool periodic) : base(width, height, patternSize, periodic)
+        {
+        }
+
+        public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
+            PropagatorSettings propagatorSettings)
+        {
+            base.SetData(nbPatterns, weights, propagator, propagatorSettings);
+        }
+
+        protected override void Clear()
+        {
+            Parallel.For(0, wave.Length, node =>
+                /* for (int node = 0; node < wave.Length; node++) */
+            {
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                {
+                    wave[node * nbPatterns + pattern] = true;
+                }
+
+                Memoisation mem = memoisation[node];
+                mem.numPossiblePatterns= nbPatterns;
+                mem.sumsOfWeights = totalSumOfWeights;
+                mem.sumsOfWeightsLogWeights = totalSumOfWeightLogWeights;
+                mem.entropies = startingEntropy;
+                memoisation[node] = mem;
+            });
+        
+            base.Clear();
+        }
+
+        protected override void Init()
+        {
+            base.Init();
+        
+            wave = new NativeArray<bool>(width * height * nbPatterns, Allocator.Persistent);
+            weighting = new NativeArray<Weighting>(nbPatterns, Allocator.Persistent);
+
+            for (int t = 0; t < nbPatterns; t++)
+            {
+                Weighting weight = weighting[t];
+                weight.logWeight = weights[t] * math.log(weights[t]);
+                totalSumOfWeights += weights[t];
+                totalSumOfWeightLogWeights += weight.logWeight;
+                weighting[t] = weight;
             }
 
-            Memoisation mem = memoisation[node];
-            mem.numPossiblePatterns= nbPatterns;
-            mem.sumsOfWeights = totalSumOfWeights;
-            mem.sumsOfWeightsLogWeights = totalSumOfWeightLogWeights;
-            mem.entropies = startingEntropy;
-            memoisation[node] = mem;
-        });
+            startingEntropy = Math.Log(totalSumOfWeights) - totalSumOfWeightLogWeights / totalSumOfWeights;
         
-        base.Clear();
-    }
-
-    protected override void Init()
-    {
-        base.Init();
-        
-        wave = new NativeArray<bool>(width * height * nbPatterns, Allocator.Persistent);
-        weighting = new NativeArray<Weighting>(nbPatterns, Allocator.Persistent);
-
-        for (int t = 0; t < nbPatterns; t++)
-        {
-            Weighting weight = weighting[t];
-            weight.logWeight = weights[t] * math.log(weights[t]);
-            totalSumOfWeights += weights[t];
-            totalSumOfWeightLogWeights += weight.logWeight;
-            weighting[t] = weight;
+            memoisation = new NativeArray<Memoisation>(nbPatterns, Allocator.Persistent);
         }
 
-        startingEntropy = Math.Log(totalSumOfWeights) - totalSumOfWeightLogWeights / totalSumOfWeights;
-        
-        memoisation = new NativeArray<Memoisation>(nbPatterns, Allocator.Persistent);
-    }
-
-    public override IEnumerator Run(uint seed, int limit, WFC_Result result)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    [BurstCompile]
-    private struct NextUnobservedNode_Job : IJob
-    {
-        [ReadOnly] public bool periodic;
-        [ReadOnly] public int width, height;
-        [ReadOnly] public int patternSize;
-        
-        [ReadOnly] public NativeArray<bool> wave;
-        [ReadOnly] public NativeArray<Memoisation> memoisation;
-
-        [ReadOnly] public Random random;
-
-        [WriteOnly] public int result;
-        
-        public void Execute()
+        public override IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
-            double min = Double.MaxValue;
-            int argmin = -1;
-            for (int node = 0; node < wave.Length; node++)
+            throw new System.NotImplementedException();
+        }
+
+        [BurstCompile]
+        private struct NextUnobservedNode_Job : IJob
+        {
+            [ReadOnly] public bool periodic;
+            [ReadOnly] public int width, height;
+            [ReadOnly] public int patternSize;
+        
+            [ReadOnly] public NativeArray<bool> wave;
+            [ReadOnly] public NativeArray<Memoisation> memoisation;
+
+            [ReadOnly] public Random random;
+
+            [WriteOnly] public int result;
+        
+            public void Execute()
             {
-                if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
-                int remainingValues = memoisation[node].numPossiblePatterns;
-                double entropy = memoisation[node].entropies;
-                if (remainingValues > 1 && entropy <= min)
+                double min = Double.MaxValue;
+                int argmin = -1;
+                for (int node = 0; node < wave.Length; node++)
                 {
-                    double noise = 1E-6 * random.NextDouble();
-                    if (entropy + noise < min)
+                    if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
+                    int remainingValues = memoisation[node].numPossiblePatterns;
+                    double entropy = memoisation[node].entropies;
+                    if (remainingValues > 1 && entropy <= min)
                     {
-                        min = entropy + noise;
-                        argmin = node;
+                        double noise = 1E-6 * random.NextDouble();
+                        if (entropy + noise < min)
+                        {
+                            min = entropy + noise;
+                            argmin = node;
+                        }
                     }
                 }
-            }
 
-            result = argmin;
+                result = argmin;
+            }
         }
-    }
     
-    [BurstCompile]
-    private struct Observe_Job : IJob
-    {
-        [ReadOnly] public int node;
-        
-        [ReadOnly] public int nbPatterns;
-        [ReadOnly] public NativeArray<bool> wave;
-        [ReadOnly] public NativeArray<double> weights;
-        
-        [ReadOnly] public Random random;
-
-        public NativeArray<double> distribution;
-
-        public void Execute()
+        [BurstCompile]
+        private struct Observe_Job : IJob
         {
-            // Choose an element according to the pattern distribution
-            distribution = new NativeArray<double>(nbPatterns, Allocator.TempJob);
+            [ReadOnly] public int node;
+        
+            [ReadOnly] public int nbPatterns;
+            [ReadOnly] public NativeArray<bool> wave;
+            [ReadOnly] public NativeArray<double> weights;
+        
+            [ReadOnly] public Random random;
+
+            public NativeArray<double> distribution;
+
+            public void Execute()
+            {
+                // Choose an element according to the pattern distribution
+                distribution = new NativeArray<double>(nbPatterns, Allocator.TempJob);
             
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
-            {
-                distribution[pattern] = wave[node * nbPatterns + pattern] ? weights[pattern] : 0.0;
-            }
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                {
+                    distribution[pattern] = wave[node * nbPatterns + pattern] ? weights[pattern] : 0.0;
+                }
 
-            int r = RandomFromDistribution(random.NextDouble());
-            for (int pattern = 0; pattern < nbPatterns; pattern++)
-                if (wave[node * nbPatterns + pattern] != (pattern == r))
-                    Ban(node, pattern);
+                int r = RandomFromDistribution(random.NextDouble());
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                    if (wave[node * nbPatterns + pattern] != (pattern == r))
+                        Ban(node, pattern);
+            }
+        
+            private void Ban(int node, int pattern) {}
+        
+            public int RandomFromDistribution(double threshold)
+            {
+                Extensions.GetRef(ref distribution, out var distributionRef);
+                double sum = Extensions.SumDoubles(ref distributionRef);
+                for (int i = 0; i < distribution.Length; i++)
+                {
+                    distribution[i] /= sum;
+                }
+        
+                double x = 0;
+        
+                for (int pattern = 0; pattern < distribution.Length; pattern++)
+                {
+                    x += distribution[pattern];
+                    if (threshold <= x) return pattern;
+                }
+        
+                return 0;
+            }
         }
-        
-        private void Ban(int node, int pattern) {}
-        
-        public int RandomFromDistribution(double threshold)
+
+        [BurstCompile]
+        private struct Propagate_Job : IJobParallelFor
         {
-            Extensions.GetRef(ref distribution, out var distributionRef);
-            double sum = Extensions.SumDoubles(ref distributionRef);
-            for (int i = 0; i < distribution.Length; i++)
-            {
-                distribution[i] /= sum;
-            }
-        
-            double x = 0;
-        
-            for (int pattern = 0; pattern < distribution.Length; pattern++)
-            {
-                x += distribution[pattern];
-                if (threshold <= x) return pattern;
-            }
-        
-            return 0;
-        }
-    }
+            [ReadOnly] public int nbPatterns;
+            [ReadOnly] public int width, height;
+            [ReadOnly] public bool isPeriodic;
+            [ReadOnly] public int patternSize;
 
-    [BurstCompile]
-    private struct Propagate_Job : IJobParallelFor
-    {
-        [ReadOnly] public int nbPatterns;
-        [ReadOnly] public int width, height;
-        [ReadOnly] public bool isPeriodic;
-        [ReadOnly] public int patternSize;
-
-        public bool isPossible;
+            public bool isPossible;
         
-        /* Maps the index of execute to the actual node index of that thread. */
-        [ReadOnly] public NativeArray<int> openWorkNodes;
+            /* Maps the index of execute to the actual node index of that thread. */
+            [ReadOnly] public NativeArray<int> openWorkNodes;
 
-        /* Wave data, wave[node * nbPatterns + pattern] */
-        public NativeArray<bool> wave;
+            /* Wave data, wave[node * nbPatterns + pattern] */
+            public NativeArray<bool> wave;
 
-        /*
+            /*
          Which patterns can be placed in which direction of the current pattern
          propagator[pattern * 4 + direction] : int[] possibilities
          */
-        [ReadOnly] public NativeArray<Propagator> propagator;
+            [ReadOnly] public NativeArray<Propagator> propagator;
 
-        public NativeArray<double> weights;
+            public NativeArray<double> weights;
         
-        public NativeArray<int> numPossiblePatterns;
-        public NativeArray<double> distribution, weightLogWeights, sumsOfWeights, sumsOfWeightLogWeights, entropies;
+            public NativeArray<int> numPossiblePatterns;
+            public NativeArray<double> distribution, weightLogWeights, sumsOfWeights, sumsOfWeightLogWeights, entropies;
 
-        public NativeHashSet<int> openNodes;
+            public NativeHashSet<int> openNodes;
 
-        public void Execute(int index)
-        {
-            int node = openWorkNodes[index];
-            int2 nodeCoord = new int2(node / width, node % width);
-
-            for (int direction = 0; direction < 4; direction++)
+            public void Execute(int index)
             {
-                /* Generate neighbour coordinate */ 
-                int x2 = nodeCoord.x + Directions.DirectionsX[direction];
-                int y2 = nodeCoord.y + Directions.DirectionsX[direction];
+                int node = openWorkNodes[index];
+                int2 nodeCoord = new int2(node / width, node % width);
 
-                if (isPeriodic)
+                for (int direction = 0; direction < 4; direction++)
                 {
-                    x2 = (x2 + width) % width;
-                    y2 = (y2 + height) % height;
-                }
-                else if (!isPeriodic && (x2 < 0
-                                          || y2 < 0
-                                          || x2 >= width
-                                          || y2 >= height))
-                {
-                    continue;
-                }
+                    /* Generate neighbour coordinate */ 
+                    int x2 = nodeCoord.x + Directions.DirectionsX[direction];
+                    int y2 = nodeCoord.y + Directions.DirectionsX[direction];
 
-                int node2 = y2 * width + x2;
+                    if (isPeriodic)
+                    {
+                        x2 = (x2 + width) % width;
+                        y2 = (y2 + height) % height;
+                    }
+                    else if (!isPeriodic && (x2 < 0
+                                             || y2 < 0
+                                             || x2 >= width
+                                             || y2 >= height))
+                    {
+                        continue;
+                    }
 
-                /*
+                    int node2 = y2 * width + x2;
+
+                    /*
                  * Go over all still possible patterns in the current node and check if the are compatible
                  * with the still possible patterns of the other node.
                  */
-                for (int possibleNodePattern = 0; possibleNodePattern < nbPatterns; possibleNodePattern++)
-                {
-                    /* Go over each pattern of the active node and check if they are still active. */
-                    if (!wave[node * nbPatterns + possibleNodePattern] == true) continue;
-                    /*
+                    for (int possibleNodePattern = 0; possibleNodePattern < nbPatterns; possibleNodePattern++)
+                    {
+                        /* Go over each pattern of the active node and check if they are still active. */
+                        if (!wave[node * nbPatterns + possibleNodePattern] == true) continue;
+                        /*
                      * Go over all possible patterns of the other cell and check if any of them are compatible
                      * with the possibleNodePattern
                      */
-                    bool anyPossible = false;
-                    for (int compatible_pattern = 0; compatible_pattern < nbPatterns; compatible_pattern++)
-                    {
-                        if (wave[node2 * nbPatterns + compatible_pattern] == true)
+                        bool anyPossible = false;
+                        for (int compatible_pattern = 0; compatible_pattern < nbPatterns; compatible_pattern++)
                         {
-                            if (GetPropagatorValue(propagator[GetPropagatorIndex(possibleNodePattern, compatible_pattern, nbPatterns)], direction) == true)
+                            if (wave[node2 * nbPatterns + compatible_pattern] == true)
                             {
-                                anyPossible = true;
-                                break;
+                                if (GetPropagatorValue(propagator[GetPropagatorIndex(possibleNodePattern, compatible_pattern, nbPatterns)], direction) == true)
+                                {
+                                    anyPossible = true;
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    /* If there were no compatible patterns found Ban the pattern. */
-                    if (!anyPossible)
+                        /* If there were no compatible patterns found Ban the pattern. */
+                        if (!anyPossible)
+                        {
+                            Ban(node, nodeCoord, possibleNodePattern);
+                        }
+                    }
+                }
+            }
+
+            private void Ban(int node, int2 nodeCoord, int pattern)
+            {
+                wave[node * nbPatterns + pattern] = false;
+
+                numPossiblePatterns[node] -= 1;
+                sumsOfWeights[node] -= weights[pattern];
+                sumsOfWeightLogWeights[node] -= weightLogWeights[pattern];
+
+                double sum = sumsOfWeights[node];
+                entropies[node] = math.log(sum) - sumsOfWeightLogWeights[node] / sum;
+                isPossible = numPossiblePatterns[node] > 0;
+
+                if (numPossiblePatterns[node] <= 0)
+                {
+                    isPossible = false;
+                }
+
+                /* Mark the neighbouring nodes for collapse and update info */
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    /* Generate neighbour coordinate */
+                    int x2 = nodeCoord.x + Directions.DirectionsX[direction];
+                    int y2 = nodeCoord.y + Directions.DirectionsY[direction];
+
+                    if (isPeriodic)
                     {
-                        Ban(node, nodeCoord, possibleNodePattern);
+                        x2 = (x2 + width) % width;
+                        y2 = (y2 + height) % height;
                     }
+                    else if (!isPeriodic && (x2 < 0
+                                             || y2 < 0
+                                             || x2 + patternSize >= width
+                                             || y2 + patternSize >= height))
+                    {
+                        continue;
+                    }
+
+                    /* Add neighbour to hash set of pen neighbours. */
+                    int node2 = y2 * width + x2;
+                    openNodes.Add(node2);
                 }
             }
         }
 
-        private void Ban(int node, int2 nodeCoord, int pattern)
+    
+    
+        public override void Ban(int node, int pattern)
         {
-            wave[node * nbPatterns + pattern] = false;
-
-            numPossiblePatterns[node] -= 1;
-            sumsOfWeights[node] -= weights[pattern];
-            sumsOfWeightLogWeights[node] -= weightLogWeights[pattern];
-
-            double sum = sumsOfWeights[node];
-            entropies[node] = math.log(sum) - sumsOfWeightLogWeights[node] / sum;
-            isPossible = numPossiblePatterns[node] > 0;
-
-            if (numPossiblePatterns[node] <= 0)
-            {
-                isPossible = false;
-            }
-
-            /* Mark the neighbouring nodes for collapse and update info */
-            for (int direction = 0; direction < 4; direction++)
-            {
-                /* Generate neighbour coordinate */
-                int x2 = nodeCoord.x + Directions.DirectionsX[direction];
-                int y2 = nodeCoord.y + Directions.DirectionsY[direction];
-
-                if (isPeriodic)
-                {
-                    x2 = (x2 + width) % width;
-                    y2 = (y2 + height) % height;
-                }
-                else if (!isPeriodic && (x2 < 0
-                                         || y2 < 0
-                                         || x2 + patternSize >= width
-                                         || y2 + patternSize >= height))
-                {
-                    continue;
-                }
-
-                /* Add neighbour to hash set of pen neighbours. */
-                int node2 = y2 * width + x2;
-                openNodes.Add(node2);
-            }
+            throw new System.NotImplementedException();
         }
-    }
 
-    
-    
-    public override void Ban(int node, int pattern)
-    {
-        throw new System.NotImplementedException();
+        public void Dispose()
+        {
+            wave.Dispose();
+            weighting.Dispose();
+            memoisation.Dispose();
+        }
     }
 }

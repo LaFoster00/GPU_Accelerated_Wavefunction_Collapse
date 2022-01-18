@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Models.CPU_Model;
+using Models.GPU_Model;
 using Unity.Mathematics;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -10,8 +12,11 @@ namespace WFC.Tiling
 {
     public enum Solver
     {
-        CPU,
-        GPU
+        CPU_Sequential,
+        CPU_Parallel,
+        GPU_Naive,
+        GPU_Granular,
+        GPU_ComputeBuffer
     }
 
     //[ExecuteInEditMode]
@@ -78,10 +83,19 @@ namespace WFC.Tiling
             Model model;
             switch (solver)
             {
-                case Solver.CPU:
+                case Solver.CPU_Sequential:
                     model = new CPU_Model_Sequential(width, height, 1, periodic);
                     break;
-                case Solver.GPU:
+                case Solver.CPU_Parallel:
+                    model = new CPU_Model_BurstJob(width, height, 1, periodic);
+                    break;
+                case Solver.GPU_Naive:
+                    model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
+                    break;
+                case Solver.GPU_Granular:
+                    model = new GPU_Model_Granular(observerShader, propagatorShader, banShader, width, height, 1, periodic);
+                    break;
+                case Solver.GPU_ComputeBuffer:
                 default:
                     model = new GPU_Model_ComputeBuffer(observerShader, propagatorShader, banShader, clearOutBuffersShader, resetOpenNodesShader, propagationIterations, totalObservePropagateIterations,width, height, 1, periodic);
                     break;
@@ -107,9 +121,16 @@ namespace WFC.Tiling
             
             switch (solver)
             {
-                case Solver.GPU:
+                case Solver.CPU_Parallel:
+                    if (model is CPU_Model_BurstJob burstModel)
+                        burstModel.Dispose();
+                    break;
+                case Solver.GPU_Naive:
+                case Solver.GPU_Granular:
+                case Solver.GPU_ComputeBuffer:
                     if (model is GPU_Model gpuModel)
                     {
+                        //Free native resources
                         gpuModel.Dispose();
                     }
                     break;
@@ -193,7 +214,7 @@ namespace WFC.Tiling
                         yellowFrameTexture);
                 }
 
-                if (solver == Solver.CPU)
+                if (solver == Solver.CPU_Sequential)
                 {
                     GUI.DrawTexture(
                         Rect.MinMaxRect(
