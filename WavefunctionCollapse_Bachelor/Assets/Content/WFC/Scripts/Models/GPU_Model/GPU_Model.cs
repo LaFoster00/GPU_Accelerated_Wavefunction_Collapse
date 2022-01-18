@@ -268,7 +268,7 @@ namespace Models.GPU_Model
             ClearOutBuffers();
         }
 
-        protected virtual void ClearOutBuffers()
+        protected void ClearOutBuffers()
         {
             outCollapseBuf.SetData(collapseClearData);
         }
@@ -276,7 +276,7 @@ namespace Models.GPU_Model
         /// <summary>
         /// This should be called after the algorithm finishes as it will be the starting point for following runs!
         /// </summary>
-        protected virtual void ClearInBuffers()
+        protected void ClearInBuffers()
         {
             inCollapseBuf.SetData(collapseClearData);
         }
@@ -378,6 +378,8 @@ namespace Models.GPU_Model
             propagatorBuf?.Release();
             inCollapseBuf?.Release();
             outCollapseBuf?.Release();
+            banParamsBuf?.Release();
+            observerParamsBuf?.Release();
         }
     }
 }

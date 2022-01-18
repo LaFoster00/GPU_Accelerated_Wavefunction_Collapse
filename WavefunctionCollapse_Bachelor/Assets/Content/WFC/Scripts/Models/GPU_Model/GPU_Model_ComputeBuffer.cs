@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Models.GPU_Model
 {
@@ -12,6 +13,9 @@ namespace Models.GPU_Model
         private readonly int _propagationIterations;
         private readonly int _totalIterations;
 
+        private Action<CommandBuffer> scheduleObservationIteration;
+        private Action<CommandBuffer> schedulePropagationDoubleIteration;
+
         public GPU_Model_ComputeBuffer(
             ComputeShader observerShader,
             ComputeShader propagatorShader,
@@ -19,13 +23,46 @@ namespace Models.GPU_Model
             ComputeShader clearOutBuffersShader,
             ComputeShader resetOpenNodesShader,
             int propagationIterations, int totalIterations,
-            int width, int height, int patternSize, bool periodic) : base(observerShader, propagatorShader, banShader, width, height, patternSize, periodic)
+            int width, int height, int patternSize, bool periodic) : base(observerShader, propagatorShader, banShader,
+            width, height, patternSize, periodic)
         {
             _clearOutBuffersShader = clearOutBuffersShader;
             _resetOpenNodesShader = resetOpenNodesShader;
-        
+
             _propagationIterations = propagationIterations;
             _totalIterations = totalIterations;
+
+            /*
+             *  Prepare command buffer creation for later
+             */
+            scheduleObservationIteration = (commandBuffer) =>
+            {
+                BindInOutBuffers(commandBuffer, true);
+                commandBuffer.DispatchCompute(observerShader, 0, 1, 1, 1);
+                BindInOutBuffers(commandBuffer, true);
+            };
+
+            schedulePropagationDoubleIteration = (commandBuffer) =>
+            {
+                //Fill command buffer two times so that the in- and out-buffers are the same as before (double swap)
+                for (int i = 0; i < 2; i++)
+                {
+                    commandBuffer.DispatchCompute(_resetOpenNodesShader,
+                        0,
+                        1,
+                        1,
+                        1);
+
+                    commandBuffer.DispatchCompute(propagatorShader,
+                        0,
+                        (int) Math.Ceiling(width / 4.0f),
+                        (int) Math.Ceiling(height / 4.0f),
+                        1);
+
+                    BindInOutBuffers(commandBuffer, true);
+                    ClearOutBuffers(commandBuffer);
+                }
+            };
         }
 
         ~GPU_Model_ComputeBuffer()
@@ -41,6 +78,26 @@ namespace Models.GPU_Model
             _clearOutBuffersShader.SetBuffer(0, "out_collapse", outCollapseBuf);
         }
 
+        private void BindInOutBuffers(CommandBuffer commandBuffer, bool swap)
+        {
+            if (swap)
+            {
+                Swap();
+            }
+            
+            commandBuffer.SetComputeBufferParam(propagatorShader, 0, "in_collapse", inCollapseBuf);
+            commandBuffer.SetComputeBufferParam(propagatorShader, 0, "out_collapse", outCollapseBuf);
+            
+            commandBuffer.SetComputeBufferParam(observerShader, 0, "in_collapse", inCollapseBuf);
+            commandBuffer.SetComputeBufferParam(observerShader, 0, "out_collapse", outCollapseBuf);
+            
+            commandBuffer.SetComputeBufferParam(banShader, 0, "in_collapse", inCollapseBuf);
+            commandBuffer.SetComputeBufferParam(banShader, 0, "out_collapse", outCollapseBuf);
+            
+            commandBuffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "in_collapse", inCollapseBuf);
+            commandBuffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "out_collapse", outCollapseBuf);
+        }
+
         protected override void BindResources()
         {
             base.BindResources();
@@ -54,9 +111,9 @@ namespace Models.GPU_Model
             BindInOutBuffers(false);
         }
 
-        protected override void ClearOutBuffers()
+        private void ClearOutBuffers(CommandBuffer commandBuffer)
         {
-            _clearOutBuffersShader.Dispatch(
+            commandBuffer.DispatchCompute(_clearOutBuffersShader,
                 0,
                 (int) Math.Ceiling(width / 32.0f),
                 (int) Math.Ceiling(height / 32.0f),
@@ -130,57 +187,44 @@ namespace Models.GPU_Model
                 }
             };
             _resultBuf.SetData(resultBufData);
-        
-
-            #region Fill PropagationBuffer
-        
-            Action propagation = () =>
-            {
-                // Resets OpenNodes to false.
-                _resetOpenNodesShader.Dispatch(0,
-                    1,
-                    1,
-                    1);
-            
-                // Propagates node collapse, will set OpenNodes to true if it collapses further nodes
-                propagatorShader.Dispatch(
-                    0, 
-                    (int) Math.Ceiling(width / 4.0f),
-                    (int) Math.Ceiling(height / 4.0f),
-                    1);
-            
-                /* Swap the in out buffers. */
-                BindInOutBuffers(true);
-            
-                /* Clear collapse out buffers for clean input in next iteration. */
-                ClearOutBuffers();
-            };
-        
-            #endregion
 
             while (!finished && isPossible)
             {
-                for (int i = 0; i < _totalIterations; i++)
+                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
                 {
-                    BindInOutBuffers(true);
-                    observerShader.Dispatch(0, 1, 1, 1);
-                    BindInOutBuffers(true);
-                
-                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
+                    for (int i = 0; i < _totalIterations; i++)
                     {
-                        yield return DebugDrawCurrentState();
-                    }
-                
-                    for (int y = 0; y < _propagationIterations; y++)
-                    {
-                        propagation.Invoke();
-                    
-                        if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
                         {
+                            CommandBuffer observationBuffer = new CommandBuffer();
+                            scheduleObservationIteration(observationBuffer);
+                            Graphics.ExecuteCommandBuffer(observationBuffer);
+                        }
+
+                        yield return DebugDrawCurrentState();
+
+                        for (int y = 0; y < _propagationIterations; y++)
+                        {
+                            CommandBuffer propagationBuffer = new CommandBuffer();
+                            schedulePropagationDoubleIteration(propagationBuffer);
+                            Graphics.ExecuteCommandBuffer(propagationBuffer);
                             yield return DebugDrawCurrentState();
                         }
                     }
                 }
+                else
+                {
+                    CommandBuffer wholeStepIterationBuffer = new CommandBuffer();
+                    for (int i = 0; i < _totalIterations; i++)
+                    {
+                        scheduleObservationIteration(wholeStepIterationBuffer);
+                        for (int y = 0; y < _propagationIterations; y++)
+                        {
+                            schedulePropagationDoubleIteration(wholeStepIterationBuffer);
+                        }
+                    }
+                    Graphics.ExecuteCommandBuffer(wholeStepIterationBuffer);
+                }
+
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
                 {
                     yield return DebugDrawCurrentState();
