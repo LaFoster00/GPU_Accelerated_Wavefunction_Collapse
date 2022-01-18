@@ -56,7 +56,8 @@ int next_unobserved_node()
 {
     float min = FLOAT_MAX;
     int argmin = -1;
-    for (uint node = 0; node < (uint)(height * width); node++)
+    const int wave_size = (uint)(height * width);
+    for (uint node = 0; node < wave_size; node++)
     {
         if (!is_periodic && (node % width + pattern_size > width || node / width + pattern_size > height)) continue;
         const int remaining_values = NUM_POSSIBLE_PATTERNS(node);

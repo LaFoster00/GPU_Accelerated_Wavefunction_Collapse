@@ -12,7 +12,9 @@ void Ban(uint node, uint2 nodeCoord, int pattern)
     SUMS_OF_WEIGHT_LOG_WEIGHTS(node) -= LOG_WEIGHT(pattern);
 
     const float sum = SUMS_OF_WEIGHTS(node);
-    ENTROPIES(node) = log(sum) - SUMS_OF_WEIGHT_LOG_WEIGHTS(node) / sum;
+    const float sumLog = log(sum);
+    const float sumsLogDivideSum = SUMS_OF_WEIGHT_LOG_WEIGHTS(node) / sum;
+    //ENTROPIES(node) = sumLog - sumsLogDivideSum;
     if (NUM_POSSIBLE_PATTERNS(node) <= 0)
     {
         IS_POSSIBLE = FALSE;

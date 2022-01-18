@@ -27,7 +27,11 @@ namespace Models.GPU_Model
         {
             public float weight;
             public float logWeight;
+            public float distribution;
+            public float padding;
         }
+
+        private Weighting[] _weightCopyBuffer;
         private ComputeBuffer _weightBuf;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -90,7 +94,6 @@ namespace Models.GPU_Model
             _memoisationCopyBuffer = new Memoisation[width * height];
 
             _inCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
-
             _outCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
             _collapseClearData = new Collapse[height * width];
             _collapseCopyBuffer = new Collapse[height * width];
@@ -105,10 +108,10 @@ namespace Models.GPU_Model
 
             _waveBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
             _waveCopyBuffer = new uint[width * height * nbPatterns];
-
+            
             _propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(uint) * 4);
-
-            _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 2);
+            _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 4);
+            _weightCopyBuffer = new Weighting[weights.Length];
 
             ClearInBuffers();
             ClearOutBuffers();
@@ -197,14 +200,13 @@ namespace Models.GPU_Model
 
             /* Clear const weight data. */
             {
-                Weighting[] weightBufData = new Weighting[weights.Length];
                 for (int pattern = 0; pattern < weights.Length; pattern++)
                 {
-                    weightBufData[pattern].weight = (float)weights[pattern];
-                    weightBufData[pattern].logWeight = (float)weightLogWeights[pattern];
+                    _weightCopyBuffer[pattern].weight = (float) weights[pattern];
+                    _weightCopyBuffer[pattern].logWeight = (float) weightLogWeights[pattern];
                 }
 
-                _weightBuf.SetData(weightBufData);
+                _weightBuf.SetData(_weightCopyBuffer);
             }
 
             /* Clear memoisation data. */
@@ -345,30 +347,7 @@ namespace Models.GPU_Model
                 }
             }
         }
-
-        private int NextUnobservedNode(Random random)
-        {
-            double min = Double.MaxValue;
-            int argmin = -1;
-            for (int node = 0; node < wave.Length; node++)
-            {
-                if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
-                int remainingValues = numPossiblePatterns[node];
-                double entropy = entropies[node];
-                if (remainingValues > 1 && entropy <= min)
-                {
-                    double noise = 1E-6 * random.NextDouble();
-                    if (entropy + noise < min)
-                    {
-                        min = entropy + noise;
-                        argmin = node;
-                    }
-                }
-            }
-
-            return argmin;
-        }
-
+        
         private int observeCount = 0;
         protected override void Observe(int node, ref Random random)
         {
@@ -385,7 +364,6 @@ namespace Models.GPU_Model
             CopyGpuCollapseToCpu();
         }
 
-        //TODO: Check if accessing the PixelData over the span of multiple function calls causes problems https://docs.unity3d.com/2020.1/Documentation/ScriptReference/Texture2D.GetPixelData.html
         /// <summary>
         /// Call FillBanCopyBuffers() before using this function first time after a propagation iteration.
         /// This call will Ban a pattern from the specified node, but WONT upload those changes to the GPU.
@@ -495,10 +473,10 @@ namespace Models.GPU_Model
         }
 
         /*
-     Transform the wave to a valid output (a 2d array of patterns that aren't in
-     contradiction). This function should be used only when all cell of the wave
-     are defined.
-    */
+         Transform the wave to a valid output (a 2d array of patterns that aren't in
+         contradiction). This function should be used only when all cell of the wave
+         are defined.
+        */
         private int[,] WaveToOutput()
         {
             CopyGpuWaveToCpu();

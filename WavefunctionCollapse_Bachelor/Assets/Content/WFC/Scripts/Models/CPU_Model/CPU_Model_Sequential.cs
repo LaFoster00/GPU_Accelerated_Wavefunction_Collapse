@@ -170,7 +170,9 @@ namespace Models.CPU_Model
             sumsOfWeightLogWeights[node] -= weightLogWeights[pattern];
 
             double sum = sumsOfWeights[node];
-            entropies[node] = Math.Log(sum) - sumsOfWeightLogWeights[node] / sum;
+            double sumLog = Math.Log(sum);
+            double sumsLogDivideSum = sumsOfWeightLogWeights[node] / sum;
+            entropies[node] = sumLog - sumsLogDivideSum;
             isPossible = numPossiblePatterns[node] > 0;
             stack[stackSize] = (node, pattern);
             stackSize++;
@@ -220,7 +222,7 @@ namespace Models.CPU_Model
             }
         }
 
-        private int NextUnobservedNode(Random random)
+        protected int NextUnobservedNode(Random random)
         {
             double min = Double.MaxValue;
             int argmin = -1;

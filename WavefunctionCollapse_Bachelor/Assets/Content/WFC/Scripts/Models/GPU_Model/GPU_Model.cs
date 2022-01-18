@@ -18,9 +18,9 @@ namespace Models.GPU_Model
 
         protected uint[] waveCopyBuffer;
         /*
-    Actual wave result
-    wave(node, pattern)
-    */
+        Actual wave result
+        wave(node, pattern)
+        */
         protected ComputeBuffer waveBuf;
 
         protected struct Weighting
@@ -153,6 +153,8 @@ namespace Models.GPU_Model
     
         protected override void Init()
         {
+            base.Init();
+            
             waveCopyBuffer = new uint[width * height * nbPatterns];
             weightingCopyBuffer = new Weighting[nbPatterns];
 
