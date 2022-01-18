@@ -30,21 +30,17 @@ namespace Models.GPU_Model
             observerParamsCopyBuffer[0].randomState = seed;
             if (waveCopyBuffer == null) Init();
             Clear();
-
-            WFC_Objects objects = new WFC_Objects()
-            {
-                random = new Random(seed)
-            };
+            
         
             while (!result.finished)
             {
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
                 {
-                    Run_Internal(objects, result).MoveNext();
+                    Run_Internal(result).MoveNext();
                 }
                 else
                 {
-                    yield return Run_Internal(objects, result);
+                    yield return Run_Internal(result);
                 }
             }
         
@@ -70,7 +66,7 @@ namespace Models.GPU_Model
             (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
         }
     
-        private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
+        private IEnumerator Run_Internal(WFC_Result result)
         {
             Observe();
             if (openNodes)
@@ -81,7 +77,7 @@ namespace Models.GPU_Model
                     yield return DebugDrawCurrentState();
                 }
 
-                var propagation = Propagate(objects);
+                var propagation = Propagate();
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
                 {
                     propagation.MoveNext();
@@ -111,7 +107,7 @@ namespace Models.GPU_Model
         }
 
     
-        private IEnumerator Propagate(WFC_Objects objects)
+        private IEnumerator Propagate()
         {
             while (openNodes && isPossible)
             {
@@ -124,8 +120,8 @@ namespace Models.GPU_Model
             
                 propagatorShader.Dispatch(
                     0,
-                    (int) Math.Ceiling(width / 16.0f),
-                    (int) Math.Ceiling(height / 16.0f),
+                    (int) Math.Ceiling((float)width / PropagationThreadGroupSizeX),
+                    (int) Math.Ceiling((float)height / PropagationThreadGroupSizeY),
                     1);
 
                 /* Copy result of Compute operation back to CPU buffer. */

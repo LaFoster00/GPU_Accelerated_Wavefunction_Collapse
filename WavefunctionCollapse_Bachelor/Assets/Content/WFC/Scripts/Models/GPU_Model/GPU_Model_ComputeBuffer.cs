@@ -13,8 +13,8 @@ namespace Models.GPU_Model
         private readonly int _propagationIterations;
         private readonly int _totalIterations;
 
-        private Action<CommandBuffer> scheduleObservationIteration;
-        private Action<CommandBuffer> schedulePropagationDoubleIteration;
+        private readonly Action<CommandBuffer> scheduleObservationIteration;
+        private readonly Action<CommandBuffer> schedulePropagationDoubleIteration;
 
         public GPU_Model_ComputeBuffer(
             ComputeShader observerShader,
@@ -55,8 +55,8 @@ namespace Models.GPU_Model
 
                     commandBuffer.DispatchCompute(propagatorShader,
                         0,
-                        (int) Math.Ceiling(width / 4.0f),
-                        (int) Math.Ceiling(height / 4.0f),
+                        (int) Math.Ceiling((float)width / PropagationThreadGroupSizeX),
+                        (int) Math.Ceiling((float)height / PropagationThreadGroupSizeY),
                         1);
 
                     BindInOutBuffers(commandBuffer, true);
@@ -120,7 +120,7 @@ namespace Models.GPU_Model
                 1);
         }
 
-        private double _totalRunTime = 0;
+        private double _totalRunTime;
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
             double startTime = Time.realtimeSinceStartupAsDouble;
@@ -269,12 +269,6 @@ namespace Models.GPU_Model
         
             _resultBuf.GetData(_resultCopyBuf);
             (isPossible) = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            
         }
     }
 }

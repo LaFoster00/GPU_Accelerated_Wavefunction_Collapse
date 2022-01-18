@@ -323,8 +323,8 @@ namespace Models.GPU_Model
 
                 _propagatorShader.Dispatch(
                     0,
-                    (int)Math.Ceiling(width / 16.0f),
-                    (int)Math.Ceiling(height / 16.0f),
+                    (int)Math.Ceiling((float)width / PropagationThreadGroupSizeX),
+                    (int)Math.Ceiling((float)height / PropagationThreadGroupSizeY),
                     1);
 
                 /* Copy result of Compute operation back to CPU buffer. */
@@ -369,10 +369,10 @@ namespace Models.GPU_Model
             return argmin;
         }
 
-        private int oberseCount = 0;
+        private int observeCount = 0;
         protected override void Observe(int node, ref Random random)
         {
-            Debug.Log($"Observe : {oberseCount++}");
+            Debug.Log($"Observe : {observeCount++}");
             FillBanCopyBuffers();
             base.Observe(node, ref random);
             ApplyBanCopyBuffers();

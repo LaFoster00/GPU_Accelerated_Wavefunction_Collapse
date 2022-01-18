@@ -11,19 +11,19 @@ namespace Models.CPU_Model
     {
         /* Wave data, wave[node][pattern] */
         protected bool[][] wave;
-    
+
         /*
-     Which patterns can be placed in which direction of the current pattern
-     propagator[pattern][direction] : int[] possibilities
-     */
+         * Which patterns can be placed in which direction of the current pattern
+         * propagator[pattern][direction] : int[] possibilities
+         */
         protected int[][][] propagator;
-    
+
         /* Which cells are fully observed. */
         protected int[] observed;
 
         protected int[] numPossiblePatterns;
         protected double[] distribution, weightLogWeights, sumsOfWeights, sumsOfWeightLogWeights, entropies;
-    
+
         /* int[wave.length][nbPatterns][4 : direction] */
         protected int[][][] compatible;
 
@@ -36,7 +36,8 @@ namespace Models.CPU_Model
         {
         }
 
-        public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
+        public override void SetData(int nbPatterns, double[] weights,
+            (bool[][][] dense, int[][][] standard) propagator,
             PropagatorSettings propagatorSettings)
         {
             base.SetData(nbPatterns, weights, propagator, propagatorSettings);
@@ -62,14 +63,14 @@ namespace Models.CPU_Model
                 entropies[node] = startingEntropy;
                 observed[node] = -1;
             });
-        
+
             base.Clear();
         }
 
         protected override void Init()
         {
             base.Init();
-        
+
             wave = new bool[width * height][];
             compatible = new int[wave.Length][][];
             for (int i = 0; i < wave.Length; i++)
@@ -174,7 +175,7 @@ namespace Models.CPU_Model
             stack[stackSize] = (node, pattern);
             stackSize++;
         }
-    
+
         protected virtual void Observe(int node, ref Random random)
         {
             // Choose an element according to the pattern distribution
@@ -305,10 +306,10 @@ namespace Models.CPU_Model
         }
 
         /*
-     Transform the wave to a valid output (a 2d array of patterns that aren't in
-     contradiction). This function should be used only when all cell of the wave
-     are defined.
-    */
+         Transform the wave to a valid output (a 2d array of patterns that aren't in
+         contradiction). This function should be used only when all cell of the wave
+         are defined.
+         */
         private int[,] WaveToOutput()
         {
             int[,] outputPatterns = new int[height, width];

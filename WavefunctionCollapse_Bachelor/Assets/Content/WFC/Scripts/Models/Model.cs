@@ -5,6 +5,8 @@ namespace WFC
 {
     public abstract class Model
     {
+        public static int PropagationThreadGroupSizeX = 4, PropagationThreadGroupSizeY = 4;
+        
         public readonly int width, height, patternSize;
         protected int nbPatterns, nbNodes;
         protected bool periodic;
