@@ -87,7 +87,7 @@ namespace WFC.Tiling
                     model = new CPU_Model_Sequential(width, height, 1, periodic);
                     break;
                 case Solver.CPU_Parallel:
-                    model = new CPU_Model_BurstJob(width, height, 1, periodic);
+                    model = new CPU_Model_Parallel(width, height, 1, periodic);
                     break;
                 case Solver.GPU_Naive:
                     model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
@@ -122,7 +122,7 @@ namespace WFC.Tiling
             switch (solver)
             {
                 case Solver.CPU_Parallel:
-                    if (model is CPU_Model_BurstJob burstModel)
+                    if (model is CPU_Model_Parallel burstModel)
                         burstModel.Dispose();
                     break;
                 case Solver.GPU_Naive:

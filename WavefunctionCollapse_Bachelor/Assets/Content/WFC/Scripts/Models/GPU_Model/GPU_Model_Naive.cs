@@ -18,12 +18,11 @@ namespace Models.GPU_Model
 
         private uint[] _waveCopyBuffer;
         /*
-    Actual wave result
-    wave(node, pattern)
-    */
+         Actual wave result
+         wave(node, pattern)
+         */
         private ComputeBuffer _waveBuf;
 
-        [StructLayout(LayoutKind.Sequential)]
         struct Weighting
         {
             public float weight;
@@ -61,7 +60,6 @@ namespace Models.GPU_Model
         private Propagator[] _propagatorCopyBuffer;
         private ComputeBuffer _propagatorBuf;
 
-        [StructLayout(LayoutKind.Sequential)]
         struct Result
         {
             public uint isPossible;
@@ -238,11 +236,6 @@ namespace Models.GPU_Model
         private void ClearInBuffers()
         {
             _inCollapseBuf.SetData(_collapseClearData);
-        }
-
-        private class WFC_Objects
-        {
-            public Random random;
         }
 
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
@@ -472,33 +465,6 @@ namespace Models.GPU_Model
         private void CopyGpuCollapseToCpu()
         {
             _inCollapseBuf.GetData(_collapseCopyBuffer);
-        }
-
-        /*
-         Transform the wave to a valid output (a 2d array of patterns that aren't in
-         contradiction). This function should be used only when all cell of the wave
-         are defined.
-        */
-        private int[,] WaveToOutput()
-        {
-            CopyGpuWaveToCpu();
-            int[,] outputPatterns = new int[height, width];
-            Parallel.For(0, wave.Length, node =>
-            {
-                for (int pattern = 0; pattern < nbPatterns; pattern++)
-                {
-                    if (wave[node][pattern])
-                    {
-                        observed[node] = pattern;
-                        int x = node % width;
-                        int y = node / width;
-                        outputPatterns[y, x] = observed[node];
-                        break;
-                    }
-                }
-            });
-
-            return outputPatterns;
         }
 
         private IEnumerator DebugDrawCurrentState()

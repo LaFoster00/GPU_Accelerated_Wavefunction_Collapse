@@ -7,7 +7,7 @@ using Random = Unity.Mathematics.Random;
 
 namespace Models.CPU_Model
 {
-    public class CPU_Model_Sequential : global::CPU_Model
+    public class CPU_Model_Sequential : CPU_Model
     {
         /* Wave data, wave[node][pattern] */
         protected bool[][] wave;
@@ -17,9 +17,6 @@ namespace Models.CPU_Model
          * propagator[pattern][direction] : int[] possibilities
          */
         protected int[][][] propagator;
-
-        /* Which cells are fully observed. */
-        protected int[] observed;
 
         protected int[] numPossiblePatterns;
         protected double[] distribution, weightLogWeights, sumsOfWeights, sumsOfWeightLogWeights, entropies;
@@ -61,7 +58,6 @@ namespace Models.CPU_Model
                 sumsOfWeights[node] = totalSumOfWeights;
                 sumsOfWeightLogWeights[node] = totalSumOfWeightLogWeights;
                 entropies[node] = startingEntropy;
-                observed[node] = -1;
             });
 
             base.Clear();
@@ -82,7 +78,6 @@ namespace Models.CPU_Model
             }
 
             distribution = new double[nbPatterns];
-            observed = new int[nbNodes];
 
             weightLogWeights = new double[nbPatterns];
 
@@ -105,17 +100,12 @@ namespace Models.CPU_Model
             stepInfo.propagatingCells = stack;
         }
 
-        private class WFC_Objects
-        {
-            public Random random;
-        }
-
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
             if (wave == null) Init();
 
             Clear();
-            WFC_Objects objects = new WFC_Objects()
+            WFC_Objects objects = new WFC_Objects
             {
                 random = new Random(seed),
             };
@@ -312,8 +302,9 @@ namespace Models.CPU_Model
          contradiction). This function should be used only when all cell of the wave
          are defined.
          */
-        private int[,] WaveToOutput()
+        protected int[,] WaveToOutput()
         {
+            int[] observed = new int[nbNodes];
             int[,] outputPatterns = new int[height, width];
             Parallel.For(0, wave.Length, node =>
             {
