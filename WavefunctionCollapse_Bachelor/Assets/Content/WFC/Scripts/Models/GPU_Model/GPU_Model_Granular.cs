@@ -28,10 +28,11 @@ namespace Models.GPU_Model
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
             observerParamsCopyBuffer[0].randomState = seed;
+            observerParamsBuf.SetData(observerParamsCopyBuffer);
+            
             if (waveCopyBuffer == null) Init();
             Clear();
             
-        
             while (!result.finished)
             {
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
@@ -51,12 +52,11 @@ namespace Models.GPU_Model
         private void Observe()
         {
             /*
-         * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
-         * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
-         */
+             * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
+             * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
+             */
             BindInOutBuffers(true);
-        
-            observerParamsBuf.SetData(observerParamsCopyBuffer);
+            
             observerShader.Dispatch(0, 1, 1, 1);
         
             /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
