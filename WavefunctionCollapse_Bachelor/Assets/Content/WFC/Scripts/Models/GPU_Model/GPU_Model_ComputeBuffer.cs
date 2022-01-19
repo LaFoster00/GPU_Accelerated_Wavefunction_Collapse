@@ -190,7 +190,7 @@ namespace Models.GPU_Model
 
             while (!finished && isPossible)
             {
-                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
+                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
                 {
                     for (int i = 0; i < _totalIterations; i++)
                     {
@@ -225,7 +225,7 @@ namespace Models.GPU_Model
                     Graphics.ExecuteCommandBuffer(wholeStepIterationBuffer);
                 }
 
-                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
+                if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnSet)
                 {
                     yield return DebugDrawCurrentState();
                 }

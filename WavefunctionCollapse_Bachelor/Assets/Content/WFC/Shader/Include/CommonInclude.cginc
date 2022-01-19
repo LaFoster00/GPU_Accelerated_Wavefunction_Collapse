@@ -23,7 +23,7 @@ struct Weighting
 };
 RWStructuredBuffer<Weighting> weighting;
 #define WEIGHT(pattern) weighting[pattern].weight
-#define LOG_WEIGHT(pattern) weighting[pattern].weight
+#define LOG_WEIGHT(pattern) weighting[pattern].log_weight
 #define DISTRIBUTION(pattern) weighting[pattern].distribution
 
 

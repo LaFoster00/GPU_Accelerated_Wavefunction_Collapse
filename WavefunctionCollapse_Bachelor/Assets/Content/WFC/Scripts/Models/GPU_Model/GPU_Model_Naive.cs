@@ -23,6 +23,7 @@ namespace Models.GPU_Model
     */
         private ComputeBuffer _waveBuf;
 
+        [StructLayout(LayoutKind.Sequential)]
         struct Weighting
         {
             public float weight;
@@ -60,6 +61,7 @@ namespace Models.GPU_Model
         private Propagator[] _propagatorCopyBuffer;
         private ComputeBuffer _propagatorBuf;
 
+        [StructLayout(LayoutKind.Sequential)]
         struct Result
         {
             public uint isPossible;
