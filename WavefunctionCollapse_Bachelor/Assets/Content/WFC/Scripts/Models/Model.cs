@@ -9,7 +9,7 @@ namespace WFC
         
         public readonly int width, height, patternSize;
         protected int nbPatterns, nbNodes;
-        protected bool periodic;
+        protected readonly bool periodic;
         
         protected bool isPossible;
         

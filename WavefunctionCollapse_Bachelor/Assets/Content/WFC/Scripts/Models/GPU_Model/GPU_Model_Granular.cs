@@ -61,7 +61,7 @@ namespace Models.GPU_Model
         
             /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
             BindInOutBuffers(true);
-        
+
             _resultBuf.GetData(_resultCopyBuf);
             (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
         }
@@ -134,7 +134,7 @@ namespace Models.GPU_Model
                 /* Swap the in out buffers. */
                 BindInOutBuffers(true);
                 ClearOutBuffers();
-            
+
 
                 if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
                 {

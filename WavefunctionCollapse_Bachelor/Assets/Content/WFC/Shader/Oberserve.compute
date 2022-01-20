@@ -39,13 +39,13 @@ void observe(const int node, const uint2 node_coord)
 {
     for (int p1 = 0; p1 < nb_patterns; p1++)
     {
-        DISTRIBUTION(p1) = WAVE(node, p1) == TRUE ? WEIGHT(p1) : 0.0f;
+        DISTRIBUTION(p1) = WAVE_IN(node, p1) == TRUE ? WEIGHT(p1) : 0.0f;
     }
 
     const int r = random_from_distribution(weighting, nb_patterns, random_next_float());
     for (int p2 = 0; p2 < nb_patterns; p2++)
     {
-        if ((WAVE(node, p2) == TRUE) != (p2 == r))
+        if ((WAVE_IN(node, p2) == TRUE) != (p2 == r))
         {
             Ban(node, node_coord, p2);
         }

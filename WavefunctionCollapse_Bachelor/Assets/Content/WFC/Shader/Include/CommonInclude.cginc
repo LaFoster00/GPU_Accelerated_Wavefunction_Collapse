@@ -10,8 +10,11 @@ uniform int pattern_size;
 Actual wave result
 wave(node, pattern)
 */
-RWStructuredBuffer<uint> wave_data;
-#define WAVE(node, pattern) wave_data[node * nb_patterns + pattern]
+StructuredBuffer<uint> wave_in;
+#define WAVE_IN(node, pattern) wave_in[node * nb_patterns + pattern]
+
+RWStructuredBuffer<uint> wave_out;
+#define WAVE_OUT(node, pattern) wave_out[node * nb_patterns + pattern]
 
 
 struct Weighting

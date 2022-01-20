@@ -21,7 +21,8 @@ namespace Models.GPU_Model
         Actual wave result
         wave(node, pattern)
         */
-        protected ComputeBuffer waveBuf;
+        protected ComputeBuffer waveInBuf;
+        protected ComputeBuffer waveOutBuf;
 
         [StructLayout(LayoutKind.Sequential)]
         protected struct Weighting
@@ -132,7 +133,8 @@ namespace Models.GPU_Model
         {
             base.SetData(nbPatterns, weights, propagator, propagatorSettings);
         
-            waveBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
+            waveInBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
+            waveOutBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
             propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(uint) * 4);
             weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 4);
 
@@ -183,6 +185,7 @@ namespace Models.GPU_Model
         protected virtual void Swap()
         {
             USCSL.Extensions.Swap(ref inCollapseBuf, ref outCollapseBuf);
+            USCSL.Extensions.Swap(ref waveInBuf, ref waveOutBuf);
         }
         
         protected virtual void BindInOutBuffers(bool swap)
@@ -194,12 +197,18 @@ namespace Models.GPU_Model
 
             propagatorShader.SetBuffer(0, "in_collapse", inCollapseBuf);
             propagatorShader.SetBuffer(0, "out_collapse", outCollapseBuf);
+            propagatorShader.SetBuffer(0, "wave_in", waveInBuf);
+            propagatorShader.SetBuffer(0, "wave_out", waveOutBuf);
 
             observerShader.SetBuffer(0, "in_collapse", inCollapseBuf);
             observerShader.SetBuffer(0, "out_collapse", outCollapseBuf);
+            observerShader.SetBuffer(0, "wave_in", waveInBuf);
+            observerShader.SetBuffer(0, "wave_out", waveOutBuf);
         
             banShader.SetBuffer(0, "in_collapse", inCollapseBuf);
             banShader.SetBuffer(0, "out_collapse", outCollapseBuf);
+            banShader.SetBuffer(0, "wave_in", waveInBuf);
+            banShader.SetBuffer(0, "wave_out", waveOutBuf);
         }
     
         protected virtual void BindResources()
@@ -209,7 +218,8 @@ namespace Models.GPU_Model
             propagatorShader.SetInt("height", height);
             propagatorShader.SetBool("is_periodic", periodic);
         
-            propagatorShader.SetBuffer(0, "wave_data", waveBuf);
+            propagatorShader.SetBuffer(0, "wave_in", waveInBuf);
+            propagatorShader.SetBuffer(0, "wave_out", waveOutBuf);
             propagatorShader.SetBuffer(0, "weighting", weightBuf);
             propagatorShader.SetBuffer(0, "memoisation", memoisationBuf);
             propagatorShader.SetBuffer(0, "propagator", propagatorBuf);
@@ -220,7 +230,8 @@ namespace Models.GPU_Model
             observerShader.SetInt("height", height);
             observerShader.SetBool("is_periodic", periodic);
         
-            observerShader.SetBuffer(0, "wave_data", waveBuf);
+            observerShader.SetBuffer(0, "wave_in", waveInBuf);
+            observerShader.SetBuffer(0, "wave_out", waveOutBuf);
             observerShader.SetBuffer(0, "weighting", weightBuf);
             observerShader.SetBuffer(0, "memoisation", memoisationBuf);
             observerShader.SetBuffer(0, "propagator", propagatorBuf);
@@ -232,7 +243,8 @@ namespace Models.GPU_Model
             banShader.SetInt("height", height);
             banShader.SetBool("is_periodic", periodic);
         
-            banShader.SetBuffer(0, "wave_data", waveBuf);
+            banShader.SetBuffer(0, "wave_in", waveInBuf);
+            banShader.SetBuffer(0, "wave_out", waveOutBuf);
             banShader.SetBuffer(0, "weighting", weightBuf);
             banShader.SetBuffer(0, "memoisation", memoisationBuf);
             banShader.SetBuffer(0, "propagator", propagatorBuf);
@@ -266,7 +278,8 @@ namespace Models.GPU_Model
                 memoisationCopyBuffer[node].entropies = (float) startingEntropy;
             });
 
-            waveBuf.SetData(waveCopyBuffer);
+            waveInBuf.SetData(waveCopyBuffer);
+            waveOutBuf.SetData(waveCopyBuffer);
             memoisationBuf.SetData(memoisationCopyBuffer);
 
             ClearOutBuffers();
@@ -288,9 +301,9 @@ namespace Models.GPU_Model
         public override void Ban(int node, int pattern)
         {
             /*
-         * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
-         * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
-         */
+             * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
+             * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
+             */
             BindInOutBuffers(true);
 
             banParamsCopyBuffer[0].node = node;
@@ -307,7 +320,7 @@ namespace Models.GPU_Model
     
         protected virtual bool[][] CopyGpuWaveToCpu()
         { 
-            waveBuf.GetData(waveCopyBuffer);
+            waveInBuf.GetData(waveCopyBuffer);
             bool[][] wave = new bool[nbNodes][];
         
             Parallel.For(0, nbNodes, node =>
@@ -377,7 +390,8 @@ namespace Models.GPU_Model
         {
             weightBuf?.Release();
             _resultBuf?.Release();
-            waveBuf?.Release();
+            waveInBuf?.Release();
+            waveOutBuf?.Release();
             memoisationBuf?.Release();
             propagatorBuf?.Release();
             inCollapseBuf?.Release();

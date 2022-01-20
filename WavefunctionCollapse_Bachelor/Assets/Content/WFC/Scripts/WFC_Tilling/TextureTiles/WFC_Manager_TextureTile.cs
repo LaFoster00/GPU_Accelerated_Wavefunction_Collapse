@@ -34,6 +34,7 @@ namespace WFC.Tiling
         [SerializeField] private ComputeShader clearOutBuffersShader;
         [SerializeField] private ComputeShader resetOpenNodesShader;
         [SerializeField] private bool periodic = true;
+        [SerializeField] private Vector2Int displayOffset;
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
         [SerializeField] private int maxNumIterations = -1;
@@ -126,6 +127,11 @@ namespace WFC.Tiling
                         burstModel.Dispose();
                     break;
                 case Solver.GPU_Naive:
+                    if (model is GPU_Model_Naive naiveModel)
+                    {
+                        naiveModel.Dispose();
+                    }
+                    break;
                 case Solver.GPU_Granular:
                 case Solver.GPU_ComputeBuffer:
                     if (model is GPU_Model gpuModel)
@@ -151,13 +157,21 @@ namespace WFC.Tiling
                     for (int x = 0; x < result.Result.GetLength(1); x++)
                     {
                         GUI.DrawTexture(
-                            Rect.MinMaxRect(displayWidth * x, displayHeight * y, displayWidth + displayWidth * x,
-                                displayHeight + displayHeight * y), result.Result[y, x]);
+                            Rect.MinMaxRect(
+                                displayWidth * x + displayOffset.x,
+                                displayHeight * y + displayOffset.y,
+                                displayWidth + displayWidth * x + displayOffset.x,
+                                displayHeight + displayHeight * y + displayOffset.y),
+                            result.Result[y, x]);
                         if (drawFrame)
                         {
                             GUI.DrawTexture(
-                                Rect.MinMaxRect(displayWidth * x, displayHeight * y, displayWidth + displayWidth * x,
-                                    displayHeight + displayHeight * y), frameTexture);
+                                Rect.MinMaxRect(
+                                    displayWidth * x + displayOffset.x,
+                                    displayHeight * y + displayOffset.y,
+                                    displayWidth + displayWidth * x + displayOffset.x,
+                                    displayHeight + displayHeight * y + displayOffset.y),
+                                frameTexture);
                         }
                     }
                 }
@@ -180,8 +194,8 @@ namespace WFC.Tiling
                             {
                                 int texIndex = texX + texY * texNumSide;
                                 if (texIndex >= currentCellTextures.Count) continue;
-                                int xmin = displayWidth * x + texX * texDisplayWidth;
-                                int ymin = displayHeight * y + texY * texDisplayHeight;
+                                int xmin = displayWidth * x + texX * texDisplayWidth + displayOffset.x;
+                                int ymin = displayHeight * y + texY * texDisplayHeight + displayOffset.y;
                                 int xmax = xmin + texDisplayHeight;
                                 int ymax = ymin + texDisplayHeight;
 
@@ -196,8 +210,12 @@ namespace WFC.Tiling
                         }
 
                         GUI.DrawTexture(
-                            Rect.MinMaxRect(displayWidth * x, displayHeight * y, displayWidth + displayWidth * x,
-                                displayHeight + displayHeight * y), frameTexture);
+                            Rect.MinMaxRect(
+                                displayWidth * x + displayOffset.x,
+                                displayHeight * y + displayOffset.y,
+                                displayWidth + displayWidth * x + displayOffset.x,
+                                displayHeight + displayHeight * y + displayOffset.y), 
+                            frameTexture);
                     }
                 }
 
@@ -207,10 +225,10 @@ namespace WFC.Tiling
                         .IdToXY(debugOutput.stepInfo.width);
                     GUI.DrawTexture(
                         Rect.MinMaxRect(
-                            displayWidth * x,
-                            displayHeight * y,
-                            displayWidth + displayWidth * x,
-                            displayHeight + displayHeight * y),
+                            displayWidth * x + displayOffset.x,
+                            displayHeight * y + displayOffset.y,
+                            displayWidth + displayWidth * x + displayOffset.x,
+                            displayHeight + displayHeight * y + displayOffset.y),
                         yellowFrameTexture);
                 }
 
@@ -218,18 +236,18 @@ namespace WFC.Tiling
                 {
                     GUI.DrawTexture(
                         Rect.MinMaxRect(
-                            displayWidth * debugOutput.stepInfo.currentTile.x,
-                            displayHeight * debugOutput.stepInfo.currentTile.y,
-                            displayWidth + displayWidth * debugOutput.stepInfo.currentTile.x,
-                            displayHeight + displayHeight * debugOutput.stepInfo.currentTile.y),
+                            displayWidth * debugOutput.stepInfo.currentTile.x + displayOffset.x,
+                            displayHeight * debugOutput.stepInfo.currentTile.y + displayOffset.y,
+                            displayWidth + displayWidth * debugOutput.stepInfo.currentTile.x + displayOffset.x,
+                            displayHeight + displayHeight * debugOutput.stepInfo.currentTile.y + displayOffset.y),
                         greenHighlightTexture);
 
                     GUI.DrawTexture(
                         Rect.MinMaxRect(
-                            displayWidth * debugOutput.stepInfo.targetTile.x,
-                            displayHeight * debugOutput.stepInfo.targetTile.y,
-                            displayWidth + displayWidth * debugOutput.stepInfo.targetTile.x,
-                            displayHeight + displayHeight * debugOutput.stepInfo.targetTile.y),
+                            displayWidth * debugOutput.stepInfo.targetTile.x + displayOffset.x,
+                            displayHeight * debugOutput.stepInfo.targetTile.y + displayOffset.y,
+                            displayWidth + displayWidth * debugOutput.stepInfo.targetTile.x + displayOffset.x,
+                            displayHeight + displayHeight * debugOutput.stepInfo.targetTile.y + displayOffset.y),
                         highlightTexture);
                 }
             }

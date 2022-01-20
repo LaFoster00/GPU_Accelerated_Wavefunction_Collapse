@@ -17,7 +17,8 @@ namespace Models.CPU_Model
     [BurstCompile]
     public class CPU_Model_Parallel : CPU_Model, IDisposable
     {
-        private NativeArray<bool> wave;
+        private NativeArray<bool> waveIn;
+        private NativeArray<bool> waveOut;
 
         private struct JobInfo
         {
@@ -112,34 +113,12 @@ namespace Models.CPU_Model
             }
         }
 
-        protected override void Clear()
-        {
-            Parallel.For(0, nbNodes, node =>
-            /* for (int node = 0; node < wave.Length; node++) */
-            {
-                for (int pattern = 0; pattern < nbPatterns; pattern++)
-                {
-                    wave[node * nbPatterns + pattern] = true;
-                }
-
-                Memoisation mem = memoisation[node];
-                mem.numPossiblePatterns= nbPatterns;
-                mem.sumsOfWeights = totalSumOfWeights;
-                mem.sumsOfWeightsLogWeights = totalSumOfWeightLogWeights;
-                mem.entropies = startingEntropy;
-                memoisation[node] = mem;
-            });
-        
-            openNodes.Clear();
-            
-            base.Clear();
-        }
-
         protected override void Init()
         {
             base.Init();
         
-            wave = new NativeArray<bool>(width * height * nbPatterns, Allocator.Persistent);
+            waveIn = new NativeArray<bool>(width * height * nbPatterns, Allocator.Persistent);
+            waveOut = new NativeArray<bool>(width * height * nbPatterns, Allocator.Persistent);
             weighting = new NativeArray<Weighting>(nbPatterns, Allocator.Persistent);
 
             for (int pattern = 0; pattern < nbPatterns; pattern++)
@@ -159,10 +138,34 @@ namespace Models.CPU_Model
             //Make hashset as large as wave so that no new entries have to be allocated.
             openNodes = new NativeHashSet<int>(width * height, Allocator.Persistent);
         }
+        
+        protected override void Clear()
+        {
+            Parallel.For(0, nbNodes, node =>
+                /* for (int node = 0; node < wave.Length; node++) */
+            {
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                {
+                    waveIn[node * nbPatterns + pattern] = true;
+                }
+
+                Memoisation mem = memoisation[node];
+                mem.numPossiblePatterns= nbPatterns;
+                mem.sumsOfWeights = totalSumOfWeights;
+                mem.sumsOfWeightsLogWeights = totalSumOfWeightLogWeights;
+                mem.entropies = startingEntropy;
+                memoisation[node] = mem;
+            });
+
+            waveOut.CopyFrom(waveIn);
+            openNodes.Clear();
+            
+            base.Clear();
+        }
 
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
-            if (!wave.IsCreated) Init();
+            if (!waveIn.IsCreated) Init();
             
             Clear();
             WFC_Objects objects = new WFC_Objects
@@ -212,7 +215,7 @@ namespace Models.CPU_Model
             var nextNodeJob = new NextUnobservedNode_Job
             {
                 jobInfo = this.jobInfo,
-                wave = this.wave,
+                wave = this.waveIn,
                 memoisation = this.memoisation,
                 random = objects.random,
             };
@@ -229,7 +232,7 @@ namespace Models.CPU_Model
                     jobInfo = this.jobInfo,
                     node = node,
                     random = objects.random,
-                    wave = this.wave,
+                    wave = this.waveIn,
                     weighting = this.weighting,
                     memoisation = this.memoisation,
                     isPossible = this.isPossible,
@@ -238,7 +241,14 @@ namespace Models.CPU_Model
                 observeJob.Execute();
                 objects.random = observeJob.random;
                 isPossible = observeJob.isPossible;
+                
+                waveOut.CopyFrom(waveIn);
 
+                if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
+                {
+                    yield return DebugDrawCurrentState();
+                }
+                
                 var propagation = Propagate();
                 propagation.MoveNext();
                 while (propagation.MoveNext())
@@ -313,7 +323,6 @@ namespace Models.CPU_Model
             [ReadOnly] public Random random;
             [WriteOnly] public bool isPossible;
             
-            [NativeDisableContainerSafetyRestriction]
             public NativeArray<Memoisation> memoisation;
             public NativeHashSet<int>.ParallelWriter openNodes;
 
@@ -334,7 +343,7 @@ namespace Models.CPU_Model
                 {
                     if (wave[node * jobInfo.nbPatterns + pattern] != (pattern == r))
                     {
-                        int2 nodeCoord = new int2(node / jobInfo.width, node % jobInfo.width);
+                        int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
 
                         Extensions.GetReadWriteRef(ref wave, out var waveRef);
                         Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
@@ -377,22 +386,24 @@ namespace Models.CPU_Model
         private IEnumerator Propagate()
         {
             var openNodesArray = openNodes.ToNativeArray(Allocator.TempJob);
-            openNodes.Clear();
             while (openNodesArray.Length > 0)
             {
+                openNodes.Clear();
                 var propagateJob = new Propagate_Job()
                 {
                     jobInfo = this.jobInfo,
                     isPossible = isPossible,
-                    wave = this.wave,
+                    waveIn = this.waveIn,
+                    waveOut = this.waveOut,
                     openWorkNodes = openNodesArray,
                     propagator = this.propagator,
                     weighting = this.weighting,
                     memoisation = this.memoisation,
                     openNodes = openNodes.AsParallelWriter(),
                 };
-                propagateJob.Schedule(openNodesArray.Length, 1).Complete();
+                propagateJob.Schedule(openNodesArray.Length, (int)math.ceil(openNodesArray.Length/8.0f)).Complete();
                 isPossible = propagateJob.isPossible;
+                waveIn.CopyFrom(waveOut);
 
                 openNodesArray.Dispose();
                 openNodesArray = openNodes.ToNativeArray(Allocator.TempJob);
@@ -402,6 +413,9 @@ namespace Models.CPU_Model
                     yield return DebugDrawCurrentState();
                 }
             }
+            
+            if (openNodesArray.IsCreated)
+                openNodesArray.Dispose();
         }
 
         [BurstCompile]
@@ -411,8 +425,8 @@ namespace Models.CPU_Model
             [WriteOnly] public bool isPossible;
         
             /* Wave data, wave[node * nbPatterns + pattern] */
-            [NativeDisableContainerSafetyRestriction] 
-            public NativeArray<bool> wave;
+            [ReadOnly] public NativeArray<bool> waveIn;
+            [WriteOnly] public NativeArray<bool> waveOut;
             
             /* Maps the index of execute to the actual node index of that thread. */
             [ReadOnly] public NativeArray<int> openWorkNodes;
@@ -430,13 +444,13 @@ namespace Models.CPU_Model
             public void Execute(int index)
             {
                 int node = openWorkNodes[index];
-                int2 nodeCoord = new int2(node / jobInfo.width, node % jobInfo.width);
+                int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
 
                 for (int direction = 0; direction < 4; direction++)
                 {
                     /* Generate neighbour coordinate */ 
                     int x2 = nodeCoord.x + Directions.DirectionsX[direction];
-                    int y2 = nodeCoord.y + Directions.DirectionsX[direction];
+                    int y2 = nodeCoord.y + Directions.DirectionsY[direction];
 
                     if (jobInfo.periodic)
                     {
@@ -460,15 +474,15 @@ namespace Models.CPU_Model
                     for (int possibleNodePattern = 0; possibleNodePattern < jobInfo.nbPatterns; possibleNodePattern++)
                     {
                         /* Go over each pattern of the active node and check if they are still active. */
-                        if (!wave[node * jobInfo.nbPatterns + possibleNodePattern] == true) continue;
+                        if (!waveIn[node * jobInfo.nbPatterns + possibleNodePattern] == true) continue;
                         /*
-                     * Go over all possible patterns of the other cell and check if any of them are compatible
-                     * with the possibleNodePattern
-                     */
+                         * Go over all possible patterns of the other cell and check if any of them are compatible
+                         * with the possibleNodePattern
+                         */
                         bool anyPossible = false;
                         for (int compatible_pattern = 0; compatible_pattern < jobInfo.nbPatterns; compatible_pattern++)
                         {
-                            if (wave[node2 * jobInfo.nbPatterns + compatible_pattern] == true)
+                            if (waveIn[node2 * jobInfo.nbPatterns + compatible_pattern] == true)
                             {
                                 if (GetPropagatorValue(propagator[GetPropagatorIndex(possibleNodePattern, compatible_pattern, jobInfo.nbPatterns)], direction) == true)
                                 {
@@ -481,7 +495,7 @@ namespace Models.CPU_Model
                         /* If there were no compatible patterns found Ban the pattern. */
                         if (!anyPossible)
                         {
-                            Extensions.GetReadWriteRef(ref wave, out var waveRef);
+                            Extensions.GetReadWriteRef(ref waveOut, out var waveRef);
                             Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
                             Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
                             
@@ -506,9 +520,18 @@ namespace Models.CPU_Model
                 waveManaged[node] = new bool[nbPatterns];
                 for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
-                    waveManaged[node][pattern] = wave[node * nbPatterns + pattern];
+                    waveManaged[node][pattern] = waveIn[node * nbPatterns + pattern];
                 }
             }
+
+            int[] openNodesArray = Unity.Collections.NotBurstCompatible.Extensions.ToArray(openNodes);
+            (int, int)[] propagatingCells = new (int, int)[openNodesArray.Length];
+            for (int i = 0; i < openNodesArray.Length; i++)
+            {
+                propagatingCells[i].Item1 = openNodesArray[i];
+            }
+            stepInfo.propagatingCells = propagatingCells;
+            stepInfo.numPropagatingCells = openNodesArray.Length;
             
             propagatorSettings.debugToOutput(stepInfo, waveManaged, propagatorSettings.orientedToTileId);
             yield return propagatorSettings.stepInterval == 0
@@ -518,9 +541,9 @@ namespace Models.CPU_Model
     
         public override void Ban(int node, int pattern)
         {
-            int2 nodeCoord = new int2(node / jobInfo.width, node % jobInfo.width);
+            int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
             
-            Extensions.GetReadWriteRef(ref wave, out var waveRef);
+            Extensions.GetReadWriteRef(ref waveIn, out var waveRef);
             Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
             Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
             NativeHashSet<int>.ParallelWriter openNodesPW = openNodes.AsParallelWriter();
@@ -560,6 +583,8 @@ namespace Models.CPU_Model
                 isPossible = false;
             }
 
+            memoisation[node] = mem;
+
             /* Mark the neighbouring nodes for collapse and update info */
             for (int direction = 0; direction < 4; direction++)
             {
@@ -584,6 +609,10 @@ namespace Models.CPU_Model
                 int node2 = y2 * jobInfo.width + x2;
                 openNodes.Add(node2);
             }
+
+            wave.Dispose();
+            memoisation.Dispose();
+            weighting.Dispose();
         }
 
         /*
@@ -595,27 +624,26 @@ namespace Models.CPU_Model
         {
             int[] observed = new int[nbNodes];
             int[,] outputPatterns = new int[height, width];
-            Parallel.For(0, nbNodes, node =>
+            for (int node = 0; node < nbNodes; node++)
+            for (int pattern = 0; pattern < nbPatterns; pattern++)
             {
-                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                if (waveIn[node * nbPatterns + pattern] == true)
                 {
-                    if (wave[node * nbPatterns + pattern] == true)
-                    {
-                        observed[node] = pattern;
-                        int x = node % width;
-                        int y = node / width;
-                        outputPatterns[y, x] = observed[node];
-                        break;
-                    }
+                    observed[node] = pattern;
+                    int x = node % width;
+                    int y = node / width;
+                    outputPatterns[y, x] = observed[node];
+                    break;
                 }
-            });
+            }
 
             return outputPatterns;
         }
         
         public void Dispose()
         {
-            wave.Dispose();
+            waveIn.Dispose();
+            waveOut.Dispose();
             weighting.Dispose();
             memoisation.Dispose();
             propagator.Dispose();

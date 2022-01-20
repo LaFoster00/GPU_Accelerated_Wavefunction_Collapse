@@ -5,7 +5,7 @@
 void Ban(uint node, uint2 nodeCoord, int pattern)
 {
     OPEN_NODES = TRUE;
-    WAVE(node, pattern) = FALSE;
+    WAVE_OUT(node, pattern) = FALSE;
     
     NUM_POSSIBLE_PATTERNS(node) -= 1;
     SUMS_OF_WEIGHTS(node) -= WEIGHT(pattern);

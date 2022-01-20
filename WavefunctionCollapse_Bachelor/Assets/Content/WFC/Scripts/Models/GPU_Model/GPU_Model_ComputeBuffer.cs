@@ -76,6 +76,8 @@ namespace Models.GPU_Model
         
             _clearOutBuffersShader.SetBuffer(0, "in_collapse", inCollapseBuf);
             _clearOutBuffersShader.SetBuffer(0, "out_collapse", outCollapseBuf);
+            _clearOutBuffersShader.SetBuffer(0, "wave_in", waveInBuf);
+            _clearOutBuffersShader.SetBuffer(0, "wave_out", waveOutBuf);
         }
 
         private void BindInOutBuffers(CommandBuffer commandBuffer, bool swap)
@@ -87,14 +89,19 @@ namespace Models.GPU_Model
             
             commandBuffer.SetComputeBufferParam(propagatorShader, 0, "in_collapse", inCollapseBuf);
             commandBuffer.SetComputeBufferParam(propagatorShader, 0, "out_collapse", outCollapseBuf);
-            
+            commandBuffer.SetComputeBufferParam(propagatorShader, 0, "wave_in", waveInBuf);
+            commandBuffer.SetComputeBufferParam(propagatorShader, 0, "wave_out", waveOutBuf);
+ 
             commandBuffer.SetComputeBufferParam(observerShader, 0, "in_collapse", inCollapseBuf);
             commandBuffer.SetComputeBufferParam(observerShader, 0, "out_collapse", outCollapseBuf);
+            commandBuffer.SetComputeBufferParam(observerShader, 0, "wave_in", waveInBuf);
+            commandBuffer.SetComputeBufferParam(observerShader, 0, "wave_out", waveOutBuf);
             
             commandBuffer.SetComputeBufferParam(banShader, 0, "in_collapse", inCollapseBuf);
             commandBuffer.SetComputeBufferParam(banShader, 0, "out_collapse", outCollapseBuf);
+            commandBuffer.SetComputeBufferParam(banShader, 0, "wave_in", waveInBuf);
+            commandBuffer.SetComputeBufferParam(banShader, 0, "wave_out", waveOutBuf);
             
-            commandBuffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "in_collapse", inCollapseBuf);
             commandBuffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "out_collapse", outCollapseBuf);
         }
 
@@ -170,13 +177,6 @@ namespace Models.GPU_Model
     
         private IEnumerator Propagate(WFC_Result result)
         {
-            /*
-         Get data acts as a sort of memory barrier ensuring all previous computation executed
-         before this step.
-         */
-            _resultBuf.GetData(_resultCopyBuf);
-        
-            bool finished = false;
             Result[] resultBufData =
             {
                 new Result
@@ -188,6 +188,7 @@ namespace Models.GPU_Model
             };
             _resultBuf.SetData(resultBufData);
 
+            bool finished = false;
             while (!finished && isPossible)
             {
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)

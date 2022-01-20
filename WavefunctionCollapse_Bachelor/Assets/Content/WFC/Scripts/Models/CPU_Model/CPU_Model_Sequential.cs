@@ -59,6 +59,8 @@ namespace Models.CPU_Model
                 sumsOfWeightLogWeights[node] = totalSumOfWeightLogWeights;
                 entropies[node] = startingEntropy;
             });
+            
+            stackSize = 0;
 
             base.Clear();
         }

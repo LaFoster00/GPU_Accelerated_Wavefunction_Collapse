@@ -21,7 +21,8 @@ namespace Models.GPU_Model
          Actual wave result
          wave(node, pattern)
          */
-        private ComputeBuffer _waveBuf;
+        private ComputeBuffer _waveInBuf;
+        private ComputeBuffer _waveOutBuf;
 
         struct Weighting
         {
@@ -106,7 +107,8 @@ namespace Models.GPU_Model
         {
             base.SetData(nbPatterns, weights, propagator, propagatorSettings);
 
-            _waveBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
+            _waveInBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
+            _waveOutBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
             _waveCopyBuffer = new uint[width * height * nbPatterns];
             
             _propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(uint) * 4);
@@ -114,7 +116,7 @@ namespace Models.GPU_Model
             _weightCopyBuffer = new Weighting[weights.Length];
 
             ClearInBuffers();
-            ClearOutBuffers();
+            ClearInOutBuffers();
 
             {
                 _propagatorCopyBuffer = new Propagator[nbPatterns * nbPatterns];
@@ -157,10 +159,13 @@ namespace Models.GPU_Model
             if (swap)
             {
                 USCSL.Extensions.Swap(ref _inCollapseBuf, ref _outCollapseBuf);
+                USCSL.Extensions.Swap(ref _waveInBuf, ref _waveOutBuf);
             }
 
             _propagatorShader.SetBuffer(0, "in_collapse", _inCollapseBuf);
             _propagatorShader.SetBuffer(0, "out_collapse", _outCollapseBuf);
+            _propagatorShader.SetBuffer(0, "wave_in", _waveInBuf);
+            _propagatorShader.SetBuffer(0, "wave_out", _waveOutBuf);
         }
 
         private void BindResources()
@@ -170,7 +175,8 @@ namespace Models.GPU_Model
             _propagatorShader.SetInt("height", height);
             _propagatorShader.SetBool("is_periodic", periodic);
 
-            _propagatorShader.SetBuffer(0, "wave_data", _waveBuf);
+            _propagatorShader.SetBuffer(0, "wave_in", _waveInBuf);
+            _propagatorShader.SetBuffer(0, "wave_out", _waveOutBuf);
             _propagatorShader.SetBuffer(0, "weighting", _weightBuf);
             _propagatorShader.SetBuffer(0, "memoisation", _memoisationBuf);
             _propagatorShader.SetBuffer(0, "propagator", _propagatorBuf);
@@ -195,7 +201,8 @@ namespace Models.GPU_Model
                         }
                     }
                 });
-                _waveBuf.SetData(_waveCopyBuffer);
+                _waveInBuf.SetData(_waveCopyBuffer);
+                _waveOutBuf.SetData(_waveCopyBuffer);
             }
 
             /* Clear const weight data. */
@@ -222,10 +229,10 @@ namespace Models.GPU_Model
                 _memoisationBuf.SetData(_memoisationCopyBuffer);
             }
 
-            ClearOutBuffers();
+            ClearInOutBuffers();
         }
 
-        private void ClearOutBuffers()
+        private void ClearInOutBuffers()
         {
             _outCollapseBuf.SetData(_collapseClearData);
         }
@@ -284,10 +291,7 @@ namespace Models.GPU_Model
                 }
                 else
                 {
-                    while (propagation.MoveNext())
-                    {
-                        yield return propagation.Current;
-                    }
+                    yield return propagation;
                 }
 
                 if (!isPossible)
@@ -329,12 +333,9 @@ namespace Models.GPU_Model
                 isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
                 _openCells = Convert.ToBoolean(resultBufData[0].openNodes);
 
-                Debug.Log($"Open Cells: {_openCells}");
-
                 /* Swap the in out buffers. */
                 BindInOutBuffers(true);
-                ClearOutBuffers();
-
+                ClearInOutBuffers();
 
                 if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
                 {
@@ -343,10 +344,8 @@ namespace Models.GPU_Model
             }
         }
         
-        private int observeCount = 0;
         protected override void Observe(int node, ref Random random)
         {
-            Debug.Log($"Observe : {observeCount++}");
             FillBanCopyBuffers();
             base.Observe(node, ref random);
             ApplyBanCopyBuffers();
@@ -425,7 +424,7 @@ namespace Models.GPU_Model
         /// </summary>
         private void ApplyBanCopyBuffers()
         {
-            _waveBuf.SetData(_waveCopyBuffer);
+            _waveInBuf.SetData(_waveCopyBuffer);
             _memoisationBuf.SetData(_memoisationCopyBuffer);
             _inCollapseBuf.SetData(_collapseCopyBuffer);
 
@@ -438,7 +437,7 @@ namespace Models.GPU_Model
 
         private void CopyGpuWaveToCpu()
         {
-            _waveBuf.GetData(_waveCopyBuffer);
+            _waveInBuf.GetData(_waveCopyBuffer);
 
             Parallel.For(0, nbPatterns, pattern =>
             {
@@ -492,7 +491,8 @@ namespace Models.GPU_Model
         {
             _weightBuf?.Release();
             _resultBuf?.Release();
-            _waveBuf?.Release();
+            _waveInBuf?.Release();
+            _waveOutBuf?.Release();
             _memoisationBuf?.Release();
             _propagatorBuf?.Release();
             _inCollapseBuf?.Release();
