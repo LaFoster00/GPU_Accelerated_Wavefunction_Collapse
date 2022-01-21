@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Models.CPU_Model;
 using UnityEngine;
+using USCSL.Utils;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
@@ -313,6 +314,7 @@ namespace Models.GPU_Model
 
         private IEnumerator Propagate(WFC_Objects objects)
         {
+            var timer = new CodeTimer_Average(true, true, true, "Propagate_Naive", Debug.Log);
             while (_openCells && isPossible)
             {
                 Result[] resultBufData = {new Result
@@ -342,13 +344,18 @@ namespace Models.GPU_Model
                     yield return DebugDrawCurrentState();
                 }
             }
+            
+            timer.Stop(false);
         }
         
         protected override void Observe(int node, ref Random random)
         {
+            var timer = new CodeTimer_Average(true, true, true, "Observe_Naive", Debug.Log);
             FillBanCopyBuffers();
             base.Observe(node, ref random);
             ApplyBanCopyBuffers();
+
+            timer.Stop(false);
         }
 
         private void FillBanCopyBuffers()

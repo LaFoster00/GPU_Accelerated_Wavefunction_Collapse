@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
+using USCSL.Utils;
 
 namespace Models.GPU_Model
 {
@@ -160,23 +161,8 @@ namespace Models.GPU_Model
 
         private IEnumerator Run_Internal(WFC_Result result)
         {
-            var propagation = Propagate(result);
-            if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
-            {
-                propagation.MoveNext();
-            }
-            else
-            {
-                while (propagation.MoveNext())
-                {
-                    yield return propagation.Current;
-                }
-            }
-        }
-
-    
-        private IEnumerator Propagate(WFC_Result result)
-        {
+            var timer = new CodeTimer_Average(true, true, true, "ObserveAndPropagate_ComputeBuffer", Debug.Log);
+            
             Result[] resultBufData =
             {
                 new Result
@@ -235,6 +221,8 @@ namespace Models.GPU_Model
                 isPossible = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
                 finished = Convert.ToBoolean(_resultCopyBuf[0].finished);
             }
+
+            timer.Stop(false);
         
             if (isPossible)
             {

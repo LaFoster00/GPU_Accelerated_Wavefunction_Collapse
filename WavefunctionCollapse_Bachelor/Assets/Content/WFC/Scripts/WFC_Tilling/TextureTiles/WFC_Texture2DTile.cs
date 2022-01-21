@@ -29,7 +29,6 @@ namespace WFC.Tiling
                     output[y, x] = tiles[tile].orientations[orientation];
                 }
             }
-            Debug.Log("Such texture, much wow!");
             return output;
         }
 

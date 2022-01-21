@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using Unity.Burst;
 using Unity.Collections;
@@ -14,25 +13,79 @@ using Random = Unity.Mathematics.Random;
 namespace Models.CPU_Model
 {
     [BurstCompile]
-    public class CPU_Model_Parallel : CPU_Model_Parallel_Base
+    public class CPU_Model_Parallel_Batched : CPU_Model_Parallel_Base
     {
-        private NativeQueue<int> openNodes;
-        
-        public CPU_Model_Parallel(int width, int height, int patternSize, bool periodic) : base(width, height, patternSize, periodic)
+        private NativeHashSet<int> openNodes;
+
+        public CPU_Model_Parallel_Batched(int width, int height, int patternSize, bool periodic) : base(width, height,
+            patternSize, periodic)
         {
+            jobInfo.width = width;
+            jobInfo.height = height;
+            jobInfo.patternSize = patternSize;
+            jobInfo.periodic = periodic;
         }
 
         protected override void Init()
         {
             base.Init();
+
             //Make hashset as large as wave so that no new entries have to be allocated.
-            openNodes = new NativeQueue<int>(Allocator.Persistent);
+            openNodes = new NativeHashSet<int>(width * height, Allocator.Persistent);
         }
 
         protected override void Clear()
         {
             openNodes.Clear();
+
             base.Clear();
+        }
+
+        public override IEnumerator Run(uint seed, int limit, WFC_Result result)
+        {
+            if (!waveIn.IsCreated) Init();
+
+            Clear();
+            WFC_Objects objects = new WFC_Objects
+            {
+                random = new Random(seed),
+            };
+
+            if (limit < 0)
+            {
+                while (!result.finished)
+                {
+                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
+                    {
+                        Run_Internal(objects, result).MoveNext();
+                    }
+                    else
+                    {
+                        yield return Run_Internal(objects, result);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < limit; i++)
+                {
+                    if (result.finished) break;
+
+                    if (propagatorSettings.debug == PropagatorSettings.DebugMode.None)
+                    {
+                        Run_Internal(objects, result).MoveNext();
+                    }
+                    else
+                    {
+                        yield return Run_Internal(objects, result);
+                    }
+                }
+            }
+
+            if (!isPossible)
+            {
+                yield return DebugDrawCurrentState();
+            }
         }
 
         protected override IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
@@ -52,7 +105,7 @@ namespace Models.CPU_Model
             int node = nextNodeJob.result;
             if (node >= 0)
             {
-                var timer = new CodeTimer_Average(true, true, true, "Observe_Parallel", Debug.Log);
+                var timer = new CodeTimer_Average(true, true, true, "Observe_CPU_Parallel_Batched", Debug.Log);
                 
                 var observeJob = new Observe_Job
                 {
@@ -63,7 +116,7 @@ namespace Models.CPU_Model
                     weighting = this.weighting,
                     memoisation = this.memoisation,
                     isPossible = this.isPossible,
-                    openNodes = this.openNodes.AsParallelWriter(),
+                    openNodes = this.openNodes.AsParallelWriter()
                 };
                 observeJob.Execute();
                 objects.random = observeJob.random;
@@ -100,47 +153,6 @@ namespace Models.CPU_Model
             }
         }
 
-        private IEnumerator Propagate()
-        {
-            var timer = new CodeTimer_Average(true, true, true, UnityEngine.Debug.Log);
-            
-            var openWorkNodesArray = new NativeArray<int>(4, Allocator.TempJob);
-            while (openNodes.Count > 0)
-            {
-                int changedNode = openNodes.Dequeue();
-                openWorkNodesArray[0] = openNodes.Dequeue();
-                openWorkNodesArray[1] = openNodes.Dequeue();
-                openWorkNodesArray[2] = openNodes.Dequeue();
-                openWorkNodesArray[3] = openNodes.Dequeue();
-                
-                var propagateJob = new Propagate_Job()
-                {
-                    changedNode = changedNode,
-                    jobInfo = this.jobInfo,
-                    isPossible = isPossible,
-                    waveIn = this.waveIn,
-                    waveOut = this.waveOut,
-                    openWorkNodes = openWorkNodesArray,
-                    propagator = this.propagator,
-                    weighting = this.weighting,
-                    memoisation = this.memoisation,
-                    openNodes = openNodes.AsParallelWriter(),
-                };
-                propagateJob.Schedule(4, 1).Complete();
-                isPossible = propagateJob.isPossible;
-                waveIn.CopyFrom(waveOut);
-
-                if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
-                {
-                    yield return DebugDrawCurrentState();
-                }
-            }
-
-            openWorkNodesArray.Dispose();
-            
-            timer.Stop(false);
-        }
-        
         [BurstCompile]
         private struct Observe_Job : IJob
         {
@@ -153,7 +165,7 @@ namespace Models.CPU_Model
             [WriteOnly] public bool isPossible;
 
             public NativeArray<Memoisation> memoisation;
-            public NativeQueue<int>.ParallelWriter openNodes;
+            public NativeHashSet<int>.ParallelWriter openNodes;
 
             private NativeArray<double> distribution;
 
@@ -212,19 +224,58 @@ namespace Models.CPU_Model
             }
         }
 
+        private IEnumerator Propagate()
+        {
+            var timer = new CodeTimer_Average(true, true, true, "Propagate_CPU_Parallel_Batched",Debug.Log);
+            
+            var openNodesArray = openNodes.ToNativeArray(Allocator.TempJob);
+            while (openNodesArray.Length > 0)
+            {
+                openNodes.Clear();
+                var propagateJob = new Propagate_Job()
+                {
+                    jobInfo = this.jobInfo,
+                    isPossible = isPossible,
+                    waveIn = this.waveIn,
+                    waveOut = this.waveOut,
+                    openWorkNodes = openNodesArray,
+                    propagator = this.propagator,
+                    weighting = this.weighting,
+                    memoisation = this.memoisation,
+                    openNodes = openNodes.AsParallelWriter(),
+                };
+                propagateJob.Schedule(openNodesArray.Length, (int) math.ceil(openNodesArray.Length / 8.0f)).Complete();
+                isPossible = propagateJob.isPossible;
+                waveIn.CopyFrom(waveOut);
+
+                openNodesArray.Dispose();
+                openNodesArray = openNodes.ToNativeArray(Allocator.TempJob);
+
+                if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
+                {
+                    yield return DebugDrawCurrentState();
+                }
+            }
+
+            if (openNodesArray.IsCreated)
+                openNodesArray.Dispose();
+            
+            timer.Stop(false);
+        }
+
         [BurstCompile]
         private struct Propagate_Job : IJobParallelFor
         {
             [ReadOnly] public JobInfo jobInfo;
             [WriteOnly] public bool isPossible;
-            [ReadOnly] public int changedNode;
-        
+
             /* Wave data, wave[node * nbPatterns + pattern] */
             [ReadOnly] public NativeArray<bool> waveIn;
             [WriteOnly] public NativeArray<bool> waveOut;
-            
+
             /* Maps the index of execute to the actual node index of that thread. */
             [ReadOnly] public NativeArray<int> openWorkNodes;
+
             /*
              Which patterns can be placed in which direction of the current pattern
              propagator[pattern * 4 + direction] : int[] possibilities
@@ -234,72 +285,78 @@ namespace Models.CPU_Model
 
             [NativeDisableContainerSafetyRestriction]
             public NativeArray<Memoisation> memoisation;
-            public NativeQueue<int>.ParallelWriter openNodes;
 
-            public void Execute(int direction)
+            public NativeHashSet<int>.ParallelWriter openNodes;
+
+            public void Execute(int index)
             {
-                int node = openWorkNodes[direction];
-                int2 nodeCoord = new int2(changedNode % jobInfo.width, changedNode / jobInfo.width);
-                
-                /* Generate own coordinate */
-                nodeCoord.x += Directions.DirectionsX[direction];
-                nodeCoord.y += Directions.DirectionsY[direction];
+                int node = openWorkNodes[index];
+                int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
 
-                if (jobInfo.periodic)
+                for (int direction = 0; direction < 4; direction++)
                 {
-                    nodeCoord.x = (nodeCoord.x + jobInfo.width) % jobInfo.width;
-                    nodeCoord.y = (nodeCoord.y + jobInfo.height) % jobInfo.height;
-                }
-                else if (!jobInfo.periodic && (nodeCoord.x < 0 
-                                               || nodeCoord.y < 0
-                                               || nodeCoord.x >= jobInfo.width 
-                                               || nodeCoord.y >= jobInfo.height))
-                {
-                    return;
-                }
+                    /* Generate neighbour coordinate */
+                    int x2 = nodeCoord.x + Directions.DirectionsX[direction];
+                    int y2 = nodeCoord.y + Directions.DirectionsY[direction];
 
-                /*
+                    if (jobInfo.periodic)
+                    {
+                        x2 = (x2 + jobInfo.width) % jobInfo.width;
+                        y2 = (y2 + jobInfo.height) % jobInfo.height;
+                    }
+                    else if (!jobInfo.periodic && (x2 < 0
+                                                   || y2 < 0
+                                                   || x2 >= jobInfo.width
+                                                   || y2 >= jobInfo.height))
+                    {
+                        continue;
+                    }
+
+                    int node2 = y2 * jobInfo.width + x2;
+
+                    /*
                  * Go over all still possible patterns in the current node and check if the are compatible
                  * with the still possible patterns of the other node.
                  */
-                for (int changedNodePattern = 0; changedNodePattern < jobInfo.nbPatterns; changedNodePattern++)
-                {
-                    /* Go over each pattern of the active node and check if they are still valid. */
-                    if (waveIn[node * jobInfo.nbPatterns + changedNodePattern] != true) continue;
-                    /*
-                     * Go over all possible patterns of the other cell and check if any of them are compatible
-                     * with the possibleNodePattern
-                     */
-                    bool anyPossible = false;
                     for (int thisNodePattern = 0; thisNodePattern < jobInfo.nbPatterns; thisNodePattern++)
                     {
-                        if (waveIn[changedNode * jobInfo.nbPatterns + thisNodePattern] == true)
+                        /* Go over each pattern of the active node and check if they are still active. */
+                        if (!waveIn[node * jobInfo.nbPatterns + thisNodePattern] == true) continue;
+                        /*
+                         * Go over all possible patterns of the other cell and check if any of them are compatible
+                         * with the possibleNodePattern
+                         */
+                        bool anyPossible = false;
+                        for (int otherNodePattern = 0; otherNodePattern < jobInfo.nbPatterns; otherNodePattern++)
                         {
-                            if (GetPropagatorValue(
-                                    propagator[
-                                        GetPropagatorIndex(changedNodePattern, thisNodePattern,
-                                            jobInfo.nbPatterns)], Directions.GetOppositeDirection(direction)) == true)
+                            if (waveIn[node2 * jobInfo.nbPatterns + otherNodePattern] == true)
                             {
-                                anyPossible = true;
-                                break;
+                                if (GetPropagatorValue(
+                                        propagator[
+                                            GetPropagatorIndex(thisNodePattern, otherNodePattern, jobInfo.nbPatterns)],
+                                        direction) == true)
+                                {
+                                    anyPossible = true;
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    /* If there were no compatible patterns found Ban the pattern. */
-                    if (!anyPossible)
-                    {
-                        Extensions.GetReadWriteRef(ref waveOut, out var waveRef);
-                        Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
-                        Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
+                        /* If there were no compatible patterns found Ban the pattern. */
+                        if (!anyPossible)
+                        {
+                            Extensions.GetReadWriteRef(ref waveOut, out var waveRef);
+                            Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
+                            Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
 
-                        Ban_Burst(node, ref nodeCoord, changedNodePattern,
-                            ref isPossible,
-                            in jobInfo,
-                            ref waveRef,
-                            ref memoisationRef,
-                            ref weightingRef,
-                            ref openNodes);
+                            Ban_Burst(node, ref nodeCoord, thisNodePattern,
+                                ref isPossible,
+                                in jobInfo,
+                                ref waveRef,
+                                ref memoisationRef,
+                                ref weightingRef,
+                                ref openNodes);
+                        }
                     }
                 }
             }
@@ -317,32 +374,31 @@ namespace Models.CPU_Model
                 }
             }
 
-            NativeArray<int> nativeOpenNodesArray = openNodes.ToArray(Allocator.Temp);
-            int[] openNodesArray = nativeOpenNodesArray.ToArray();
-            nativeOpenNodesArray.Dispose();
+            int[] openNodesArray = Unity.Collections.NotBurstCompatible.Extensions.ToArray(openNodes);
             (int, int)[] propagatingCells = new (int, int)[openNodesArray.Length];
             for (int i = 0; i < openNodesArray.Length; i++)
             {
                 propagatingCells[i].Item1 = openNodesArray[i];
             }
+
             stepInfo.propagatingCells = propagatingCells;
             stepInfo.numPropagatingCells = openNodesArray.Length;
-            
+
             propagatorSettings.debugToOutput(stepInfo, waveManaged, propagatorSettings.orientedToTileId);
             yield return propagatorSettings.stepInterval == 0
                 ? null
                 : new WaitForSeconds(propagatorSettings.stepInterval);
         }
-    
+
         public override void Ban(int node, int pattern)
         {
             int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
-            
+
             Extensions.GetReadWriteRef(ref waveIn, out var waveRef);
             Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
             Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
-            NativeQueue<int>.ParallelWriter openNodesPW = openNodes.AsParallelWriter();
-                            
+            NativeHashSet<int>.ParallelWriter openNodesPW = openNodes.AsParallelWriter();
+
             Ban_Burst(node, ref nodeCoord, pattern,
                 ref isPossible,
                 in jobInfo,
@@ -351,18 +407,16 @@ namespace Models.CPU_Model
                 ref weightingRef,
                 ref openNodesPW);
         }
-        
+
         [BurstCompile]
         private static void Ban_Burst(int node, ref int2 nodeCoord, int pattern,
             ref bool isPossible,
             in JobInfo jobInfo,
-            ref Extensions.NativeArrayRef waveRef, 
-            ref Extensions.NativeArrayRef memoisationRef, 
+            ref Extensions.NativeArrayRef waveRef,
+            ref Extensions.NativeArrayRef memoisationRef,
             ref Extensions.NativeArrayRef weightingRef,
-            ref NativeQueue<int>.ParallelWriter openNodes)
+            ref NativeHashSet<int>.ParallelWriter openNodes)
         {
-            openNodes.Enqueue(node);
-            
             Extensions.ToNativeArray(ref waveRef, out NativeArray<bool> wave);
             Extensions.ToNativeArray(ref memoisationRef, out NativeArray<Memoisation> memoisation);
             Extensions.ToNativeArray(ref weightingRef, out NativeArray<Weighting> weighting);
@@ -404,7 +458,7 @@ namespace Models.CPU_Model
 
                 /* Add neighbour to hash set of pen neighbours. */
                 int node2 = y2 * jobInfo.width + x2;
-                openNodes.Enqueue(node2);
+                openNodes.Add(node2);
             }
 
             wave.Dispose();

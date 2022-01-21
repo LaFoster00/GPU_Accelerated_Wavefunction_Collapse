@@ -6,6 +6,7 @@ using Models.CPU_Model;
 using Models.GPU_Model;
 using Unity.Mathematics;
 using UnityEngine;
+using USCSL.Utils;
 using Random = UnityEngine.Random;
 
 namespace WFC.Tiling
@@ -14,6 +15,7 @@ namespace WFC.Tiling
     {
         CPU_Sequential,
         CPU_Parallel,
+        CPU_Parallel_Batched,
         GPU_Naive,
         GPU_Granular,
         GPU_ComputeBuffer
@@ -27,26 +29,38 @@ namespace WFC.Tiling
         public (bool Success, Texture2D[,] Result) result;
         public (Model.StepInfo stepInfo, List<Texture2D>[,] debug) debugOutput;
 
+        [Header("Solver")]
         [SerializeField] private Solver solver;
-        [SerializeField] private ComputeShader observerShader;
-        [SerializeField] private ComputeShader propagatorShader;
-        [SerializeField] private ComputeShader banShader;
-        [SerializeField] private ComputeShader clearOutBuffersShader;
-        [SerializeField] private ComputeShader resetOpenNodesShader;
+        [SerializeField] private int maxNumIterations = -1;
+        
+        [Header("Output")]
+        [SerializeField] private int width;
+        [SerializeField] private int height;
         [SerializeField] private bool periodic = true;
+        
+        [Header("Display")]
         [SerializeField] private Vector2Int displayOffset;
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
-        [SerializeField] private int maxNumIterations = -1;
-        [SerializeField] private int totalObservePropagateIterations = 10;
-        [SerializeField] private int propagationIterations = 4;
-        [SerializeField] private int width;
-        [SerializeField] private int height;
         [SerializeField] private bool drawFrame = true;
         [SerializeField] private Texture2D frameTexture;
         [SerializeField] private Texture2D highlightTexture;
         [SerializeField] private Texture2D greenHighlightTexture;
         [SerializeField] private Texture2D yellowFrameTexture;
+        
+        [Header("GPU Compute Shader")]
+        [SerializeField] private ComputeShader observerShader;
+        [SerializeField] private ComputeShader propagatorShader;
+        [SerializeField] private ComputeShader banShader;
+        [SerializeField] private ComputeShader clearOutBuffersShader;
+        [SerializeField] private ComputeShader resetOpenNodesShader;
+
+        [Header("ComputeBuffer Settings")]
+        [SerializeField] private int totalObservePropagateIterations = 10;
+        [SerializeField] private int propagationIterations = 4;
+
+        [Header("Debug Mode")] [SerializeField]
+        private bool timeFunctionCalls = false;
         [SerializeField] private Model.PropagatorSettings.DebugMode debugMode;
         [SerializeField] private float stepInterval;
 
@@ -54,6 +68,8 @@ namespace WFC.Tiling
 
         private void Start()
         {
+            CodeTimerOptions.active = timeFunctionCalls;
+            
             List<TileNeighbour<Texture2D>> neighbours = new List<TileNeighbour<Texture2D>>();
             foreach (var tile in tiles)
             {
@@ -92,6 +108,9 @@ namespace WFC.Tiling
                 case Solver.CPU_Parallel:
                     model = new CPU_Model_Parallel(width, height, 1, periodic);
                     break;
+                case Solver.CPU_Parallel_Batched:
+                    model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
+                    break;
                 case Solver.GPU_Naive:
                     model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
                     break;
@@ -120,13 +139,15 @@ namespace WFC.Tiling
                 result.Result = wfcResult.result;
                 result.Success = wfcResult.success;
                 iteration++;
+                if (!result.Success) print("Generation failed. Retrying");
             }
             
             switch (solver)
             {
                 case Solver.CPU_Parallel:
-                    if (model is CPU_Model_Parallel burstModel)
-                        burstModel.Dispose();
+                case Solver.CPU_Parallel_Batched:
+                    if (model is CPU_Model_Parallel_Base parallelModel)
+                        parallelModel.Dispose();
                     break;
                 case Solver.GPU_Naive:
                     if (model is GPU_Model_Naive naiveModel)
@@ -144,10 +165,20 @@ namespace WFC.Tiling
                     break;
             }
 
-            print(
-                result.Success
-                    ? $"It took {Time.realtimeSinceStartup - startTime} seconds and {iteration} tries to complete this task!"
-                    : $"WuHuwhwaaawg i cant do it!");
+            print($"It took {Time.realtimeSinceStartup - startTime} seconds and {iteration} tries to complete this task!");
+            PrintTimingData();
+        }
+
+        private void PrintTimingData()
+        {
+            if (timeFunctionCalls)
+            {
+                var timings = CodeTimer_Average.FunctionCallTimings;
+                foreach (var timing in timings)
+                {
+                    Debug.Log(CodeTimer_Average.GetMessage(timing.Value));
+                }
+            }
         }
 
         private void OnGUI()

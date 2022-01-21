@@ -173,6 +173,8 @@ namespace Models.CPU_Model
 
         protected virtual void Observe(int node, ref Random random)
         {
+            var timer = new CodeTimer_Average(true, true, true, "Observe_Sequential", Debug.Log);
+            
             // Choose an element according to the pattern distribution
             bool[] w = wave[node];
             for (int pattern = 0; pattern < nbPatterns; pattern++)
@@ -184,6 +186,8 @@ namespace Models.CPU_Model
             for (int pattern = 0; pattern < nbPatterns; pattern++)
                 if (w[pattern] != (pattern == r))
                     Ban(node, pattern);
+            
+            timer.Stop(false);
         }
 
         private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
@@ -241,6 +245,7 @@ namespace Models.CPU_Model
         private IEnumerator Propagate()
         {
             var timer = new CodeTimer_Average(true, true, true, UnityEngine.Debug.Log);
+            
             while (stackSize > 0)
             {
                 /* Remove all incompatible patterns resulting from previously collapsed nodes. */
@@ -299,7 +304,7 @@ namespace Models.CPU_Model
                     }
                 }
             }
-            timer.Stop();
+            timer.Stop(false);
         }
 
         /*

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using USCSL.Utils;
 using Random = Unity.Mathematics.Random;
 
 namespace Models.GPU_Model
@@ -51,6 +52,7 @@ namespace Models.GPU_Model
 
         private void Observe()
         {
+            var timer = new CodeTimer_Average(true, true, true, "Observe_Granular", Debug.Log);
             /*
              * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
              * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
@@ -64,6 +66,8 @@ namespace Models.GPU_Model
 
             _resultBuf.GetData(_resultCopyBuf);
             (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+            
+            timer.Stop(false);
         }
     
         private IEnumerator Run_Internal(WFC_Result result)
@@ -109,6 +113,7 @@ namespace Models.GPU_Model
     
         private IEnumerator Propagate()
         {
+            var timer = new CodeTimer_Average(true, true, true, "Propagate_Granular", Debug.Log);
             while (openNodes && isPossible)
             {
                 Result[] resultBufData = {new Result
@@ -141,6 +146,8 @@ namespace Models.GPU_Model
                     yield return DebugDrawCurrentState();
                 }
             }
+            
+            timer.Stop(false);
         }
     }
 }
