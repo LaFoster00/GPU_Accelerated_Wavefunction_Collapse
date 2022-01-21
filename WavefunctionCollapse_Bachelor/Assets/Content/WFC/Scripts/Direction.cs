@@ -3,6 +3,7 @@
  * MIT License
  */
 
+using Unity.Burst;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace WFC
         None = -1
     }
 
+    [BurstCompile]
     public static class Directions
     {
         public static int ToX(this Direction direction)
@@ -45,6 +47,7 @@ namespace WFC
         public static readonly int[] DirectionsX = new[] {0, -1, 1, 0};
         public static readonly int[] DirectionsY = new[] {-1, 0, 0, 1};
 
+        [BurstCompile]
         public static int GetOppositeDirection(int direction)
         {
             return 3 - direction;

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using USCSL.Utils;
 using WFC;
 using Random = Unity.Mathematics.Random;
 
@@ -239,6 +240,7 @@ namespace Models.CPU_Model
 
         private IEnumerator Propagate()
         {
+            var timer = new CodeTimer_Average(true, true, true, UnityEngine.Debug.Log);
             while (stackSize > 0)
             {
                 /* Remove all incompatible patterns resulting from previously collapsed nodes. */
@@ -297,6 +299,7 @@ namespace Models.CPU_Model
                     }
                 }
             }
+            timer.Stop();
         }
 
         /*

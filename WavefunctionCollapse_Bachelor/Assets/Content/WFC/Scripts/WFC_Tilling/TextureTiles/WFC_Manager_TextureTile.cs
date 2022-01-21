@@ -78,6 +78,8 @@ namespace WFC.Tiling
 
         private IEnumerator ExecuteWfc(List<TileNeighbour<Texture2D>> neighbours)
         {
+            yield return new WaitForSeconds(2);
+            
             double startTime = Time.realtimeSinceStartup;
             int iteration = 0;
             

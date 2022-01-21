@@ -295,7 +295,7 @@ MonoBehaviour:
   highlightTexture: {fileID: 2800000, guid: 0de633a87b1dea303864f5f317515aa2, type: 3}
   greenHighlightTexture: {fileID: 2800000, guid: c1576c538e7b231b09a74843580fa775, type: 3}
   yellowFrameTexture: {fileID: 2800000, guid: bbf75ad0f97e440dcbb4c322d391d38e, type: 3}
-  debugMode: 0
+  debugMode: 1
   stepInterval: 0
 --- !u!4 &291630408
 Transform:
