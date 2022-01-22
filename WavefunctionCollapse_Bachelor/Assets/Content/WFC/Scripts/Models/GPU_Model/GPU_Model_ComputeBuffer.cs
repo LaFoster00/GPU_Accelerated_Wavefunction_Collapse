@@ -131,8 +131,6 @@ namespace Models.GPU_Model
         private double _totalRunTime;
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
         {
-            double startTime = Time.realtimeSinceStartupAsDouble;
-
             if (waveCopyBuffer == null) Init();
             Clear();
         
@@ -153,10 +151,6 @@ namespace Models.GPU_Model
         
             /* Preparing for next run. This should be done now before the user collapses tiles by hand for the next run. */
             ClearInBuffers();
-        
-            double executionTime = Time.realtimeSinceStartupAsDouble - startTime;
-            _totalRunTime += executionTime;
-            Debug.Log($"Run took {executionTime} sec and {_totalRunTime} sec in total.");
         }
 
         private IEnumerator Run_Internal(WFC_Result result)
@@ -232,8 +226,6 @@ namespace Models.GPU_Model
             }
             else
             {
-            
-                Debug.Log("Impossible");
                 result.output = null;
                 result.success = false;
                 result.finished = true;

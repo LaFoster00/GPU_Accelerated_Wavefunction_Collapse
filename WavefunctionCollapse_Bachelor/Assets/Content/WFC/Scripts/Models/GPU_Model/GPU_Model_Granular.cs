@@ -96,7 +96,6 @@ namespace Models.GPU_Model
 
                 if (!isPossible)
                 {
-                    Debug.Log("Impossible");
                     result.output = null;
                     result.success = false;
                     result.finished = true;

@@ -81,11 +81,6 @@ namespace Models.CPU_Model
                     }
                 }
             }
-
-            if (!isPossible)
-            {
-                yield return DebugDrawCurrentState();
-            }
         }
 
         protected override IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)

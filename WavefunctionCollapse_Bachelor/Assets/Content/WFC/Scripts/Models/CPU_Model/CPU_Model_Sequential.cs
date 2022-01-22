@@ -143,11 +143,6 @@ namespace Models.CPU_Model
                     }
                 }
             }
-
-            if (!isPossible)
-            {
-                yield return DebugDrawCurrentState();
-            }
         }
 
         public override void Ban(int node, int pattern)
