@@ -244,7 +244,7 @@ namespace Models.CPU_Model
 
         private IEnumerator Propagate()
         {
-            var timer = new CodeTimer_Average(true, true, true, UnityEngine.Debug.Log);
+            var timer = new CodeTimer_Average(true, true, true, "Propagate_Sequential", Debug.Log);
             
             while (stackSize > 0)
             {
@@ -258,6 +258,7 @@ namespace Models.CPU_Model
 
                 for (int direction = 0; direction < 4; direction++)
                 {
+                    var internalTimer = new CodeTimer_Average(true, true, true, "Propagate_Internal_Sequential", Debug.Log);
                     stepInfo.targetTile.x = stepInfo.currentTile.x + Directions.DirectionsX[direction];
                     stepInfo.targetTile.y = stepInfo.currentTile.y + Directions.DirectionsY[direction];
                     if (periodic)
@@ -279,10 +280,10 @@ namespace Models.CPU_Model
                     foreach (var pat in patterns)
                     {
                         /*
-                     Decrement compatible patterns then compare.
-                     If the element was set to 0 with this operation, we need to remove
-                     the pattern from the wave, and propagate the information
-                     */
+                         Decrement compatible patterns then compare.
+                         If the element was set to 0 with this operation, we need to remove
+                         the pattern from the wave, and propagate the information
+                         */
                         if (--compatible[node2][pat][direction] == 0)
                         {
                             Ban(node2, pat);
@@ -302,6 +303,7 @@ namespace Models.CPU_Model
                             yield return DebugDrawCurrentState();
                         }
                     }
+                    internalTimer.Stop(false);
                 }
             }
             timer.Stop(false);

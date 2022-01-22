@@ -105,7 +105,7 @@ namespace Models.CPU_Model
             int node = nextNodeJob.result;
             if (node >= 0)
             {
-                var timer = new CodeTimer_Average(true, true, true, "Observe_CPU_Parallel_Batched", Debug.Log);
+                var timer = new CodeTimer_Average(true, true, true, "Observe_Parallel_Batched", Debug.Log);
                 
                 var observeJob = new Observe_Job
                 {
@@ -226,7 +226,7 @@ namespace Models.CPU_Model
 
         private IEnumerator Propagate()
         {
-            var timer = new CodeTimer_Average(true, true, true, "Propagate_CPU_Parallel_Batched",Debug.Log);
+            var timer = new CodeTimer_Average(true, true, true, "Propagate_Parallel_Batched",Debug.Log);
             
             var openNodesArray = openNodes.ToNativeArray(Allocator.TempJob);
             while (openNodesArray.Length > 0)
@@ -290,6 +290,7 @@ namespace Models.CPU_Model
 
             public void Execute(int index)
             {
+                var timer = new CodeTimer_Average(true, true, true, "Propagate_Internal_Parallel_Batched", Debug.Log);
                 int node = openWorkNodes[index];
                 int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
 
@@ -315,9 +316,9 @@ namespace Models.CPU_Model
                     int node2 = y2 * jobInfo.width + x2;
 
                     /*
-                 * Go over all still possible patterns in the current node and check if the are compatible
-                 * with the still possible patterns of the other node.
-                 */
+                     * Go over all still possible patterns in the current node and check if the are compatible
+                     * with the still possible patterns of the other node.
+                     */
                     for (int thisNodePattern = 0; thisNodePattern < jobInfo.nbPatterns; thisNodePattern++)
                     {
                         /* Go over each pattern of the active node and check if they are still active. */
@@ -359,6 +360,8 @@ namespace Models.CPU_Model
                         }
                     }
                 }
+
+                timer.Stop(false);
             }
         }
 

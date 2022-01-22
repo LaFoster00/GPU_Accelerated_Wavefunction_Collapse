@@ -351,6 +351,7 @@ namespace Models.GPU_Model
         protected override void Observe(int node, ref Random random)
         {
             var timer = new CodeTimer_Average(true, true, true, "Observe_Naive", Debug.Log);
+            
             FillBanCopyBuffers();
             base.Observe(node, ref random);
             ApplyBanCopyBuffers();

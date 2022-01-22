@@ -133,8 +133,6 @@ namespace Models.GPU_Model
                 _resultBuf.GetData(resultBufData);
                 isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
                 openNodes = Convert.ToBoolean(resultBufData[0].openNodes);
-            
-                Debug.Log($"Open Cells: {openNodes}");
 
                 /* Swap the in out buffers. */
                 BindInOutBuffers(true);

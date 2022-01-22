@@ -161,8 +161,6 @@ namespace Models.GPU_Model
 
         private IEnumerator Run_Internal(WFC_Result result)
         {
-            var timer = new CodeTimer_Average(true, true, true, "ObserveAndPropagate_ComputeBuffer", Debug.Log);
-            
             Result[] resultBufData =
             {
                 new Result
@@ -177,6 +175,8 @@ namespace Models.GPU_Model
             bool finished = false;
             while (!finished && isPossible)
             {
+                var timer = new CodeTimer_Average(true, true, true, "ObserveAndPropagate_ComputeBuffer", Debug.Log);
+                
                 if (propagatorSettings.debug == PropagatorSettings.DebugMode.OnChange)
                 {
                     for (int i = 0; i < _totalIterations; i++)
@@ -220,10 +220,10 @@ namespace Models.GPU_Model
                 _resultBuf.GetData(_resultCopyBuf);
                 isPossible = Convert.ToBoolean(_resultCopyBuf[0].isPossible);
                 finished = Convert.ToBoolean(_resultCopyBuf[0].finished);
+                
+                timer.Stop(false);
             }
 
-            timer.Stop(false);
-        
             if (isPossible)
             {
                 result.output = WaveToOutput();

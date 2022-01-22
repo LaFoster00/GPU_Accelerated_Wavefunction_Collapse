@@ -102,7 +102,7 @@ namespace Models.CPU_Model
 
         private IEnumerator Propagate()
         {
-            var timer = new CodeTimer_Average(true, true, true, UnityEngine.Debug.Log);
+            var timer = new CodeTimer_Average(true, true, true, "Propagate_Parallel", Debug.Log);
             
             var openWorkNodesArray = new NativeArray<int>(4, Allocator.TempJob);
             while (openNodes.Count > 0)
@@ -238,6 +238,7 @@ namespace Models.CPU_Model
 
             public void Execute(int direction)
             {
+                var timer = new CodeTimer_Average(true, true, true, "Propagate_Internal_Parallel", Debug.Log);
                 int node = openWorkNodes[direction];
                 int2 nodeCoord = new int2(changedNode % jobInfo.width, changedNode / jobInfo.width);
                 
@@ -302,6 +303,7 @@ namespace Models.CPU_Model
                             ref openNodes);
                     }
                 }
+                timer.Stop(false);
             }
         }
 
