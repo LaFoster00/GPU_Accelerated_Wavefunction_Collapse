@@ -267,6 +267,11 @@ namespace Models.GPU_Model
                     yield return Run_Internal(objects, result);
                 }
             }
+            
+            if (!isPossible)
+            {
+                yield return DebugDrawCurrentState();
+            }
 
             /* Preparing for next run. This should be done now before the user collapses tiles by hand for the next run. */
             ClearInBuffers();
@@ -343,7 +348,7 @@ namespace Models.GPU_Model
                     yield return DebugDrawCurrentState();
                 }
             }
-            
+
             timer.Stop(false);
         }
         
@@ -410,18 +415,6 @@ namespace Models.GPU_Model
             }
 
             _openCells = true;
-        }
-
-        /// <summary>
-        /// This should be called if the user wants to Ban a pattern from a node and directly upload those changes to the GPU.
-        /// </summary>
-        /// <param name="node"></param>
-        /// <param name="pattern"></param>
-        public void BanAndApply(int node, int pattern)
-        {
-            FillBanCopyBuffers();
-            Ban(node, pattern);
-            ApplyBanCopyBuffers();
         }
 
         /// <summary>

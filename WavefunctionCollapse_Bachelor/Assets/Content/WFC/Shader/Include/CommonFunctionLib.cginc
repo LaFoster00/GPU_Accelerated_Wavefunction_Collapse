@@ -5,6 +5,13 @@
 void Ban(uint node, uint2 nodeCoord, int pattern)
 {
     OPEN_NODES = TRUE;
+
+    /*
+     *Check if node has already been removed this iteration since pattern can be checked multiple times in one
+     *iteration. Removing the node twice will lead to wrong entropy data and a lot of rejections.
+     */
+    if (WAVE_OUT(node, pattern) == FALSE) return;
+    
     WAVE_OUT(node, pattern) = FALSE;
     
     NUM_POSSIBLE_PATTERNS(node) -= 1;

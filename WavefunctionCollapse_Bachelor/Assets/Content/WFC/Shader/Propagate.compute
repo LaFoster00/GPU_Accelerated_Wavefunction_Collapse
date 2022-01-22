@@ -2,7 +2,7 @@
 #pragma kernel CSMain
 #include "Include/CommonFunctionLib.cginc"
 
-[numthreads(4,4,1)]
+[numthreads(32,32,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
     /* If there arent any open nodes dont execute. This ensures that we dont waste computational power on unnecessary iterations*/
@@ -50,29 +50,27 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
         for (int this_node_pattern = 0; this_node_pattern < nb_patterns; this_node_pattern++)
         {
             /* Go over each pattern of the active node and check if they are still valid. */
-            if (WAVE_IN(node, this_node_pattern) == TRUE)
+            if (WAVE_IN(node, this_node_pattern) == FALSE) continue;
+            /*
+             * Go over all possible patterns of the other cell and check if any of them are compatible
+             * with the possibleNodePattern
+             */
+            bool any_possible = false;
+            for (int other_node_pattern = 0; other_node_pattern < nb_patterns; other_node_pattern++)
             {
-                /*
-                 * Go over all possible patterns of the other cell and check if any of them are compatible
-                 * with the possibleNodePattern
-                 */
-                bool any_possible = false;
-                for (int other_node_pattern = 0; other_node_pattern < nb_patterns; other_node_pattern++)
+                if (WAVE_IN(node2, other_node_pattern) == TRUE)
                 {
-                   if (WAVE_IN(node2, other_node_pattern) == TRUE)
-                   {
-                       if (PROPAGATOR(this_node_pattern, other_node_pattern, direction) == TRUE)
-                       {
-                           any_possible = true;
-                           break;
-                       }
-                   }
+                    if (PROPAGATOR(this_node_pattern, other_node_pattern, direction) == TRUE)
+                    {
+                        any_possible = true;
+                        break;
+                    }
                 }
-                /* If there were no compatible patterns found Ban the pattern. */
-                if (!any_possible)
-                {
-                    Ban(node, nodeCoord.xy, this_node_pattern);
-                }
+            }
+            /* If there were no compatible patterns found Ban the pattern. */
+            if (!any_possible)
+            {
+                Ban(node, nodeCoord.xy, this_node_pattern);
             }
         }
     }

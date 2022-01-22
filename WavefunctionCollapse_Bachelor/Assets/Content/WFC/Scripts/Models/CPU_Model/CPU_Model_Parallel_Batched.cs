@@ -266,7 +266,7 @@ namespace Models.CPU_Model
 
             /* Wave data, wave[node * nbPatterns + pattern] */
             [ReadOnly] public NativeArray<bool> waveIn;
-            [WriteOnly] public NativeArray<bool> waveOut;
+            public NativeArray<bool> waveOut;
 
             /* Maps the index of execute to the actual node index of that thread. */
             [ReadOnly] public NativeArray<int> openWorkNodes;
@@ -317,7 +317,7 @@ namespace Models.CPU_Model
                     for (int thisNodePattern = 0; thisNodePattern < jobInfo.nbPatterns; thisNodePattern++)
                     {
                         /* Go over each pattern of the active node and check if they are still active. */
-                        if (!waveIn[node * jobInfo.nbPatterns + thisNodePattern] == true) continue;
+                        if (waveIn[node * jobInfo.nbPatterns + thisNodePattern] == false) continue;
                         /*
                          * Go over all possible patterns of the other cell and check if any of them are compatible
                          * with the possibleNodePattern
@@ -416,6 +416,17 @@ namespace Models.CPU_Model
             ref NativeHashSet<int>.ParallelWriter openNodes)
         {
             Extensions.ToNativeArray(ref waveRef, out NativeArray<bool> wave);
+            
+            /*
+             *Check if node has already been removed this iteration since pattern can be checked multiple times in one
+             *iteration. Removing the node twice will lead to wrong entropy data and a lot of rejections.
+             */
+            if (wave[node * jobInfo.nbPatterns + pattern] == false)
+            {
+                wave.Dispose();
+                return;
+            }
+            
             Extensions.ToNativeArray(ref memoisationRef, out NativeArray<Memoisation> memoisation);
             Extensions.ToNativeArray(ref weightingRef, out NativeArray<Weighting> weighting);
             wave[node * jobInfo.nbPatterns + pattern] = false;
