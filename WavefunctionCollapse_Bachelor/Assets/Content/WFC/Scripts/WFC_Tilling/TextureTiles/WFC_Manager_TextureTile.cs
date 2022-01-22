@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Models.CPU_Model;
 using Models.GPU_Model;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using USCSL.Utils;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -43,6 +45,10 @@ namespace WFC.Tiling
         [SerializeField] private int width;
         [SerializeField] private int height;
         [SerializeField] private bool periodic = true;
+        [SerializeField] private bool saveOutput = false;
+        [SerializeField] private bool useApplicationPath = true;
+        [SerializeField] private string filePath = "/Content/WFC/Outputs/";
+        [SerializeField] private string fileName = "Output";
         
         [Header("Display")]
         [SerializeField] private Vector2Int displayOffset;
@@ -176,6 +182,53 @@ namespace WFC.Tiling
 
             print($"It took {Time.realtimeSinceStartup - startTime} seconds and {iteration} tries to complete this task!");
             PrintTimingData();
+
+            if (!saveOutput) yield break;
+            
+            var outputTexture = OutputToTexture(result.Result);
+            var outputImage = outputTexture.EncodeToPNG();
+            Destroy(outputTexture);
+            fileName = fileName.Replace(".png", "");
+            if (filePath[filePath.Length - 1] != '/')
+            {
+                filePath += "/";
+            }
+
+            string fullPath;
+            if (!useApplicationPath)
+            {
+                fullPath = filePath + fileName + $"_{width}_{height}" + ".png";
+                File.WriteAllBytes(fullPath, outputImage);
+            }
+            else
+            {
+                if (filePath[0] != '/')
+                {
+                    filePath = "/" + filePath;
+                }
+                fullPath = Application.dataPath + filePath + fileName + $"_{width}_{height}" + ".png";
+                File.WriteAllBytes(fullPath, outputImage);
+            }
+            print($"Image saved at {fullPath}.");
+        }
+        
+        public Texture2D OutputToTexture(Texture2D[,] output)
+        {
+            int tilesize = output[0, 0].width;
+            int MX = output.GetLength(0), MY = output.GetLength(1);
+            Texture2D result = new Texture2D(MX * tilesize, MY * tilesize, output[0,0].format, false);
+
+            for (int tileX = 0; tileX < MX; tileX++)
+            {
+                for (int tileY = 0; tileY < MY; tileY++)
+                {
+                    result.SetPixels(tileX * tilesize, tileY * tilesize, tilesize, tilesize, output[height - tileY - 1, tileX].GetPixels());
+                }
+            }
+
+            result.Apply();
+
+            return result;
         }
 
         private IEnumerator RunBenchmark(List<TileNeighbour<Texture2D>> neighbours)

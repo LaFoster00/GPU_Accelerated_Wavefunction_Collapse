@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace WFC.Tiling
 {
@@ -26,8 +28,9 @@ namespace WFC.Tiling
         protected int[][] orientedTileIds;
 
         protected Model model;
-        
-        public TilingWFC(Model solver, WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours, Model.PropagatorSettings propagatorSettings)
+
+        public TilingWFC(Model solver, WFC_2DTile<T>[] tiles, Neighbour<T>[] neighbours,
+            Model.PropagatorSettings propagatorSettings)
         {
             model = solver;
             this.tiles = tiles;
@@ -54,9 +57,9 @@ namespace WFC.Tiling
                 for (int oID = 0; oID < tiles[tID].orientations.Length; oID++) //oID = orientationID
                 {
                     // Each oriented tile id (Solver) will return their original tile and its orientation index
-                    idToOrientedTile.Add((tID, oID)); 
+                    idToOrientedTile.Add((tID, oID));
                     // Each original tile id and orientation will return their oriented tile id (Solver)
-                    orientedTileIds[tID][oID] = id;  
+                    orientedTileIds[tID][oID] = id;
                     id++;
                 }
             }
@@ -141,7 +144,7 @@ namespace WFC.Tiling
             return frequencies.ToArray();
         }
 
-        protected virtual void CollapseNodeToPattern( int y, int x, int pattern)
+        protected virtual void CollapseNodeToPattern(int y, int x, int pattern)
         {
             for (int p = 0; p < orientedToTileId.Length; p++)
             {
@@ -176,7 +179,7 @@ namespace WFC.Tiling
             public bool success;
             public T[,] result;
         }
-        
+
         /* Run the tiling wfc and return the result if the algorithm succeeded */
         public IEnumerator Run(uint seed, int limit, WFC_TypedResult returnValue)
         {

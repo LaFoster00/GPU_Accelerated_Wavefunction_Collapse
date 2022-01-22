@@ -271,16 +271,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tiles:
-  - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
   - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
   - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
+  - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
   - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-  solver: 2
+  runBenchmark: 0
+  runsPerSolver: 10
+  solver: 0
   maxNumIterations: -1
-  width: 16
-  height: 16
+  width: 128
+  height: 128
   periodic: 1
-  displayOffset: {x: 0, y: 0}
+  saveOutput: 1
+  useApplicationPath: 1
+  filePath: /Content/WFC/Outputs/
+  fileName: Output
+  displayOffset: {x: 100, y: 100}
   displayHeight: 30
   displayWidth: 30
   drawFrame: 0
@@ -293,11 +299,11 @@ MonoBehaviour:
   banShader: {fileID: 7200000, guid: d90e688b67a3bce5e9ea21aec6d89f38, type: 3}
   clearOutBuffersShader: {fileID: 7200000, guid: b879f1635e9452ef6bff8c0e3cb06aac, type: 3}
   resetOpenNodesShader: {fileID: 7200000, guid: c24e4aa2b054ead4199bfac51f777778, type: 3}
-  totalObservePropagateIterations: 10
-  propagationIterations: 2
-  timeFunctionCalls: 0
+  totalObservePropagateIterations: 1
+  propagationIterations: 30
+  timeFunctionCalls: 1
   debugMode: 0
-  stepInterval: 0
+  stepInterval: 10
 --- !u!4 &291630408
 Transform:
   m_ObjectHideFlags: 0
