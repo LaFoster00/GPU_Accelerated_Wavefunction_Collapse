@@ -121,7 +121,7 @@ namespace WFC.Tiling
                     model = new CPU_Model_Sequential(width, height, 1, periodic);
                     break;
                 case Solver.CPU_Parallel:
-                    model = new CPU_Model_Parallel(width, height, 1, periodic);
+                    model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
                     break;
                 case Solver.CPU_Parallel_Batched:
                     model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
@@ -252,7 +252,7 @@ namespace WFC.Tiling
                         model = new CPU_Model_Sequential(width, height, 1, periodic);
                         break;
                     case Solver.CPU_Parallel:
-                        model = new CPU_Model_Parallel(width, height, 1, periodic);
+                        model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
                         break;
                     case Solver.CPU_Parallel_Batched:
                         model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);

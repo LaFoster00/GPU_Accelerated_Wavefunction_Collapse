@@ -277,7 +277,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
   runBenchmark: 0
   runsPerSolver: 10
-  solver: 0
+  solver: 2
   maxNumIterations: -1
   width: 128
   height: 128

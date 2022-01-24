@@ -14,11 +14,11 @@ using Random = Unity.Mathematics.Random;
 namespace Models.CPU_Model
 {
     [BurstCompile]
-    public class CPU_Model_Parallel : CPU_Model_Parallel_Base
+    public class CPU_Model_Parallel_Queue : CPU_Model_Parallel_Base
     {
         private NativeQueue<int> openNodes;
         
-        public CPU_Model_Parallel(int width, int height, int patternSize, bool periodic) : base(width, height, patternSize, periodic)
+        public CPU_Model_Parallel_Queue(int width, int height, int patternSize, bool periodic) : base(width, height, patternSize, periodic)
         {
         }
 
@@ -108,11 +108,34 @@ namespace Models.CPU_Model
             while (openNodes.Count > 0)
             {
                 int changedNode = openNodes.Dequeue();
-                openWorkNodesArray[0] = openNodes.Dequeue();
-                openWorkNodesArray[1] = openNodes.Dequeue();
-                openWorkNodesArray[2] = openNodes.Dequeue();
-                openWorkNodesArray[3] = openNodes.Dequeue();
                 
+                /* Calculate neighboring nodes here instead of inside ban to avoid potential race conditions. */
+                int2 nodeCoord = new int2(changedNode % width, changedNode / width);
+                /* Mark the neighbouring nodes for collapse and update info */
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    /* Generate neighbour coordinate */
+                    int x2 = nodeCoord.x + Directions.DirectionsX[direction];
+                    int y2 = nodeCoord.y + Directions.DirectionsY[direction];
+
+                    if (jobInfo.periodic)
+                    {
+                        x2 = (x2 + jobInfo.width) % jobInfo.width;
+                        y2 = (y2 + jobInfo.height) % jobInfo.height;
+                    }
+                    else if (!jobInfo.periodic && (x2 < 0
+                                                   || y2 < 0
+                                                   || x2 + jobInfo.patternSize >= jobInfo.width
+                                                   || y2 + jobInfo.patternSize >= jobInfo.height))
+                    {
+                        continue;
+                    }
+
+                    /* Add neighbour to hash set of pen neighbours. */
+                    int node2 = y2 * jobInfo.width + x2;
+                    openWorkNodesArray[direction] = node2;
+                }
+
                 var propagateJob = new Propagate_Job()
                 {
                     changedNode = changedNode,
@@ -383,31 +406,6 @@ namespace Models.CPU_Model
             }
 
             memoisation[node] = mem;
-
-            /* Mark the neighbouring nodes for collapse and update info */
-            for (int direction = 0; direction < 4; direction++)
-            {
-                /* Generate neighbour coordinate */
-                int x2 = nodeCoord.x + Directions.DirectionsX[direction];
-                int y2 = nodeCoord.y + Directions.DirectionsY[direction];
-
-                if (jobInfo.periodic)
-                {
-                    x2 = (x2 + jobInfo.width) % jobInfo.width;
-                    y2 = (y2 + jobInfo.height) % jobInfo.height;
-                }
-                else if (!jobInfo.periodic && (x2 < 0
-                                               || y2 < 0
-                                               || x2 + jobInfo.patternSize >= jobInfo.width
-                                               || y2 + jobInfo.patternSize >= jobInfo.height))
-                {
-                    continue;
-                }
-
-                /* Add neighbour to hash set of pen neighbours. */
-                int node2 = y2 * jobInfo.width + x2;
-                openNodes.Enqueue(node2);
-            }
 
             wave.Dispose();
             memoisation.Dispose();
