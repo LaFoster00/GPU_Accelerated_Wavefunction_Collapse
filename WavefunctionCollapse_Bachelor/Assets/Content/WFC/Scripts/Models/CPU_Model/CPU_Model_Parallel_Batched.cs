@@ -111,7 +111,7 @@ namespace Models.CPU_Model
                     weighting = this.weighting,
                     memoisation = this.memoisation,
                     isPossible = this.isPossible,
-                    openNodes = this.openNodes.AsParallelWriter()
+                    openNodes = this.openNodes.AsParallelWriter(),
                 };
                 observeJob.Execute();
                 objects.random = observeJob.random;
@@ -154,7 +154,7 @@ namespace Models.CPU_Model
             [ReadOnly] public JobInfo jobInfo;
             [ReadOnly] public int node;
 
-            [ReadOnly] public NativeArray<bool> wave;
+            public NativeArray<bool> wave;
             [ReadOnly] public NativeArray<Weighting> weighting;
             [ReadOnly] public Random random;
             [WriteOnly] public bool isPossible;
@@ -180,18 +180,22 @@ namespace Models.CPU_Model
                     if (wave[node * jobInfo.nbPatterns + pattern] != (pattern == r))
                     {
                         int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
-
-                        Extensions.GetReadWriteRef(ref wave, out var waveRef);
-                        Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
-                        Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
-
-                        Ban_Burst(node, ref nodeCoord, pattern,
-                            ref isPossible,
-                            in jobInfo,
-                            ref waveRef,
-                            ref memoisationRef,
-                            ref weightingRef,
-                            ref openNodes);
+                        
+                        var ban = new Ban_Job()
+                        {
+                            node = node,
+                            nodeCoord = nodeCoord,
+                            pattern = pattern,
+                            isPossible = isPossible,
+                            wave = wave,
+                            jobInfo = jobInfo,
+                            memoisation = memoisation,
+                            weighting = weighting,
+                            openNodes = openNodes
+                                
+                        };
+                        ban.Execute();
+                        isPossible = ban.isPossible;
                     }
                 }
 
@@ -200,8 +204,8 @@ namespace Models.CPU_Model
 
             public int RandomFromDistribution(double threshold)
             {
-                Extensions.GetReadWriteRef(ref distribution, out var distributionRef);
-                double sum = Extensions.SumDoubles(ref distributionRef);
+                NativeSlice<double> distributionSlice = distribution;
+                double sum = Extensions.SumDoubles(ref distributionSlice);
                 for (int i = 0; i < distribution.Length; i++)
                 {
                     distribution[i] /= sum;
@@ -266,6 +270,7 @@ namespace Models.CPU_Model
 
             /* Wave data, wave[node * nbPatterns + pattern] */
             [ReadOnly] public NativeArray<bool> waveIn;
+            [NativeDisableContainerSafetyRestriction]
             public NativeArray<bool> waveOut;
 
             /* Maps the index of execute to the actual node index of that thread. */
@@ -285,7 +290,6 @@ namespace Models.CPU_Model
 
             public void Execute(int index)
             {
-                var timer = new CodeTimer_Average(true, true, true, "Propagate_Internal_Parallel_Batched", Debug.Log);
                 int node = openWorkNodes[index];
                 int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
 
@@ -341,22 +345,24 @@ namespace Models.CPU_Model
                         /* If there were no compatible patterns found Ban the pattern. */
                         if (!anyPossible)
                         {
-                            Extensions.GetReadWriteRef(ref waveOut, out var waveRef);
-                            Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
-                            Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
-
-                            Ban_Burst(node, ref nodeCoord, thisNodePattern,
-                                ref isPossible,
-                                in jobInfo,
-                                ref waveRef,
-                                ref memoisationRef,
-                                ref weightingRef,
-                                ref openNodes);
+                            var ban = new Ban_Job()
+                            {
+                                node = node,
+                                nodeCoord = nodeCoord,
+                                pattern = thisNodePattern,
+                                isPossible = isPossible,
+                                wave = waveOut,
+                                jobInfo = jobInfo,
+                                memoisation = memoisation,
+                                weighting = weighting,
+                                openNodes = openNodes
+                                
+                            };
+                            ban.Execute();
+                            isPossible = ban.isPossible;
                         }
                     }
                 }
-
-                timer.Stop(false);
             }
         }
 
@@ -392,87 +398,82 @@ namespace Models.CPU_Model
         {
             int2 nodeCoord = new int2(node % jobInfo.width, node / jobInfo.width);
 
-            Extensions.GetReadWriteRef(ref waveIn, out var waveRef);
-            Extensions.GetReadWriteRef(ref memoisation, out var memoisationRef);
-            Extensions.GetReadonlyRef(ref weighting, out var weightingRef);
-            NativeHashSet<int>.ParallelWriter openNodesPW = openNodes.AsParallelWriter();
-
-            Ban_Burst(node, ref nodeCoord, pattern,
-                ref isPossible,
-                in jobInfo,
-                ref waveRef,
-                ref memoisationRef,
-                ref weightingRef,
-                ref openNodesPW);
+            var ban = new Ban_Job()
+            {
+                node = node,
+                nodeCoord = nodeCoord,
+                pattern = pattern,
+                isPossible = isPossible,
+                wave = waveIn,
+                jobInfo = jobInfo,
+                memoisation = memoisation,
+                weighting = weighting,
+                openNodes = openNodes.AsParallelWriter()
+            };
+            ban.Execute();
+            isPossible = ban.isPossible;
         }
 
         [BurstCompile]
-        private static void Ban_Burst(int node, ref int2 nodeCoord, int pattern,
-            ref bool isPossible,
-            in JobInfo jobInfo,
-            ref Extensions.NativeArrayRef waveRef,
-            ref Extensions.NativeArrayRef memoisationRef,
-            ref Extensions.NativeArrayRef weightingRef,
-            ref NativeHashSet<int>.ParallelWriter openNodes)
+        private struct Ban_Job : IJob
         {
-            Extensions.ToNativeArray(ref waveRef, out NativeArray<bool> wave);
+            [ReadOnly] public int node;
+            [ReadOnly] public int pattern;
+            [ReadOnly] public bool isPossible;
+            [ReadOnly] public JobInfo jobInfo;
+            [ReadOnly] public int2 nodeCoord;
+            public NativeSlice<bool> wave;
+            public NativeSlice<Memoisation> memoisation;
+            [ReadOnly] public NativeSlice<Weighting> weighting;
+            public NativeHashSet<int>.ParallelWriter openNodes;
             
-            /*
-             *Check if node has already been removed this iteration since pattern can be checked multiple times in one
-             *iteration. Removing the node twice will lead to wrong entropy data and a lot of rejections.
-             */
-            if (wave[node * jobInfo.nbPatterns + pattern] == false)
+            public void Execute()
             {
-                wave.Dispose();
-                return;
-            }
-            
-            Extensions.ToNativeArray(ref memoisationRef, out NativeArray<Memoisation> memoisation);
-            Extensions.ToNativeArray(ref weightingRef, out NativeArray<Weighting> weighting);
-            wave[node * jobInfo.nbPatterns + pattern] = false;
-
-            Memoisation mem = memoisation[node];
-            mem.numPossiblePatterns -= 1;
-            mem.sumsOfWeights -= weighting[pattern].weight;
-            mem.sumsOfWeightsLogWeights -= weighting[pattern].logWeight;
-
-            double sum = mem.sumsOfWeights;
-            mem.entropies = math.log(sum) - mem.sumsOfWeightsLogWeights / sum;
-            if (mem.numPossiblePatterns <= 0)
-            {
-                isPossible = false;
-            }
-
-            memoisation[node] = mem;
-
-            /* Mark the neighbouring nodes for collapse and update info */
-            for (int direction = 0; direction < 4; direction++)
-            {
-                /* Generate neighbour coordinate */
-                int x2 = nodeCoord.x + Directions.DirectionsX[direction];
-                int y2 = nodeCoord.y + Directions.DirectionsY[direction];
-
-                if (jobInfo.periodic)
+                if (wave[node * jobInfo.nbPatterns + pattern] == false)
                 {
-                    x2 = (x2 + jobInfo.width) % jobInfo.width;
-                    y2 = (y2 + jobInfo.height) % jobInfo.height;
+                    return;
                 }
-                else if (!jobInfo.periodic && (x2 < 0
-                                               || y2 < 0
-                                               || x2 + jobInfo.patternSize >= jobInfo.width
-                                               || y2 + jobInfo.patternSize >= jobInfo.height))
+                wave[node * jobInfo.nbPatterns + pattern] = false;
+
+                Memoisation mem = memoisation[node];
+                mem.numPossiblePatterns -= 1;
+                mem.sumsOfWeights -= weighting[pattern].weight;
+                mem.sumsOfWeightsLogWeights -= weighting[pattern].logWeight;
+
+                double sum = mem.sumsOfWeights;
+                mem.entropies = math.log(sum) - mem.sumsOfWeightsLogWeights / sum;
+                if (mem.numPossiblePatterns <= 0)
                 {
-                    continue;
+                    isPossible = false;
                 }
 
-                /* Add neighbour to hash set of pen neighbours. */
-                int node2 = y2 * jobInfo.width + x2;
-                openNodes.Add(node2);
-            }
+                memoisation[node] = mem;
 
-            wave.Dispose();
-            memoisation.Dispose();
-            weighting.Dispose();
+                /* Mark the neighbouring nodes for collapse and update info */
+                for (int direction = 0; direction < 4; direction++)
+                {
+                    /* Generate neighbour coordinate */
+                    int x2 = nodeCoord.x + Directions.DirectionsX[direction];
+                    int y2 = nodeCoord.y + Directions.DirectionsY[direction];
+
+                    if (jobInfo.periodic)
+                    {
+                        x2 = (x2 + jobInfo.width) % jobInfo.width;
+                        y2 = (y2 + jobInfo.height) % jobInfo.height;
+                    }
+                    else if (!jobInfo.periodic && (x2 < 0
+                                                   || y2 < 0
+                                                   || x2 + jobInfo.patternSize >= jobInfo.width
+                                                   || y2 + jobInfo.patternSize >= jobInfo.height))
+                    {
+                        continue;
+                    }
+
+                    /* Add neighbour to hash set of pen neighbours. */
+                    int node2 = y2 * jobInfo.width + x2;
+                    openNodes.Add(node2);
+                }
+            }
         }
 
         public override void Dispose()

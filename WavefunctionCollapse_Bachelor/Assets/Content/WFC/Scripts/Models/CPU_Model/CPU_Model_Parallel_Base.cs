@@ -201,6 +201,29 @@ namespace Models.CPU_Model
         }
 
         protected abstract IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result);
+        
+        protected int NextUnobservedNode(ref Random random)
+        {
+            double min = Double.MaxValue;
+            int argmin = -1;
+            for (int node = 0; node < nbNodes; node++)
+            {
+                if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
+                int remainingValues = memoisation[node].numPossiblePatterns;
+                double entropy = memoisation[node].entropies;
+                if (remainingValues > 1 && entropy <= min)
+                {
+                    double noise = 1E-6 * random.NextDouble();
+                    if (entropy + noise < min)
+                    {
+                        min = entropy + noise;
+                        argmin = node;
+                    }
+                }
+            }
+
+            return argmin;
+        }
 
         [BurstCompile]
         protected struct NextUnobservedNode_Job : IJob

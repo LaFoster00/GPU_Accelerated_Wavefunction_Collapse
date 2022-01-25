@@ -8,7 +8,6 @@ using Models.CPU_Model;
 using Models.GPU_Model;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
 using USCSL.Utils;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -18,7 +17,7 @@ namespace WFC.Tiling
     public enum Solver
     {
         CPU_Sequential = 0,
-        CPU_Parallel = 1,
+        CPU_Parallel_Queue = 1,
         CPU_Parallel_Batched = 2,
         GPU_Naive = 3,
         GPU_Granular = 4,
@@ -120,7 +119,7 @@ namespace WFC.Tiling
                 case Solver.CPU_Sequential:
                     model = new CPU_Model_Sequential(width, height, 1, periodic);
                     break;
-                case Solver.CPU_Parallel:
+                case Solver.CPU_Parallel_Queue:
                     model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
                     break;
                 case Solver.CPU_Parallel_Batched:
@@ -159,7 +158,7 @@ namespace WFC.Tiling
             
             switch (solver)
             {
-                case Solver.CPU_Parallel:
+                case Solver.CPU_Parallel_Queue:
                 case Solver.CPU_Parallel_Batched:
                     if (model is CPU_Model_Parallel_Base parallelModel)
                         parallelModel.Dispose();
@@ -251,7 +250,7 @@ namespace WFC.Tiling
                     case Solver.CPU_Sequential:
                         model = new CPU_Model_Sequential(width, height, 1, periodic);
                         break;
-                    case Solver.CPU_Parallel:
+                    case Solver.CPU_Parallel_Queue:
                         model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
                         break;
                     case Solver.CPU_Parallel_Batched:
@@ -306,7 +305,7 @@ namespace WFC.Tiling
 
                 switch (solver)
                 {
-                    case Solver.CPU_Parallel:
+                    case Solver.CPU_Parallel_Queue:
                     case Solver.CPU_Parallel_Batched:
                         if (model is CPU_Model_Parallel_Base parallelModel)
                             parallelModel.Dispose();

@@ -279,8 +279,8 @@ MonoBehaviour:
   runsPerSolver: 10
   solver: 2
   maxNumIterations: -1
-  width: 128
-  height: 128
+  width: 16
+  height: 16
   periodic: 1
   saveOutput: 1
   useApplicationPath: 1
@@ -303,7 +303,7 @@ MonoBehaviour:
   propagationIterations: 30
   timeFunctionCalls: 1
   debugMode: 0
-  stepInterval: 10
+  stepInterval: 0
 --- !u!4 &291630408
 Transform:
   m_ObjectHideFlags: 0
