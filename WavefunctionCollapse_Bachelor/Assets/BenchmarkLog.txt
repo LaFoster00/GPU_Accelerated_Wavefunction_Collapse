@@ -1,0 +1,3528 @@
+Running benchmark for 1 tiles.
+Running config with 10 iterations and a size of int2(8, 8).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0233273 seconds.
+New Run
+This iteration took 0.008923 seconds.
+New Run
+This iteration took 0.0048699 seconds.
+New Run
+This iteration took 0.0049966 seconds.
+New Run
+This iteration took 0.0050623 seconds.
+New Run
+This iteration took 0.0041772 seconds.
+New Run
+This iteration took 0.0051134 seconds.
+New Run
+This iteration took 0.0051023 seconds.
+New Run
+This iteration took 0.004937 seconds.
+New Run
+This iteration took 0.0050193 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0324303 seconds.
+New Run
+This iteration took 0.0043109 seconds.
+New Run
+This iteration took 0.0045154 seconds.
+New Run
+This iteration took 0.0047096 seconds.
+New Run
+This iteration took 0.0047345 seconds.
+New Run
+This iteration took 0.0043425 seconds.
+New Run
+This iteration took 0.0046955 seconds.
+New Run
+This iteration took 0.0047106 seconds.
+New Run
+This iteration took 0.0046434 seconds.
+New Run
+This iteration took 0.004695 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0121176 seconds.
+New Run
+This iteration took 0.0042332 seconds.
+New Run
+This iteration took 0.0042235 seconds.
+New Run
+This iteration took 0.0051285 seconds.
+New Run
+This iteration took 0.0123072 seconds.
+New Run
+This iteration took 0.0056066 seconds.
+New Run
+This iteration took 0.0023173 seconds.
+New Run
+This iteration took 0.0044387 seconds.
+New Run
+This iteration took 0.0043013 seconds.
+New Run
+This iteration took 0.0041343 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.0084289 seconds.
+New Run
+This iteration took 0.0047636 seconds.
+New Run
+This iteration took 0.0041188 seconds.
+New Run
+This iteration took 0.0048413 seconds.
+New Run
+This iteration took 0.004893 seconds.
+New Run
+This iteration took 0.0050565 seconds.
+New Run
+This iteration took 0.0049495 seconds.
+New Run
+This iteration took 0.0048956 seconds.
+New Run
+This iteration took 0.0049099 seconds.
+New Run
+This iteration took 0.0048647 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.0124097 seconds.
+New Run
+This iteration took 0.0050514 seconds.
+New Run
+This iteration took 0.0049398 seconds.
+New Run
+This iteration took 0.0043328 seconds.
+New Run
+This iteration took 0.0049618 seconds.
+New Run
+This iteration took 0.004152 seconds.
+New Run
+This iteration took 0.0040922 seconds.
+New Run
+This iteration took 0.0048109 seconds.
+New Run
+This iteration took 0.0050106 seconds.
+New Run
+This iteration took 0.0048454 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0126187 seconds.
+New Run
+This iteration took 0.0043207 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0131173 seconds.
+New Run
+This iteration took 0.004689 seconds.
+New Run
+This iteration took 0.0096587 seconds.
+New Run
+This iteration took 0.0043647 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0085449 seconds.
+New Run
+This iteration took 0.0049026 seconds.
+New Run
+This iteration took 0.0049417 seconds.
+New Run
+This iteration took 0.0049387 seconds.
+Function 'Observe_Sequential' took 5.04E-05 on average.
+0.001008 seconds in total. 20 total invocations
+Function 'Propagate_Sequential' took 0.00023126 on average.
+0.0023126 seconds in total. 10 total invocations
+Function 'Propagate_Internal_Sequential' took 1.53476562500003E-07 on average.
+0.000392900000000008 seconds in total. 2560 total invocations
+Function 'Observe_Parallel' took 0.00060714 on average.
+0.0060714 seconds in total. 10 total invocations
+Function 'Propagate_Parallel' took 0.00108614 on average.
+0.0108614 seconds in total. 10 total invocations
+Function 'Observe_Parallel_Batched' took 0.00026312 on average.
+0.0026312 seconds in total. 10 total invocations
+Function 'Propagate_Parallel_Batched' took 0.00049197 on average.
+0.0049197 seconds in total. 10 total invocations
+Function 'Observe_Naive' took 0.00023029 on average.
+0.0023029 seconds in total. 10 total invocations
+Function 'Propagate_Naive' took 0.0006675 on average.
+0.006675 seconds in total. 10 total invocations
+Function 'Observe_Granular' took 0.00018715 on average.
+0.003743 seconds in total. 20 total invocations
+Function 'Propagate_Granular' took 0.00068811 on average.
+0.0068811 seconds in total. 10 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.00021909347826087 on average.
+0.0100783 seconds in total. 46 total invocations
+Solver 'CPU_Sequential took 0.00752711 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.00781516 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.00633254 seconds on average for a run.
+Solver 'GPU_Naive took 0.00562432 seconds on average for a run.
+Solver 'GPU_Granular took 0.00585748 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.00761994 seconds on average for a run.
+Running config with 10 iterations and a size of int2(16, 16).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0029036 seconds.
+New Run
+This iteration took 0.0050233 seconds.
+New Run
+This iteration took 0.0049611 seconds.
+New Run
+This iteration took 0.0050777 seconds.
+New Run
+This iteration took 0.0050311 seconds.
+New Run
+This iteration took 0.0050323 seconds.
+New Run
+This iteration took 0.0061098 seconds.
+New Run
+This iteration took 0.0050915 seconds.
+New Run
+This iteration took 0.005025 seconds.
+New Run
+This iteration took 0.0051917 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0041743 seconds.
+New Run
+This iteration took 0.0066889 seconds.
+New Run
+This iteration took 0.0042944 seconds.
+New Run
+This iteration took 0.0068126 seconds.
+New Run
+This iteration took 0.0045695 seconds.
+New Run
+This iteration took 0.0042909 seconds.
+New Run
+This iteration took 0.0040195 seconds.
+New Run
+This iteration took 0.0070866 seconds.
+New Run
+This iteration took 0.0041789 seconds.
+New Run
+This iteration took 0.004385 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0045261 seconds.
+New Run
+This iteration took 0.0045619 seconds.
+New Run
+This iteration took 0.0050661 seconds.
+New Run
+This iteration took 0.0047648 seconds.
+New Run
+This iteration took 0.0042053 seconds.
+New Run
+This iteration took 0.0048379 seconds.
+New Run
+This iteration took 0.0047731 seconds.
+New Run
+This iteration took 0.0044375 seconds.
+New Run
+This iteration took 0.0048996 seconds.
+New Run
+This iteration took 0.0049279 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.004209 seconds.
+New Run
+This iteration took 0.0044076 seconds.
+New Run
+This iteration took 0.0047172 seconds.
+New Run
+This iteration took 0.0126352 seconds.
+New Run
+This iteration took 0.0047298 seconds.
+New Run
+This iteration took 0.004513 seconds.
+New Run
+This iteration took 0.0043759 seconds.
+New Run
+This iteration took 0.004627 seconds.
+New Run
+This iteration took 0.0042653 seconds.
+New Run
+This iteration took 0.0049305 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.0044083 seconds.
+New Run
+This iteration took 0.0040924 seconds.
+New Run
+This iteration took 0.0049631 seconds.
+New Run
+This iteration took 0.0050765 seconds.
+New Run
+This iteration took 0.004962 seconds.
+New Run
+This iteration took 0.0047014 seconds.
+New Run
+This iteration took 0.0048631 seconds.
+New Run
+This iteration took 0.0050366 seconds.
+New Run
+This iteration took 0.0050696 seconds.
+New Run
+This iteration took 0.0049714 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+This iteration took 0.0039982 seconds.
+New Run
+This iteration took 0.0045267 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0094047 seconds.
+New Run
+This iteration took 0.0043334 seconds.
+New Run
+This iteration took 0.0044472 seconds.
+New Run
+This iteration took 0.0046355 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0098179 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.023749 seconds.
+New Run
+This iteration took 0.0047664 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0098553 seconds.
+Function 'Observe_Sequential' took 3.08E-06 on average.
+6.16E-05 seconds in total. 20 total invocations
+Function 'Propagate_Sequential' took 0.00080945 on average.
+0.0080945 seconds in total. 10 total invocations
+Function 'Propagate_Internal_Sequential' took 1.36865234374995E-07 on average.
+0.00140149999999995 seconds in total. 10240 total invocations
+Function 'Observe_Parallel' took 1.25E-05 on average.
+0.000125 seconds in total. 10 total invocations
+Function 'Propagate_Parallel' took 0.00238009 on average.
+0.0238009 seconds in total. 10 total invocations
+Function 'Observe_Parallel_Batched' took 1.411E-05 on average.
+0.0001411 seconds in total. 10 total invocations
+Function 'Propagate_Parallel_Batched' took 0.00042431 on average.
+0.0042431 seconds in total. 10 total invocations
+Function 'Observe_Naive' took 0.00017821 on average.
+0.0017821 seconds in total. 10 total invocations
+Function 'Propagate_Naive' took 0.0011962 on average.
+0.011962 seconds in total. 10 total invocations
+Function 'Observe_Granular' took 0.000236865 on average.
+0.0047373 seconds in total. 20 total invocations
+Function 'Propagate_Granular' took 0.00112558 on average.
+0.0112558 seconds in total. 10 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.000284852 on average.
+0.0142426 seconds in total. 50 total invocations
+Solver 'CPU_Sequential took 0.00540186 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.0055091 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.00516061 seconds on average for a run.
+Solver 'GPU_Naive took 0.00577352 seconds on average for a run.
+Solver 'GPU_Granular took 0.0052076 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.00840304 seconds on average for a run.
+Running config with 10 iterations and a size of int2(32, 32).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.008411 seconds.
+New Run
+This iteration took 0.0051626 seconds.
+New Run
+This iteration took 0.0052863 seconds.
+New Run
+This iteration took 0.0051383 seconds.
+New Run
+This iteration took 0.0050609 seconds.
+New Run
+This iteration took 0.0054485 seconds.
+New Run
+This iteration took 0.0051828 seconds.
+New Run
+This iteration took 0.0051394 seconds.
+New Run
+This iteration took 0.0125334 seconds.
+New Run
+This iteration took 0.0055827 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0103071 seconds.
+New Run
+This iteration took 0.017544 seconds.
+New Run
+This iteration took 0.0105235 seconds.
+New Run
+This iteration took 0.0105451 seconds.
+New Run
+This iteration took 0.0107922 seconds.
+New Run
+This iteration took 0.0105199 seconds.
+New Run
+This iteration took 0.0106721 seconds.
+New Run
+This iteration took 0.0102148 seconds.
+New Run
+This iteration took 0.0101488 seconds.
+New Run
+This iteration took 0.0109751 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0046735 seconds.
+New Run
+This iteration took 0.0046966 seconds.
+New Run
+This iteration took 0.0046045 seconds.
+New Run
+This iteration took 0.0059726 seconds.
+New Run
+This iteration took 0.0105419 seconds.
+New Run
+This iteration took 0.0048496 seconds.
+New Run
+This iteration took 0.0047709 seconds.
+New Run
+This iteration took 0.0046915 seconds.
+New Run
+This iteration took 0.0046301 seconds.
+New Run
+This iteration took 0.0046999 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.0065217 seconds.
+New Run
+This iteration took 0.0052273 seconds.
+New Run
+This iteration took 0.0124112 seconds.
+New Run
+This iteration took 0.0053828 seconds.
+New Run
+This iteration took 0.0051364 seconds.
+New Run
+This iteration took 0.0050076 seconds.
+New Run
+This iteration took 0.0050911 seconds.
+New Run
+This iteration took 0.005249 seconds.
+New Run
+This iteration took 0.0048502 seconds.
+New Run
+This iteration took 0.0074448 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.0064572 seconds.
+New Run
+This iteration took 0.006051 seconds.
+New Run
+This iteration took 0.0090384 seconds.
+New Run
+This iteration took 0.0085928 seconds.
+New Run
+This iteration took 0.0059208 seconds.
+New Run
+This iteration took 0.0055393 seconds.
+New Run
+This iteration took 0.0059449 seconds.
+New Run
+This iteration took 0.0056327 seconds.
+New Run
+This iteration took 0.006151 seconds.
+New Run
+This iteration took 0.0057779 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+This iteration took 0.0052764 seconds.
+New Run
+This iteration took 0.0047864 seconds.
+New Run
+This iteration took 0.0065596 seconds.
+New Run
+This iteration took 0.0048427 seconds.
+New Run
+This iteration took 0.0046805 seconds.
+New Run
+This iteration took 0.0048363 seconds.
+New Run
+This iteration took 0.0051141 seconds.
+New Run
+This iteration took 0.0046325 seconds.
+New Run
+This iteration took 0.0047577 seconds.
+New Run
+This iteration took 0.0060161 seconds.
+Function 'Observe_Sequential' took 2.895E-06 on average.
+5.79E-05 seconds in total. 20 total invocations
+Function 'Propagate_Sequential' took 0.00336022 on average.
+0.0336022 seconds in total. 10 total invocations
+Function 'Propagate_Internal_Sequential' took 1.27341308593756E-07 on average.
+0.00521590000000025 seconds in total. 40960 total invocations
+Function 'Observe_Parallel' took 1.141E-05 on average.
+0.0001141 seconds in total. 10 total invocations
+Function 'Propagate_Parallel' took 0.00752205 on average.
+0.0752205 seconds in total. 10 total invocations
+Function 'Observe_Parallel_Batched' took 1.254E-05 on average.
+0.0001254 seconds in total. 10 total invocations
+Function 'Propagate_Parallel_Batched' took 0.0010034 on average.
+0.010034 seconds in total. 10 total invocations
+Function 'Observe_Naive' took 0.00020505 on average.
+0.0020505 seconds in total. 10 total invocations
+Function 'Propagate_Naive' took 0.00208647 on average.
+0.0208647 seconds in total. 10 total invocations
+Function 'Observe_Granular' took 0.000471565 on average.
+0.0094313 seconds in total. 20 total invocations
+Function 'Propagate_Granular' took 0.00224252 on average.
+0.0224252 seconds in total. 10 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.0004774475 on average.
+0.0190979 seconds in total. 40 total invocations
+Solver 'CPU_Sequential took 0.00672519 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.01161781 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.00584289 seconds on average for a run.
+Solver 'GPU_Naive took 0.0066846 seconds on average for a run.
+Solver 'GPU_Granular took 0.0070051 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.00562788 seconds on average for a run.
+Running config with 10 iterations and a size of int2(64, 64).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0383388 seconds.
+New Run
+This iteration took 0.0145188 seconds.
+New Run
+This iteration took 0.0145527 seconds.
+New Run
+This iteration took 0.0148418 seconds.
+New Run
+This iteration took 0.0205657 seconds.
+New Run
+This iteration took 0.0146249 seconds.
+New Run
+This iteration took 0.0143646 seconds.
+New Run
+This iteration took 0.0147278 seconds.
+New Run
+This iteration took 0.0147577 seconds.
+New Run
+This iteration took 0.0165372 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0428096 seconds.
+New Run
+This iteration took 0.0356934 seconds.
+New Run
+This iteration took 0.0357152 seconds.
+New Run
+This iteration took 0.0353929 seconds.
+New Run
+This iteration took 0.038582 seconds.
+New Run
+This iteration took 0.0340251 seconds.
+New Run
+This iteration took 0.0343028 seconds.
+New Run
+This iteration took 0.0352654 seconds.
+New Run
+This iteration took 0.0348353 seconds.
+New Run
+This iteration took 0.0351628 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0073585 seconds.
+New Run
+This iteration took 0.0075342 seconds.
+New Run
+This iteration took 0.0070767 seconds.
+New Run
+This iteration took 0.0071915 seconds.
+New Run
+This iteration took 0.0072705 seconds.
+New Run
+This iteration took 0.0147294 seconds.
+New Run
+This iteration took 0.0074741 seconds.
+New Run
+This iteration took 0.0072541 seconds.
+New Run
+This iteration took 0.0070399 seconds.
+New Run
+This iteration took 0.0113457 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.010658 seconds.
+New Run
+This iteration took 0.0094246 seconds.
+New Run
+This iteration took 0.0159667 seconds.
+New Run
+This iteration took 0.0091019 seconds.
+New Run
+This iteration took 0.0089493 seconds.
+New Run
+This iteration took 0.0091681 seconds.
+New Run
+This iteration took 0.0094339 seconds.
+New Run
+This iteration took 0.0084818 seconds.
+New Run
+This iteration took 0.0093484 seconds.
+New Run
+This iteration took 0.0103067 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.0222814 seconds.
+New Run
+This iteration took 0.0205322 seconds.
+New Run
+This iteration took 0.0177833 seconds.
+New Run
+This iteration took 0.0182718 seconds.
+New Run
+This iteration took 0.0309957 seconds.
+New Run
+This iteration took 0.0174502 seconds.
+New Run
+This iteration took 0.0173756 seconds.
+New Run
+This iteration took 0.0174543 seconds.
+New Run
+This iteration took 0.0176266 seconds.
+New Run
+This iteration took 0.0175455 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+This iteration took 0.0120509 seconds.
+New Run
+This iteration took 0.0144588 seconds.
+New Run
+This iteration took 0.0144133 seconds.
+New Run
+This iteration took 0.0195676 seconds.
+New Run
+This iteration took 0.0213245 seconds.
+New Run
+This iteration took 0.0138422 seconds.
+New Run
+This iteration took 0.0143654 seconds.
+New Run
+This iteration took 0.0146395 seconds.
+New Run
+This iteration took 0.0140656 seconds.
+New Run
+This iteration took 0.0148346 seconds.
+Function 'Observe_Sequential' took 2.775E-06 on average.
+5.55E-05 seconds in total. 20 total invocations
+Function 'Propagate_Sequential' took 0.01176489 on average.
+0.1176489 seconds in total. 10 total invocations
+Function 'Propagate_Internal_Sequential' took 1.24346923827851E-07 on average.
+0.0203729999999551 seconds in total. 163840 total invocations
+Function 'Observe_Parallel' took 1.106E-05 on average.
+0.0001106 seconds in total. 10 total invocations
+Function 'Propagate_Parallel' took 0.03119597 on average.
+0.3119597 seconds in total. 10 total invocations
+Function 'Observe_Parallel_Batched' took 1.289E-05 on average.
+0.0001289 seconds in total. 10 total invocations
+Function 'Propagate_Parallel_Batched' took 0.00339453 on average.
+0.0339453 seconds in total. 10 total invocations
+Function 'Observe_Naive' took 0.00031079 on average.
+0.0031079 seconds in total. 10 total invocations
+Function 'Propagate_Naive' took 0.00491515 on average.
+0.0491515 seconds in total. 10 total invocations
+Function 'Observe_Granular' took 0.00223887 on average.
+0.0447774 seconds in total. 20 total invocations
+Function 'Propagate_Granular' took 0.0052512 on average.
+0.052512 seconds in total. 10 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.0017661675 on average.
+0.0706467 seconds in total. 40 total invocations
+Solver 'CPU_Sequential took 0.01826327 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.03664068 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.00889667 seconds on average for a run.
+Solver 'GPU_Naive took 0.01057548 seconds on average for a run.
+Solver 'GPU_Granular took 0.02061607 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.01637348 seconds on average for a run.
+Running config with 10 iterations and a size of int2(128, 128).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0619014 seconds.
+New Run
+This iteration took 0.0511396 seconds.
+New Run
+This iteration took 0.0575174 seconds.
+New Run
+This iteration took 0.0561961 seconds.
+New Run
+This iteration took 0.0557282 seconds.
+New Run
+This iteration took 0.0507997 seconds.
+New Run
+This iteration took 0.0566331 seconds.
+New Run
+This iteration took 0.0558844 seconds.
+New Run
+This iteration took 0.0509876 seconds.
+New Run
+This iteration took 0.0564404 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.1431808 seconds.
+New Run
+This iteration took 0.1448539 seconds.
+New Run
+This iteration took 0.1348541 seconds.
+New Run
+This iteration took 0.1376996 seconds.
+New Run
+This iteration took 0.1452438 seconds.
+New Run
+This iteration took 0.1474169 seconds.
+New Run
+This iteration took 0.1449845 seconds.
+New Run
+This iteration took 0.1368206 seconds.
+New Run
+This iteration took 0.1413866 seconds.
+New Run
+This iteration took 0.1393139 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.02574 seconds.
+New Run
+This iteration took 0.0220607 seconds.
+New Run
+This iteration took 0.0299236 seconds.
+New Run
+This iteration took 0.0329606 seconds.
+New Run
+This iteration took 0.0217902 seconds.
+New Run
+This iteration took 0.023541 seconds.
+New Run
+This iteration took 0.032335 seconds.
+New Run
+This iteration took 0.0279041 seconds.
+New Run
+This iteration took 0.0247497 seconds.
+New Run
+This iteration took 0.0274556 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.0323735 seconds.
+New Run
+This iteration took 0.0319388 seconds.
+New Run
+This iteration took 0.0378183 seconds.
+New Run
+This iteration took 0.0295258 seconds.
+New Run
+This iteration took 0.0267434 seconds.
+New Run
+This iteration took 0.028935 seconds.
+New Run
+This iteration took 0.0282089 seconds.
+New Run
+This iteration took 0.0295881 seconds.
+New Run
+This iteration took 0.0285006 seconds.
+New Run
+This iteration took 0.0355714 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.0587904 seconds.
+New Run
+This iteration took 0.0726219 seconds.
+New Run
+This iteration took 0.0622063 seconds.
+New Run
+This iteration took 0.090531 seconds.
+New Run
+This iteration took 0.0588562 seconds.
+New Run
+This iteration took 0.0601587 seconds.
+New Run
+This iteration took 0.0541274 seconds.
+New Run
+This iteration took 0.0532079 seconds.
+New Run
+This iteration took 0.0528067 seconds.
+New Run
+This iteration took 0.0555654 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+This iteration took 0.0461562 seconds.
+New Run
+This iteration took 0.0479722 seconds.
+New Run
+This iteration took 0.0451699 seconds.
+New Run
+This iteration took 0.0476679 seconds.
+New Run
+This iteration took 0.049447 seconds.
+New Run
+This iteration took 0.0448311 seconds.
+New Run
+This iteration took 0.0663483 seconds.
+New Run
+This iteration took 0.0453377 seconds.
+New Run
+This iteration took 0.0469979 seconds.
+New Run
+This iteration took 0.0477539 seconds.
+Function 'Observe_Sequential' took 3.21E-06 on average.
+6.42E-05 seconds in total. 20 total invocations
+Function 'Propagate_Sequential' took 0.04808573 on average.
+0.4808573 seconds in total. 10 total invocations
+Function 'Propagate_Internal_Sequential' took 1.30014038087329E-07 on average.
+0.0852060000009118 seconds in total. 655360 total invocations
+Function 'Observe_Parallel' took 1.342E-05 on average.
+0.0001342 seconds in total. 10 total invocations
+Function 'Propagate_Parallel' took 0.13147307 on average.
+1.3147307 seconds in total. 10 total invocations
+Function 'Observe_Parallel_Batched' took 1.525E-05 on average.
+0.0001525 seconds in total. 10 total invocations
+Function 'Propagate_Parallel_Batched' took 0.01460609 on average.
+0.1460609 seconds in total. 10 total invocations
+Function 'Observe_Naive' took 0.00122108 on average.
+0.0122108 seconds in total. 10 total invocations
+Function 'Propagate_Naive' took 0.01619056 on average.
+0.1619056 seconds in total. 10 total invocations
+Function 'Observe_Granular' took 0.012782855 on average.
+0.2556571 seconds in total. 20 total invocations
+Function 'Propagate_Granular' took 0.01757189 on average.
+0.1757189 seconds in total. 10 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.00799813 on average.
+0.3199252 seconds in total. 40 total invocations
+Solver 'CPU_Sequential took 0.05594038 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.14215017 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.02741337 seconds on average for a run.
+Solver 'GPU_Naive took 0.03153542 seconds on average for a run.
+Solver 'GPU_Granular took 0.06250841 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.04940952 seconds on average for a run.
+Running config with 10 iterations and a size of int2(256, 256).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.24818 seconds.
+New Run
+This iteration took 0.2073842 seconds.
+New Run
+This iteration took 0.2043963 seconds.
+New Run
+This iteration took 0.2083133 seconds.
+New Run
+This iteration took 0.2040726 seconds.
+New Run
+This iteration took 0.212005 seconds.
+New Run
+This iteration took 0.2090227 seconds.
+New Run
+This iteration took 0.2119702 seconds.
+New Run
+This iteration took 0.2264428 seconds.
+New Run
+This iteration took 0.2093402 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.7710905 seconds.
+New Run
+This iteration took 0.7522922 seconds.
+New Run
+This iteration took 0.7562484 seconds.
+New Run
+This iteration took 0.7533593 seconds.
+New Run
+This iteration took 0.7232899 seconds.
+New Run
+This iteration took 0.7408111 seconds.
+New Run
+This iteration took 0.7665883 seconds.
+New Run
+This iteration took 0.746968 seconds.
+New Run
+This iteration took 0.7387087 seconds.
+New Run
+This iteration took 0.7349868 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0996132 seconds.
+New Run
+This iteration took 0.1099401 seconds.
+New Run
+This iteration took 0.1029631 seconds.
+New Run
+This iteration took 0.1005644 seconds.
+New Run
+This iteration took 0.1021915 seconds.
+New Run
+This iteration took 0.1098188 seconds.
+New Run
+This iteration took 0.1027186 seconds.
+New Run
+This iteration took 0.1084379 seconds.
+New Run
+This iteration took 0.107301 seconds.
+New Run
+This iteration took 0.1005631 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.0983136 seconds.
+New Run
+This iteration took 0.072879 seconds.
+New Run
+This iteration took 0.0686443 seconds.
+New Run
+This iteration took 0.0669684 seconds.
+New Run
+This iteration took 0.0706677 seconds.
+New Run
+This iteration took 0.0725685 seconds.
+New Run
+This iteration took 0.0668884 seconds.
+New Run
+This iteration took 0.0654281 seconds.
+New Run
+This iteration took 0.0700872 seconds.
+New Run
+This iteration took 0.0756454 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.1379259 seconds.
+New Run
+This iteration took 0.1478955 seconds.
+New Run
+This iteration took 0.1280439 seconds.
+New Run
+This iteration took 0.1232163 seconds.
+New Run
+This iteration took 0.1242373 seconds.
+New Run
+This iteration took 0.1269291 seconds.
+New Run
+This iteration took 0.1559716 seconds.
+New Run
+This iteration took 0.1225102 seconds.
+New Run
+This iteration took 0.1256851 seconds.
+New Run
+This iteration took 0.1218008 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+This iteration took 0.1320587 seconds.
+New Run
+This iteration took 0.1068845 seconds.
+New Run
+This iteration took 0.0957096 seconds.
+New Run
+This iteration took 0.0995226 seconds.
+New Run
+This iteration took 0.1247638 seconds.
+New Run
+This iteration took 0.0972388 seconds.
+New Run
+This iteration took 0.0925 seconds.
+New Run
+This iteration took 0.0989674 seconds.
+New Run
+This iteration took 0.1122233 seconds.
+New Run
+This iteration took 0.0971057 seconds.
+Function 'Observe_Sequential' took 3.64E-06 on average.
+7.28E-05 seconds in total. 20 total invocations
+Function 'Propagate_Sequential' took 0.19382806 on average.
+1.9382806 seconds in total. 10 total invocations
+Function 'Propagate_Internal_Sequential' took 1.46161117556967E-07 on average.
+0.383152600008536 seconds in total. 2621440 total invocations
+Function 'Observe_Parallel' took 1.842E-05 on average.
+0.0001842 seconds in total. 10 total invocations
+Function 'Propagate_Parallel' took 0.7140375 on average.
+7.140375 seconds in total. 10 total invocations
+Function 'Observe_Parallel_Batched' took 2.026E-05 on average.
+0.0002026 seconds in total. 10 total invocations
+Function 'Propagate_Parallel_Batched' took 0.07328067 on average.
+0.7328067 seconds in total. 10 total invocations
+Function 'Observe_Naive' took 0.00197065 on average.
+0.0197065 seconds in total. 10 total invocations
+Function 'Propagate_Naive' took 0.04094487 on average.
+0.4094487 seconds in total. 10 total invocations
+Function 'Observe_Granular' took 0.02419857 on average.
+0.4839714 seconds in total. 20 total invocations
+Function 'Propagate_Granular' took 0.0399361 on average.
+0.399361 seconds in total. 10 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.014551365 on average.
+0.5820546 seconds in total. 40 total invocations
+Solver 'CPU_Sequential took 0.21481274 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.74916325 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.10503746 seconds on average for a run.
+Solver 'GPU_Naive took 0.07349962 seconds on average for a run.
+Solver 'GPU_Granular took 0.13215226 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.10634553 seconds on average for a run.
+Running benchmark for 2 tiles.
+Running config with 10 iterations and a size of int2(8, 8).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0033684 seconds.
+New Run
+This iteration took 0.0046553 seconds.
+New Run
+This iteration took 0.0047183 seconds.
+New Run
+This iteration took 0.0050196 seconds.
+New Run
+This iteration took 0.0047477 seconds.
+New Run
+This iteration took 0.0045106 seconds.
+New Run
+This iteration took 0.0042859 seconds.
+New Run
+This iteration took 0.0041924 seconds.
+New Run
+This iteration took 0.0098894 seconds.
+New Run
+This iteration took 0.0041814 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0061997 seconds.
+New Run
+This iteration took 0.0052502 seconds.
+New Run
+This iteration took 0.0070292 seconds.
+New Run
+This iteration took 0.0073531 seconds.
+New Run
+This iteration took 0.0048259 seconds.
+New Run
+This iteration took 0.0047668 seconds.
+New Run
+This iteration took 0.0073617 seconds.
+New Run
+This iteration took 0.0047578 seconds.
+New Run
+This iteration took 0.0060533 seconds.
+New Run
+This iteration took 0.0070133 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.006404 seconds.
+New Run
+This iteration took 0.005786 seconds.
+New Run
+This iteration took 0.0138271 seconds.
+New Run
+This iteration took 0.0068019 seconds.
+New Run
+This iteration took 0.0055693 seconds.
+New Run
+This iteration took 0.0041666 seconds.
+New Run
+This iteration took 0.0060921 seconds.
+New Run
+This iteration took 0.0056741 seconds.
+New Run
+This iteration took 0.0042603 seconds.
+New Run
+This iteration took 0.0040586 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.0217273 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 5.0676966 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.2235164 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.0916918 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.08511 seconds.
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1771945 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0283641 seconds.
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0463518 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0663187 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0716248 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0344939 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0540387 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0911668 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0252961 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0514717 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.13787 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0450759 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.2964325 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0445371 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.039882 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.056506 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0453659 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1466153 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0588591 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0164281 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0892252 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0402912 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1038785 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0867592 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.056904 seconds.
+Function 'Observe_Sequential' took 1.80370116518163E-06 on average.
+0.0026316 seconds in total. 1459 total invocations
+Function 'Propagate_Sequential' took 1.71699266503667E-05 on average.
+0.0070225 seconds in total. 409 total invocations
+Function 'Propagate_Internal_Sequential' took 1.53776041666666E-07 on average.
+0.001181 seconds in total. 7680 total invocations
+Function 'Observe_Parallel' took 7.14527027027027E-06 on average.
+0.0031725 seconds in total. 444 total invocations
+Function 'Propagate_Parallel' took 5.27833333333334E-05 on average.
+0.0234358 seconds in total. 444 total invocations
+Function 'Observe_Parallel_Batched' took 8.66288659793814E-06 on average.
+0.0033612 seconds in total. 388 total invocations
+Function 'Propagate_Parallel_Batched' took 3.73389175257732E-05 on average.
+0.0144875 seconds in total. 388 total invocations
+Function 'Observe_Naive' took 0.000163114666666667 on average.
+0.1712704 seconds in total. 1050 total invocations
+Function 'Propagate_Naive' took 0.000159479142857143 on average.
+0.1674531 seconds in total. 1050 total invocations
+Function 'Observe_Granular' took 0.00013105595026643 on average.
+0.147569 seconds in total. 1126 total invocations
+Function 'Propagate_Granular' took 0.00014930770609319 on average.
+0.1666274 seconds in total. 1116 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.000451932460732984 on average.
+0.1726382 seconds in total. 382 total invocations
+Solver 'CPU_Sequential took 0.00565912 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.0067887 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.00701609 seconds on average for a run.
+Solver 'GPU_Naive took 0.58886455 seconds on average for a run.
+Solver 'GPU_Granular took 0.08298559 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.07087122 seconds on average for a run.
+Running config with 10 iterations and a size of int2(16, 16).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0060803 seconds.
+New Run
+This iteration took 0.0141564 seconds.
+New Run
+This iteration took 0.0058851 seconds.
+New Run
+This iteration took 0.0059356 seconds.
+New Run
+This iteration took 0.0059073 seconds.
+New Run
+This iteration took 0.009257 seconds.
+New Run
+This iteration took 0.0130334 seconds.
+New Run
+This iteration took 0.0061755 seconds.
+New Run
+This iteration took 0.005943 seconds.
+New Run
+This iteration took 0.0097451 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0184506 seconds.
+New Run
+This iteration took 0.0164724 seconds.
+New Run
+This iteration took 0.0216518 seconds.
+New Run
+This iteration took 0.0149402 seconds.
+New Run
+This iteration took 0.0178302 seconds.
+New Run
+This iteration took 0.0167505 seconds.
+New Run
+This iteration took 0.0156207 seconds.
+New Run
+This iteration took 0.0193631 seconds.
+New Run
+This iteration took 0.0189025 seconds.
+New Run
+This iteration took 0.0149993 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0135772 seconds.
+New Run
+This iteration took 0.0179983 seconds.
+New Run
+This iteration took 0.0241951 seconds.
+New Run
+This iteration took 0.0149918 seconds.
+New Run
+This iteration took 0.0161866 seconds.
+New Run
+This iteration took 0.0139168 seconds.
+New Run
+This iteration took 0.013773 seconds.
+New Run
+This iteration took 0.0115309 seconds.
+New Run
+This iteration took 0.0273592 seconds.
+New Run
+This iteration took 0.0191261 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.1880672 seconds.
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.3611597 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.1311369 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.2816393 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.1854 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.3419559 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.2050711 seconds.
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.1451906 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.3924038 seconds.
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+Failed after observe.
+Generation failed. Retrying
+New Run
+This iteration took 0.1007066 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.4097891 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1117109 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1210786 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1510074 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.3530995 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.9206328 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1176743 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1514519 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.3833651 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.1406681 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.5570523 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.4288295 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0975227 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.4131999 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.206265 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0588793 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.4846176 seconds.
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.6157701 seconds.
+New Run
+Generation failed. Retrying
+New Run
+This iteration took 0.0488443 seconds.
+New Run
+This iteration took 0.0347702 seconds.
+Function 'Observe_Sequential' took 1.80159930840718E-06 on average.
+0.00833600000000002 seconds in total. 4627 total invocations
+Function 'Propagate_Sequential' took 1.42855524079319E-05 on average.
+0.0252139999999998 seconds in total. 1765 total invocations
+Function 'Propagate_Internal_Sequential' took 1.31119791666636E-07 on average.
+0.00402799999999907 seconds in total. 30720 total invocations
+Function 'Observe_Parallel' took 5.41264623955426E-06 on average.
+0.00971569999999991 seconds in total. 1795 total invocations
+Function 'Propagate_Parallel' took 4.28733704735377E-05 on average.
+0.0769577000000001 seconds in total. 1795 total invocations
+Function 'Observe_Parallel_Batched' took 7.05038123167152E-06 on average.
+0.0120208999999999 seconds in total. 1705 total invocations
+Function 'Propagate_Parallel_Batched' took 3.17011143695014E-05 on average.
+0.0540504 seconds in total. 1705 total invocations
+Function 'Observe_Naive' took 0.000176778581411601 on average.
+0.505940300000001 seconds in total. 2862 total invocations
+Function 'Propagate_Naive' took 0.000176126345213138 on average.
+0.5040736 seconds in total. 2862 total invocations
+Function 'Observe_Granular' took 0.00019022658922233 on average.
+0.5895122 seconds in total. 3099 total invocations
+Function 'Propagate_Granular' took 0.000202453609582389 on average.
+0.625379199999999 seconds in total. 3089 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.00109024461009174 on average.
+0.950693300000001 seconds in total. 872 total invocations
+Solver 'CPU_Sequential took 0.0090043 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.01827929 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.01808733 seconds on average for a run.
+Solver 'GPU_Naive took 0.23434331 seconds on average for a run.
+Solver 'GPU_Granular took 0.28711118 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.29617926 seconds on average for a run.
+Running config with 10 iterations and a size of int2(32, 32).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.0301767 seconds.
+New Run
+This iteration took 0.0222195 seconds.
+New Run
+This iteration took 0.0281485 seconds.
+New Run
+This iteration took 0.0247828 seconds.
+New Run
+This iteration took 0.021508 seconds.
+New Run
+This iteration took 0.0226353 seconds.
+New Run
+This iteration took 0.0239902 seconds.
+New Run
+This iteration took 0.0235376 seconds.
+New Run
+This iteration took 0.0388411 seconds.
+New Run
+This iteration took 0.0269538 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 0.0983808 seconds.
+New Run
+This iteration took 0.0931335 seconds.
+New Run
+This iteration took 0.1036999 seconds.
+New Run
+This iteration took 0.1148991 seconds.
+New Run
+This iteration took 0.1016142 seconds.
+New Run
+This iteration took 0.0920828 seconds.
+New Run
+This iteration took 0.108847 seconds.
+New Run
+This iteration took 0.0907922 seconds.
+New Run
+This iteration took 0.112948 seconds.
+New Run
+This iteration took 0.0946334 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 0.0844199 seconds.
+New Run
+This iteration took 0.0907897 seconds.
+New Run
+This iteration took 0.1051728 seconds.
+New Run
+This iteration took 0.1006743 seconds.
+New Run
+This iteration took 0.1144898 seconds.
+New Run
+This iteration took 0.1022896 seconds.
+New Run
+This iteration took 0.0968376 seconds.
+New Run
+This iteration took 0.0971816 seconds.
+New Run
+This iteration took 0.1000256 seconds.
+New Run
+This iteration took 0.1099323 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 0.3277146 seconds.
+New Run
+This iteration took 0.2992782 seconds.
+New Run
+This iteration took 0.2801767 seconds.
+New Run
+This iteration took 0.2939624 seconds.
+New Run
+This iteration took 0.328063 seconds.
+New Run
+This iteration took 0.2602267 seconds.
+New Run
+This iteration took 0.2781909 seconds.
+New Run
+This iteration took 0.3418491 seconds.
+New Run
+This iteration took 0.3578746 seconds.
+New Run
+This iteration took 0.3628223 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 0.4909478 seconds.
+New Run
+This iteration took 0.4007043 seconds.
+New Run
+This iteration took 0.3082675 seconds.
+New Run
+This iteration took 0.37186 seconds.
+New Run
+This iteration took 0.4227913 seconds.
+New Run
+This iteration took 0.3524163 seconds.
+New Run
+This iteration took 0.3955832 seconds.
+New Run
+This iteration took 0.2687926 seconds.
+New Run
+This iteration took 0.3576727 seconds.
+New Run
+This iteration took 0.3258476 seconds.
+Running Benchmark for GPU_ComputeBuffer.
+New Run
+This iteration took 0.3139684 seconds.
+New Run
+This iteration took 0.280213 seconds.
+New Run
+This iteration took 0.2562907 seconds.
+New Run
+This iteration took 0.2960651 seconds.
+New Run
+This iteration took 0.2176434 seconds.
+New Run
+This iteration took 0.3138985 seconds.
+New Run
+This iteration took 0.2584321 seconds.
+New Run
+This iteration took 0.3047937 seconds.
+New Run
+This iteration took 0.2710076 seconds.
+New Run
+This iteration took 0.293324 seconds.
+Function 'Observe_Sequential' took 1.59227122215529E-06 on average.
+0.0211580999999995 seconds in total. 13288 total invocations
+Function 'Propagate_Sequential' took 1.36934990439778E-05 on average.
+0.0931021000000052 seconds in total. 6799 total invocations
+Function 'Propagate_Internal_Sequential' took 1.26727701822784E-07 on average.
+0.0155722999999837 seconds in total. 122880 total invocations
+Function 'Observe_Parallel' took 5.0611072374843E-06 on average.
+0.0362931999999999 seconds in total. 7171 total invocations
+Function 'Propagate_Parallel' took 4.01422395760701E-05 on average.
+0.287859999999999 seconds in total. 7171 total invocations
+Function 'Observe_Parallel_Batched' took 6.23591318591317E-06 on average.
+0.0456842999999999 seconds in total. 7326 total invocations
+Function 'Propagate_Parallel_Batched' took 3.11902538902538E-05 on average.
+0.228499799999999 seconds in total. 7326 total invocations
+Function 'Observe_Naive' took 0.000233888226229003 on average.
+1.5177007 seconds in total. 6489 total invocations
+Function 'Propagate_Naive' took 0.000153018893512098 on average.
+0.992939600000001 seconds in total. 6489 total invocations
+Function 'Observe_Granular' took 0.000400030590366905 on average.
+2.64940260000001 seconds in total. 6623 total invocations
+Function 'Propagate_Granular' took 0.000136533676092545 on average.
+0.902897200000001 seconds in total. 6613 total invocations
+Function 'ObserveAndPropagate_ComputeBuffer' took 0.00504229962335216 on average.
+2.6774611 seconds in total. 531 total invocations
+Solver 'CPU_Sequential took 0.0274034 seconds on average for a run.
+Solver 'CPU_Parallel_Queue took 0.10220417 seconds on average for a run.
+Solver 'CPU_Parallel_Batched took 0.10124864 seconds on average for a run.
+Solver 'GPU_Naive took 0.31485741 seconds on average for a run.
+Solver 'GPU_Granular took 0.37064335 seconds on average for a run.
+Solver 'GPU_ComputeBuffer took 0.28182824 seconds on average for a run.
+Running config with 10 iterations and a size of int2(64, 64).
+Running Benchmark for CPU_Sequential.
+New Run
+This iteration took 0.1875186 seconds.
+New Run
+This iteration took 0.1587944 seconds.
+New Run
+This iteration took 0.1582913 seconds.
+New Run
+This iteration took 0.1708634 seconds.
+New Run
+This iteration took 0.1576174 seconds.
+New Run
+This iteration took 0.1592071 seconds.
+New Run
+This iteration took 0.1627739 seconds.
+New Run
+This iteration took 0.2658359 seconds.
+New Run
+This iteration took 0.1696672 seconds.
+New Run
+This iteration took 0.1538524 seconds.
+Running Benchmark for CPU_Parallel_Queue.
+New Run
+This iteration took 1.1160577 seconds.
+New Run
+This iteration took 1.0728806 seconds.
+New Run
+This iteration took 1.0241002 seconds.
+New Run
+This iteration took 1.1215397 seconds.
+New Run
+This iteration took 0.9014462 seconds.
+New Run
+This iteration took 0.9991806 seconds.
+New Run
+This iteration took 1.139585 seconds.
+New Run
+This iteration took 1.0636569 seconds.
+New Run
+This iteration took 1.1660535 seconds.
+New Run
+This iteration took 1.2677053 seconds.
+Running Benchmark for CPU_Parallel_Batched.
+New Run
+This iteration took 1.1201897 seconds.
+New Run
+This iteration took 1.042704 seconds.
+New Run
+This iteration took 1.1404342 seconds.
+New Run
+This iteration took 1.043704 seconds.
+New Run
+This iteration took 1.1224305 seconds.
+New Run
+This iteration took 1.1215058 seconds.
+New Run
+This iteration took 1.0228603 seconds.
+New Run
+This iteration took 1.235104 seconds.
+New Run
+This iteration took 1.0874285 seconds.
+New Run
+This iteration took 1.1348863 seconds.
+Running Benchmark for GPU_Naive.
+New Run
+This iteration took 1.5879266 seconds.
+New Run
+This iteration took 1.7114703 seconds.
+New Run
+This iteration took 1.8334089 seconds.
+New Run
+This iteration took 1.7679032 seconds.
+New Run
+This iteration took 1.7734435 seconds.
+New Run
+This iteration took 1.6188326 seconds.
+New Run
+This iteration took 1.576085 seconds.
+New Run
+This iteration took 1.6711964 seconds.
+New Run
+This iteration took 2.0158822 seconds.
+New Run
+This iteration took 2.3855032 seconds.
+Running Benchmark for GPU_Granular.
+New Run
+This iteration took 3.7858796 seconds.
+New Run
+This iteration took 3.7630847 seconds.
+New Run
+This iteration took 4.0557803 seconds.
+New Run
+This iteration took 3.362437 seconds.
