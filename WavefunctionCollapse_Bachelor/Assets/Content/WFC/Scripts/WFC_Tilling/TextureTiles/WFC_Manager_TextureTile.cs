@@ -159,7 +159,7 @@ namespace WFC.Tiling
                     model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
                     break;
                 case Solver.GPU_Naive:
-                    model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
+                    model = new GPU_Model_Naive(observerShader, propagatorShader, banShader, width, height, 1, periodic);
                     break;
                 case Solver.GPU_Granular:
                     model = new GPU_Model_Granular(observerShader, propagatorShader, banShader, width, height, 1, periodic);
@@ -197,11 +197,6 @@ namespace WFC.Tiling
                         parallelModel.Dispose();
                     break;
                 case Solver.GPU_Naive:
-                    if (model is GPU_Model_Naive naiveModel)
-                    {
-                        naiveModel.Dispose();
-                    }
-                    break;
                 case Solver.GPU_Granular:
                 case Solver.GPU_ComputeBuffer:
                     if (model is GPU_Model gpuModel)
@@ -314,7 +309,7 @@ namespace WFC.Tiling
                                 model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
                                 break;
                             case Solver.GPU_Naive:
-                                model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
+                                model = new GPU_Model_Naive(observerShader, propagatorShader, banShader, width, height, 1, periodic);
                                 break;
                             case Solver.GPU_Granular:
                                 model = new GPU_Model_Granular(observerShader, propagatorShader, banShader, width,
@@ -377,12 +372,6 @@ namespace WFC.Tiling
                                     parallelModel.Dispose();
                                 break;
                             case Solver.GPU_Naive:
-                                if (model is GPU_Model_Naive naiveModel)
-                                {
-                                    naiveModel.Dispose();
-                                }
-
-                                break;
                             case Solver.GPU_Granular:
                             case Solver.GPU_ComputeBuffer:
                                 if (model is GPU_Model gpuModel)
@@ -390,7 +379,6 @@ namespace WFC.Tiling
                                     //Free native resources
                                     gpuModel.Dispose();
                                 }
-
                                 break;
                         }
                     }

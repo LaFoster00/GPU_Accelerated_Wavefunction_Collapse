@@ -60,7 +60,7 @@ namespace Models.GPU_Model
             observerShader.Dispatch(0, 1, 1, 1);
 
             _resultBuf.GetData(_resultCopyBuf);
-            (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+            (openNodes, isPossible) = (_resultCopyBuf[0].openNodes, _resultCopyBuf[0].isPossible);
             
             waveInBuf.GetData(waveCopyBuffer);
             
@@ -127,8 +127,8 @@ namespace Models.GPU_Model
 
                 /* Copy result of Compute operation back to CPU buffer. */
                 _resultBuf.GetData(resultBufData);
-                isPossible = Convert.ToBoolean(resultBufData[0].isPossible);
-                openNodes = Convert.ToBoolean(resultBufData[0].openNodes);
+                isPossible =resultBufData[0].isPossible;
+                openNodes = resultBufData[0].openNodes;
 
                 /* Swap the in out buffers. */
                 BindInOutBuffers(true);

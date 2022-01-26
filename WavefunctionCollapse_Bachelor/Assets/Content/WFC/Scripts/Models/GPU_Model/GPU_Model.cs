@@ -304,23 +304,29 @@ namespace Models.GPU_Model
             BindInOutBuffers(true);
         
             _resultBuf.GetData(_resultCopyBuf);
-            (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+            (openNodes, isPossible) = (_resultCopyBuf[0].openNodes, _resultCopyBuf[0].isPossible);
         }
     
-        protected virtual bool[][] CopyGpuWaveToCpu()
+        protected virtual bool[][] CopyGpuWaveToCpu(bool convert = true)
         { 
             waveInBuf.GetData(waveCopyBuffer);
-            bool[][] wave = new bool[nbNodes][];
-        
-            Parallel.For(0, nbNodes, node =>
+
+            if (convert)
             {
-                wave[node] = new bool[nbPatterns];
-                for (int pattern = 0; pattern < nbPatterns; pattern++)
+                bool[][] wave = new bool[nbNodes][];
+
+                Parallel.For(0, nbNodes, node =>
                 {
-                    wave[node][pattern] = Convert.ToBoolean(waveCopyBuffer[node * nbPatterns + pattern]);
-                }
-            });
-            return wave;
+                    wave[node] = new bool[nbPatterns];
+                    for (int pattern = 0; pattern < nbPatterns; pattern++)
+                    {
+                        wave[node][pattern] = waveCopyBuffer[node * nbPatterns + pattern];
+                    }
+                });
+                return wave;
+            }
+
+            return null;
         }
 
         protected void CopyGpuCollapseToCpu()
@@ -361,7 +367,7 @@ namespace Models.GPU_Model
             List<(int, int)> propagatingCells = new List<(int, int)>();
             for (int node = 0; node < nbNodes; node++)
             {
-                if (Convert.ToBoolean(collapseCopyBuffer[node].needs_collapse))
+                if (collapseCopyBuffer[node].needs_collapse)
                 {
                     propagatingCells.Add((node, 0));
                 }
