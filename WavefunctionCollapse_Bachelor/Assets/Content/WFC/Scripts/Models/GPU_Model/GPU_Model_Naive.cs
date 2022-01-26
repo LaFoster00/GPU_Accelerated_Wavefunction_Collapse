@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Models.CPU_Model;
 using UnityEngine;
 using USCSL.Utils;
+using USCSL.Utils.Shader;
 using WFC;
 using Random = Unity.Mathematics.Random;
 

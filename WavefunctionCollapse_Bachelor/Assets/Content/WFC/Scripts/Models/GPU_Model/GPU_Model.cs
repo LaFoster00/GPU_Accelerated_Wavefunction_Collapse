@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using UnityEngine;
+using USCSL.Utils.Shader;
 using WFC;
 
 namespace Models.GPU_Model
