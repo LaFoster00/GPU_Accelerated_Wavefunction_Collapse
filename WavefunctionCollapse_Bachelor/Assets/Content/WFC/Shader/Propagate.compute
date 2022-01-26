@@ -6,11 +6,11 @@
 Actual wave result
 wave(node, pattern)
 */
-StructuredBuffer<uint> wave_in;
+StructuredBuffer<bool> wave_in;
 #define WAVE_IN(node, pattern) wave_in[node * nb_patterns + pattern]
 
 
-[numthreads(32,32,1)]
+[numthreads(4,4,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
     const int node =  nodeCoord.y * width + nodeCoord.x;
@@ -23,7 +23,7 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
     {
         WAVE_OUT(node, pattern) = WAVE_IN(node, pattern);
     }
-    
+
     /* If there arent any open nodes dont execute. This ensures that we dont waste computational power on unnecessary iterations*/
     if (FINISHED == TRUE || IS_POSSIBLE == FALSE) return;
     

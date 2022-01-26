@@ -17,7 +17,7 @@ namespace Models.GPU_Model
 
         #region ShaderResources
 
-        private uint[] _waveCopyBuffer;
+        private BlittableBool[] _waveCopyBuffer;
         /*
          Actual wave result
          wave(node, pattern)
@@ -53,10 +53,10 @@ namespace Models.GPU_Model
         struct Propagator
         {
             /* Array inside GPU struct */
-            public uint propagatorDown;
-            public uint propagatorLeft;
-            public uint propagatorRight;
-            public uint propagatorUp;
+            public BlittableBool propagatorDown;
+            public BlittableBool propagatorLeft;
+            public BlittableBool propagatorRight;
+            public BlittableBool propagatorUp;
 
         }
         private Propagator[] _propagatorCopyBuffer;
@@ -64,18 +64,18 @@ namespace Models.GPU_Model
 
         struct Result
         {
-            public uint isPossible;
-            public uint openNodes;
-            public uint finished;
-            public uint padding;
+            public BlittableBool isPossible;
+            public BlittableBool openNodes;
+            public BlittableBool finished;
+            public BlittableBool padding;
         }
         private readonly ComputeBuffer _resultBuf; // Change this to structured buffer
 
         [StructLayout(LayoutKind.Sequential)]
         struct Collapse
         {
-            public uint is_collapsed;
-            public uint needs_collapse;
+            public BlittableBool is_collapsed;
+            public BlittableBool needs_collapse;
         }
         private readonly Collapse[] _collapseClearData;
         private readonly Collapse[] _collapseCopyBuffer;
@@ -97,8 +97,8 @@ namespace Models.GPU_Model
             _memoisationBuf = new ComputeBuffer(width * height, sizeof(float) * 3 + sizeof(int));
             _memoisationCopyBuffer = new Memoisation[width * height];
 
-            _inCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
-            _outCollapseBuf = new ComputeBuffer(width * height, sizeof(uint) * 2);
+            _inCollapseBuf = new ComputeBuffer(width * height, sizeof(int) * 2);
+            _outCollapseBuf = new ComputeBuffer(width * height, sizeof(int) * 2);
             _collapseClearData = new Collapse[height * width];
             _collapseCopyBuffer = new Collapse[height * width];
 
@@ -110,11 +110,11 @@ namespace Models.GPU_Model
         {
             base.SetData(nbPatterns, weights, propagator, propagatorSettings);
 
-            _waveInBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
-            _waveOutBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(uint));
-            _waveCopyBuffer = new uint[width * height * nbPatterns];
+            _waveInBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(int));
+            _waveOutBuf = new ComputeBuffer(width * height * nbPatterns, sizeof(int));
+            _waveCopyBuffer = new BlittableBool[width * height * nbPatterns];
             
-            _propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(uint) * 4);
+            _propagatorBuf = new ComputeBuffer(nbPatterns * nbPatterns, sizeof(int) * 4);
             _weightBuf = new ComputeBuffer(weights.Length, sizeof(float) * 4);
             _weightCopyBuffer = new Weighting[weights.Length];
 
@@ -128,10 +128,10 @@ namespace Models.GPU_Model
                     int patternOffset = pattern * nbPatterns;
                     for (int otherPattern = 0; otherPattern < nbPatterns; otherPattern++)
                     {
-                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorDown = Convert.ToUInt32(densePropagator[pattern][0][otherPattern]);
-                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorLeft = Convert.ToUInt32(densePropagator[pattern][1][otherPattern]);
-                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorRight = Convert.ToUInt32(densePropagator[pattern][2][otherPattern]);
-                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorUp = Convert.ToUInt32(densePropagator[pattern][3][otherPattern]);
+                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorDown = densePropagator[pattern][0][otherPattern];
+                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorLeft = densePropagator[pattern][1][otherPattern];
+                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorRight = densePropagator[pattern][2][otherPattern];
+                        _propagatorCopyBuffer[patternOffset + otherPattern].propagatorUp = densePropagator[pattern][3][otherPattern];
                     }
                 });
                 _propagatorBuf.SetData(_propagatorCopyBuffer);
@@ -149,8 +149,8 @@ namespace Models.GPU_Model
 
             Result[] resultBufData = {new Result
             {
-                isPossible = Convert.ToUInt32(isPossible),
-                openNodes = Convert.ToUInt32(_openCells)
+                isPossible = isPossible,
+                openNodes = _openCells
             }};
             _resultBuf.SetData(resultBufData);
 
@@ -198,7 +198,7 @@ namespace Models.GPU_Model
                         int yOffset = y * width;
                         for (int x = 0; x < width; x++)
                         {
-                            _waveCopyBuffer[(x + yOffset) * nbPatterns + pattern] = Convert.ToUInt32(wave[x + yOffset][pattern]);
+                            _waveCopyBuffer[(x + yOffset) * nbPatterns + pattern] = wave[x + yOffset][pattern];
                         }
                     }
                 });
@@ -324,8 +324,8 @@ namespace Models.GPU_Model
             {
                 Result[] resultBufData = {new Result
                 {
-                    isPossible = Convert.ToUInt32(isPossible),
-                    openNodes = Convert.ToUInt32(_openCells = false)
+                    isPossible = isPossible,
+                    openNodes = _openCells = false
                 }};
                 _resultBuf.SetData(resultBufData);
 
@@ -382,7 +382,7 @@ namespace Models.GPU_Model
         {
             base.Ban(node, pattern);
 
-            _waveCopyBuffer[node * nbPatterns + pattern] = Convert.ToUInt32(false);
+            _waveCopyBuffer[node * nbPatterns + pattern] = false;
 
             _memoisationCopyBuffer[node].sums_of_weights = (float)sumsOfWeights[node];
             _memoisationCopyBuffer[node].sums_of_weight_log_weights = (float)sumsOfWeightLogWeights[node];
@@ -390,7 +390,7 @@ namespace Models.GPU_Model
             _memoisationCopyBuffer[node].num_possible_patterns = numPossiblePatterns[node];
 
             /* Update the collapse information for the compute shader. */
-            _collapseCopyBuffer[node].is_collapsed = Convert.ToUInt32(true);
+            _collapseCopyBuffer[node].is_collapsed = true;
 
             int x = node % width;
             int y = node / width;
@@ -412,7 +412,7 @@ namespace Models.GPU_Model
                 }
 
                 int node2 = x2 + y2 * width;
-                _collapseCopyBuffer[node2].needs_collapse = Convert.ToUInt32(true);
+                _collapseCopyBuffer[node2].needs_collapse = true;
             }
 
             _openCells = true;
@@ -431,7 +431,7 @@ namespace Models.GPU_Model
 
             Result[] resultBufData = {new Result
             {
-                isPossible = Convert.ToUInt32(isPossible), openNodes = Convert.ToUInt32(_openCells)
+                isPossible = isPossible, openNodes = _openCells
             }};
             _resultBuf.SetData(resultBufData);
         }

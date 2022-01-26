@@ -16,7 +16,7 @@ namespace Models.GPU_Model
     
         #region CommonShaderResources
 
-        protected uint[] waveCopyBuffer;
+        protected BlittableBool[] waveCopyBuffer;
         /*
         Actual wave result
         wave(node, pattern)
@@ -52,10 +52,10 @@ namespace Models.GPU_Model
         protected struct Propagator
         {
             /* Array inside GPU struct */
-            public uint propagatorDown;
-            public uint propagatorLeft;
-            public uint propagatorRight;
-            public uint propagatorUp;
+            public BlittableBool propagatorDown;
+            public BlittableBool propagatorLeft;
+            public BlittableBool propagatorRight;
+            public BlittableBool propagatorUp;
 
         }
         protected  Propagator[] propagatorCopyBuffer;
@@ -64,10 +64,10 @@ namespace Models.GPU_Model
         [StructLayout(LayoutKind.Sequential)]
         protected struct Result
         {
-            public uint isPossible;
-            public uint openNodes;
-            public uint finished;
-            public uint padding; 
+            public BlittableBool isPossible;
+            public BlittableBool openNodes;
+            public BlittableBool finished;
+            public BlittableBool padding; 
         }
         protected  readonly Result[] _resultCopyBuf = new Result[1];
         protected  readonly ComputeBuffer _resultBuf = new ComputeBuffer(1, sizeof(uint) * 4); // Change this to structured buffer
@@ -75,8 +75,8 @@ namespace Models.GPU_Model
         [StructLayout(LayoutKind.Sequential)]
         protected struct Collapse
         {
-            public uint is_collapsed;
-            public uint needs_collapse;
+            public BlittableBool is_collapsed;
+            public BlittableBool needs_collapse;
         }
         protected  Collapse[] collapseClearData;
         protected  Collapse[] collapseCopyBuffer;
@@ -144,10 +144,10 @@ namespace Models.GPU_Model
                 {
                     for (int otherPattern = 0; otherPattern < nbPatterns; otherPattern++)
                     {
-                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorDown = Convert.ToUInt32(densePropagator[pattern][0][otherPattern]);
-                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorLeft = Convert.ToUInt32(densePropagator[pattern][1][otherPattern]);
-                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorRight = Convert.ToUInt32(densePropagator[pattern][2][otherPattern]);
-                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorUp = Convert.ToUInt32(densePropagator[pattern][3][otherPattern]);
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorDown = densePropagator[pattern][0][otherPattern];
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorLeft = densePropagator[pattern][1][otherPattern];
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorRight = densePropagator[pattern][2][otherPattern];
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorUp = densePropagator[pattern][3][otherPattern];
                     }
                 }
                 propagatorBuf.SetData(propagatorCopyBuffer);
@@ -158,7 +158,7 @@ namespace Models.GPU_Model
         {
             base.Init();
             
-            waveCopyBuffer = new uint[width * height * nbPatterns];
+            waveCopyBuffer = new BlittableBool[width * height * nbPatterns];
             weightingCopyBuffer = new Weighting[nbPatterns];
 
             for (int pattern = 0; pattern < nbPatterns; pattern++)
@@ -248,8 +248,8 @@ namespace Models.GPU_Model
             
             Result[] resultBufData = {new Result
             {
-                isPossible = Convert.ToUInt32(isPossible),
-                openNodes = Convert.ToUInt32(openNodes)
+                isPossible = isPossible,
+                openNodes = openNodes
             }};
             _resultBuf.SetData(resultBufData);
 
@@ -257,7 +257,7 @@ namespace Models.GPU_Model
             {
                 for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
-                    waveCopyBuffer[node * nbPatterns + pattern] = Convert.ToUInt32(true);
+                    waveCopyBuffer[node * nbPatterns + pattern] = true;
                 }
 
                 memoisationCopyBuffer[node].num_possible_patterns = nbPatterns;

@@ -114,8 +114,8 @@ namespace Models.GPU_Model
             {
                 Result[] resultBufData = {new Result
                 {
-                    isPossible = Convert.ToUInt32(isPossible),
-                    openNodes = Convert.ToUInt32(openNodes = false)
+                    isPossible = isPossible,
+                    openNodes = openNodes = false
                 }};
                 _resultBuf.SetData(resultBufData);
             

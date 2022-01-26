@@ -152,9 +152,9 @@ namespace Models.GPU_Model
             {
                 new Result
                 {
-                    isPossible = Convert.ToUInt32(isPossible),
-                    openNodes = Convert.ToUInt32(false),
-                    finished =  Convert.ToUInt32(false)
+                    isPossible = isPossible,
+                    openNodes = false,
+                    finished =  false
                 }
             };
             _resultBuf.SetData(resultBufData);

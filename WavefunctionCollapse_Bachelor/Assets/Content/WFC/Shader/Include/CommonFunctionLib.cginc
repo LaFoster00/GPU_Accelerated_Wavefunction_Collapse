@@ -1,7 +1,7 @@
 #include "Include/CommonInclude.cginc"
 #include "Include/Utils.cginc"
 
-RWStructuredBuffer<uint> wave_out;
+RWStructuredBuffer<bool> wave_out;
 #define WAVE_OUT(node, pattern) wave_out[node * nb_patterns + pattern]
 
 /* Removes pattern from cell and marks the surrounding cells for update. */

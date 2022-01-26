@@ -39,7 +39,7 @@ propagator[uint3(pattern, otherPattern, direction)]
 */
 struct Propagator
 {
-    uint propagatorDir[4];
+    bool propagatorDir[4];
 };
 uniform StructuredBuffer<Propagator> propagator;
 #define PROPAGATOR(pattern, otherPattern, direction) propagator[pattern * nb_patterns + otherPattern].propagatorDir[direction]
@@ -47,8 +47,8 @@ uniform StructuredBuffer<Propagator> propagator;
 
 struct Collapse
 {
-    uint is_collapsed;
-    uint needs_collapse;
+    bool is_collapsed;
+    bool needs_collapse;
 };
 
 /* Neighbours of cells that changed. */
@@ -63,15 +63,15 @@ RWStructuredBuffer<Collapse> out_collapse;
 
 struct Result
 {
-    uint is_possible;
-    uint open_nodes;
-    uint finished;
-    uint padding;
+    bool is_possible;
+    bool open_nodes;
+    bool finished;
+    bool padding;
 };
 RWStructuredBuffer<Result> result;
 #define IS_POSSIBLE result[0].is_possible
 #define OPEN_NODES result[0].open_nodes
 #define FINISHED result[0].finished
 
-#define TRUE 1u
-#define FALSE 0u
+#define TRUE true
+#define FALSE false
