@@ -39,13 +39,13 @@ void observe(const int node, const uint2 node_coord)
 {
     for (int p1 = 0; p1 < nb_patterns; p1++)
     {
-        DISTRIBUTION(p1) = WAVE_IN(node, p1) == TRUE ? WEIGHT(p1) : 0.0f;
+        DISTRIBUTION(p1) = WAVE_OUT(node, p1) == TRUE ? WEIGHT(p1) : 0.0f;
     }
 
     const int r = random_from_distribution(weighting, nb_patterns, random_next_float());
     for (int p2 = 0; p2 < nb_patterns; p2++)
     {
-        if ((WAVE_IN(node, p2) == TRUE) != (p2 == r))
+        if ((WAVE_OUT(node, p2) == TRUE) != (p2 == r))
         {
             Ban(node, node_coord, p2);
         }
@@ -56,8 +56,8 @@ int next_unobserved_node()
 {
     float min = FLOAT_MAX;
     int argmin = -1;
-    const int wave_size = (uint)(height * width);
-    for (uint node = 0; node < wave_size; node++)
+    const int wave_size = (height * width);
+    for (int node = 0; node < wave_size; node++)
     {
         if (!is_periodic && (node % width + pattern_size > width || node / width + pattern_size > height)) continue;
         const int remaining_values = NUM_POSSIBLE_PATTERNS(node);

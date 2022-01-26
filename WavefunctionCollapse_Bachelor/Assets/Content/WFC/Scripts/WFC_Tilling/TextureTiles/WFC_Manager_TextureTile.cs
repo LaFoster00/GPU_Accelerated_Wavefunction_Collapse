@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Timers;
 using Models.CPU_Model;
 using Models.GPU_Model;
 using Unity.Mathematics;
@@ -24,6 +25,23 @@ namespace WFC.Tiling
         GPU_ComputeBuffer = 5
     }
 
+    [Serializable]
+    public struct BenchmarkConfig
+    {
+        public int iterations;
+        public int2 dimensions;
+
+        public int totalObserveIterations;
+        public int propagationIterations;
+    }
+
+    [Serializable]
+    public struct BenchmarkRun
+    {
+        public List<WFC_Texture2DTile> tiles;
+        public List<BenchmarkConfig> configs;
+    }
+
     //[ExecuteInEditMode]
     public class WFC_Manager_TextureTile : MonoBehaviour
     {
@@ -34,7 +52,22 @@ namespace WFC.Tiling
 
         [Header("Benchmark")] 
         [SerializeField] private bool runBenchmark = true;
-        [SerializeField] private int runsPerSolver = 10;
+
+        [SerializeField] private List<BenchmarkRun> benchmarkRuns = new List<BenchmarkRun>()
+        {
+            new BenchmarkRun()
+            {
+                tiles = new List<WFC_Texture2DTile>(),
+                configs = new List<BenchmarkConfig>()
+                {
+                    new BenchmarkConfig()
+                    {
+                        iterations = 10,
+                        dimensions = new int2(16, 16),
+                    }
+                }
+            }
+        };
 
         [Header("Solver")]
         [SerializeField] private Solver solver;
@@ -80,7 +113,23 @@ namespace WFC.Tiling
         private void Start()
         {
             CodeTimerOptions.active = timeFunctionCalls;
-            
+
+            _settings = new Model.PropagatorSettings(debugMode, stepInterval, DisplayWaveDebug);
+
+            if (runBenchmark)
+                StartCoroutine(RunBenchmark());
+            else
+                StartCoroutine(ExecuteWfc());
+        }
+
+        private void Update()
+        {
+            _settings.stepInterval = stepInterval;
+            _settings.debug = debugMode;
+        }
+
+        private IEnumerator ExecuteWfc()
+        {
             List<TileNeighbour<Texture2D>> neighbours = new List<TileNeighbour<Texture2D>>();
             foreach (var tile in tiles)
             {
@@ -91,23 +140,7 @@ namespace WFC.Tiling
                         neighbours.Add(neighbour);
                 }
             }
-
-            _settings = new Model.PropagatorSettings(debugMode, stepInterval, DisplayWaveDebug);
-
-            if (runBenchmark)
-                StartCoroutine(RunBenchmark(neighbours));
-            else
-                StartCoroutine(ExecuteWfc(neighbours));
-        }
-
-        private void Update()
-        {
-            _settings.stepInterval = stepInterval;
-            _settings.debug = debugMode;
-        }
-
-        private IEnumerator ExecuteWfc(List<TileNeighbour<Texture2D>> neighbours)
-        {
+            
             yield return new WaitForSeconds(2);
             
             double startTime = Time.realtimeSinceStartup;
@@ -230,109 +263,147 @@ namespace WFC.Tiling
             return result;
         }
 
-        private IEnumerator RunBenchmark(List<TileNeighbour<Texture2D>> neighbours)
+        private IEnumerator RunBenchmark()
         {
             yield return new WaitForSeconds(2);
-            
-            int iteration = 0;
 
-            double[] executionTimes = new double[(int)Solver.GPU_ComputeBuffer + 1];
-
-            int run = 0;
-            while (run <= (int)Solver.GPU_ComputeBuffer)
+            foreach (var benchmarkRun in benchmarkRuns)
             {
-                run++;
-                solver = (Solver)run - 1;
-                
-                Model model;
-                switch (solver)
+                tiles = benchmarkRun.tiles.ToArray();
+                Debug.Log($"Running benchmark for {benchmarkRun.tiles.Count} tiles.");
+                List<TileNeighbour<Texture2D>> neighbours = new List<TileNeighbour<Texture2D>>();
+                foreach (var tile in tiles)
                 {
-                    case Solver.CPU_Sequential:
-                        model = new CPU_Model_Sequential(width, height, 1, periodic);
-                        break;
-                    case Solver.CPU_Parallel_Queue:
-                        model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
-                        break;
-                    case Solver.CPU_Parallel_Batched:
-                        model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
-                        break;
-                    case Solver.GPU_Naive:
-                        model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
-                        break;
-                    case Solver.GPU_Granular:
-                        model = new GPU_Model_Granular(observerShader, propagatorShader, banShader, width, height, 1,
-                            periodic);
-                        break;
-                    case Solver.GPU_ComputeBuffer:
-                    default:
-                        model = new GPU_Model_ComputeBuffer(observerShader, propagatorShader, banShader,
-                            clearOutBuffersShader, resetOpenNodesShader, propagationIterations,
-                            totalObservePropagateIterations, width, height, 1, periodic);
-                        break;
-                }
-                
-                print($"Running Benchmark for {solver.ToString()}.");
-
-                TilingWFC<Texture2D> tilingWfc = new TilingWFC<Texture2D>(model,
-                    tiles.Cast<WFC_2DTile<Texture2D>>().ToArray(),
-                    neighbours.Cast<Neighbour<Texture2D>>().ToArray(), _settings);
-
-                Stopwatch stopwatch = new Stopwatch();
-                for (int i = 0; i < runsPerSolver; i++)
-                {
-                    stopwatch.Start();
-                    
-                    result = (false, null);
-                    while (!result.Success)
+                    tile.GenerateOrientations();
+                    foreach (var neighbour in tile.neighbours)
                     {
-                        Debug.Log("New Run");
-                        TilingWFC<Texture2D>.WFC_TypedResult wfcResult = new TilingWFC<Texture2D>.WFC_TypedResult();
-
-                        Unity.Mathematics.Random random =
-                            Unity.Mathematics.Random.CreateFromIndex(
-                                (uint) Random.Range(Int32.MinValue, Int32.MaxValue));
-                        yield return tilingWfc.Run(random.NextUInt(), maxNumIterations, wfcResult);
-
-                        result.Result = wfcResult.result;
-                        result.Success = wfcResult.success;
-                        iteration++;
-                        if (!result.Success) print("Generation failed. Retrying");
+                        if (neighbour.active && tiles.Contains(neighbour.leftTile) && tiles.Contains(neighbour.rightTile))
+                            neighbours.Add(neighbour);
                     }
-                    stopwatch.Stop();
-                    yield return new WaitForSeconds(0.01f);
                 }
-                executionTimes[(int)solver] += stopwatch.Elapsed.TotalSeconds;
-
-                switch (solver)
+                foreach (var benchmarkConfig in benchmarkRun.configs)
                 {
-                    case Solver.CPU_Parallel_Queue:
-                    case Solver.CPU_Parallel_Batched:
-                        if (model is CPU_Model_Parallel_Base parallelModel)
-                            parallelModel.Dispose();
-                        break;
-                    case Solver.GPU_Naive:
-                        if (model is GPU_Model_Naive naiveModel)
+                    width =  benchmarkConfig.dimensions.x;
+                    height = benchmarkConfig.dimensions.y;
+
+                    totalObservePropagateIterations = benchmarkConfig.totalObserveIterations;
+                    propagationIterations = benchmarkConfig.propagationIterations;
+
+                    Debug.Log($"Running config with {benchmarkConfig.iterations} iterations and a size of {benchmarkConfig.dimensions}.");
+                    
+                    int iteration = 0;
+
+                    double[] executionTimes = new double[(int) Solver.GPU_ComputeBuffer + 1];
+
+                    int run = 0;
+                    while (run <= (int) Solver.GPU_ComputeBuffer)
+                    {
+                        run++;
+                        solver = (Solver) run - 1;
+
+                        Model model;
+                        switch (solver)
                         {
-                            naiveModel.Dispose();
+                            case Solver.CPU_Sequential:
+                                model = new CPU_Model_Sequential(width, height, 1, periodic);
+                                break;
+                            case Solver.CPU_Parallel_Queue:
+                                model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
+                                break;
+                            case Solver.CPU_Parallel_Batched:
+                                model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
+                                break;
+                            case Solver.GPU_Naive:
+                                model = new GPU_Model_Naive(propagatorShader, width, height, 1, periodic);
+                                break;
+                            case Solver.GPU_Granular:
+                                model = new GPU_Model_Granular(observerShader, propagatorShader, banShader, width,
+                                    height,
+                                    1,
+                                    periodic);
+                                break;
+                            case Solver.GPU_ComputeBuffer:
+                            default:
+                                model = new GPU_Model_ComputeBuffer(observerShader, propagatorShader, banShader,
+                                    clearOutBuffersShader, resetOpenNodesShader, propagationIterations,
+                                    totalObservePropagateIterations, width, height, 1, periodic);
+                                break;
                         }
 
-                        break;
-                    case Solver.GPU_Granular:
-                    case Solver.GPU_ComputeBuffer:
-                        if (model is GPU_Model gpuModel)
+                        print($"Running Benchmark for {solver.ToString()}.");
+
+                        TilingWFC<Texture2D> tilingWfc = new TilingWFC<Texture2D>(model,
+                            tiles.Cast<WFC_2DTile<Texture2D>>().ToArray(),
+                            neighbours.Cast<Neighbour<Texture2D>>().ToArray(), _settings);
+
+                        Stopwatch stopwatch = new Stopwatch();
+                        for (int i = 0; i < benchmarkConfig.iterations; i++)
                         {
-                            //Free native resources
-                            gpuModel.Dispose();
+                            stopwatch.Start();
+
+                            result = (false, null);
+                            var internalTimer = new Stopwatch();
+                            while (!result.Success)
+                            {
+                                internalTimer.Start();
+                                Debug.Log("New Run");
+                                TilingWFC<Texture2D>.WFC_TypedResult wfcResult =
+                                    new TilingWFC<Texture2D>.WFC_TypedResult();
+
+                                Unity.Mathematics.Random random =
+                                    Unity.Mathematics.Random.CreateFromIndex(
+                                        (uint) Random.Range(Int32.MinValue, Int32.MaxValue));
+                                yield return tilingWfc.Run(random.NextUInt(), maxNumIterations, wfcResult);
+
+                                result.Result = wfcResult.result;
+                                result.Success = wfcResult.success;
+                                iteration++;
+                                if (!result.Success) print("Generation failed. Retrying");
+                                internalTimer.Stop();
+                            }
+                            Debug.Log($"This iteration took {internalTimer.Elapsed.TotalSeconds} seconds.");
+
+                            stopwatch.Stop();
+                            yield return new WaitForSeconds(0.01f);
                         }
 
-                        break;
+                        executionTimes[(int) solver] += stopwatch.Elapsed.TotalSeconds;
+
+                        switch (solver)
+                        {
+                            case Solver.CPU_Parallel_Queue:
+                            case Solver.CPU_Parallel_Batched:
+                                if (model is CPU_Model_Parallel_Base parallelModel)
+                                    parallelModel.Dispose();
+                                break;
+                            case Solver.GPU_Naive:
+                                if (model is GPU_Model_Naive naiveModel)
+                                {
+                                    naiveModel.Dispose();
+                                }
+
+                                break;
+                            case Solver.GPU_Granular:
+                            case Solver.GPU_ComputeBuffer:
+                                if (model is GPU_Model gpuModel)
+                                {
+                                    //Free native resources
+                                    gpuModel.Dispose();
+                                }
+
+                                break;
+                        }
+                    }
+
+                    PrintTimingData();
+                    CodeTimer_Average.Reset();
+
+                    for (int i = 0; i <= (int) Solver.GPU_ComputeBuffer; i++)
+                    {
+                        print(
+                            $"Solver '{((Solver) i).ToString()} took {executionTimes[i] / benchmarkConfig.iterations} seconds on average for a run.");
+                    }
                 }
-            }
-            PrintTimingData();
-
-            for (int i = 0; i <= (int)Solver.GPU_ComputeBuffer; i++)
-            {
-                print($"Solver '{((Solver)i).ToString()} took {executionTimes[i] / runsPerSolver} seconds on average for a run.");
             }
         }
 

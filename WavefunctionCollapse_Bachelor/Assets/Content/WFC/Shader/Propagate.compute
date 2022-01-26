@@ -2,12 +2,17 @@
 #pragma kernel CSMain
 #include "Include/CommonFunctionLib.cginc"
 
+/*
+Actual wave result
+wave(node, pattern)
+*/
+StructuredBuffer<uint> wave_in;
+#define WAVE_IN(node, pattern) wave_in[node * nb_patterns + pattern]
+
+
 [numthreads(32,32,1)]
 void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
 {
-    /* If there arent any open nodes dont execute. This ensures that we dont waste computational power on unnecessary iterations*/
-    if (FINISHED == TRUE || IS_POSSIBLE == FALSE) return;
-    
     const int node =  nodeCoord.y * width + nodeCoord.x;
     
     /* Return execution if node is outside of working grid. */
@@ -19,29 +24,31 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
         WAVE_OUT(node, pattern) = WAVE_IN(node, pattern);
     }
     
+    /* If there arent any open nodes dont execute. This ensures that we dont waste computational power on unnecessary iterations*/
+    if (FINISHED == TRUE || IS_POSSIBLE == FALSE) return;
+    
     if (IN_NEEDS_COLLAPSE(node) == FALSE) return;
     
-    for (uint direction = 0; direction < 4; direction++)
+    for (int direction = 0; direction < 4; direction++)
     {
         /* Generate neighbour coordinate */
-        int x2 = nodeCoord.x + directions_x[direction];
-        int y2 = nodeCoord.y + directions_y[direction];
+        int x2 = (int)nodeCoord.x + directions_x[direction];
+        int y2 = (int)nodeCoord.y + directions_y[direction];
 
         if (is_periodic)
         {
-            x2 = ((uint)(x2 + width)) % width;
-            y2 = ((uint)(y2 + height)) % height;
+            x2 = (x2 + width) % width;
+            y2 = (y2 + height) % height;
         }
         else if (!is_periodic && (x2 < 0
-                               || y2 < 0
-                               || x2 >= width 
-                               || y2 >= height))
+                                       || y2 < 0
+                                       || x2 >= width
+                                       || y2 >= height))
         {
             continue;
         }
 
         const int node2 = y2 * width + x2;
-        if (IN_IS_COLLAPSED(node2) == FALSE) continue;
 
         /*
          * Go over all still possible patterns in the current node and check if the are compatible
@@ -49,7 +56,7 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
          */
         for (int this_node_pattern = 0; this_node_pattern < nb_patterns; this_node_pattern++)
         {
-            /* Go over each pattern of the active node and check if they are still valid. */
+            /* Go over each pattern of the active node and check if they are still active. */
             if (WAVE_IN(node, this_node_pattern) == FALSE) continue;
             /*
              * Go over all possible patterns of the other cell and check if any of them are compatible
@@ -67,6 +74,7 @@ void CSMain (uint3 nodeCoord : SV_DispatchThreadID)
                     }
                 }
             }
+
             /* If there were no compatible patterns found Ban the pattern. */
             if (!any_possible)
             {

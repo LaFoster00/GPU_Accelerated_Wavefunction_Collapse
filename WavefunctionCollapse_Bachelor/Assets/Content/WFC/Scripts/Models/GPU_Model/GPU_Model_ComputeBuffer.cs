@@ -38,9 +38,9 @@ namespace Models.GPU_Model
              */
             scheduleObservationIteration = (commandBuffer) =>
             {
-                BindInOutBuffers(commandBuffer, true);
+                commandBuffer.SetComputeBufferParam(observerShader, 0, "out_collapse", inCollapseBuf);
+                commandBuffer.SetComputeBufferParam(observerShader, 0, "wave_out", waveInBuf);
                 commandBuffer.DispatchCompute(observerShader, 0, 1, 1, 1);
-                BindInOutBuffers(commandBuffer, true);
             };
 
             schedulePropagationDoubleIteration = (commandBuffer) =>
@@ -92,15 +92,8 @@ namespace Models.GPU_Model
             commandBuffer.SetComputeBufferParam(propagatorShader, 0, "out_collapse", outCollapseBuf);
             commandBuffer.SetComputeBufferParam(propagatorShader, 0, "wave_in", waveInBuf);
             commandBuffer.SetComputeBufferParam(propagatorShader, 0, "wave_out", waveOutBuf);
- 
-            commandBuffer.SetComputeBufferParam(observerShader, 0, "in_collapse", inCollapseBuf);
-            commandBuffer.SetComputeBufferParam(observerShader, 0, "out_collapse", outCollapseBuf);
-            commandBuffer.SetComputeBufferParam(observerShader, 0, "wave_in", waveInBuf);
-            commandBuffer.SetComputeBufferParam(observerShader, 0, "wave_out", waveOutBuf);
-            
-            commandBuffer.SetComputeBufferParam(banShader, 0, "in_collapse", inCollapseBuf);
+
             commandBuffer.SetComputeBufferParam(banShader, 0, "out_collapse", outCollapseBuf);
-            commandBuffer.SetComputeBufferParam(banShader, 0, "wave_in", waveInBuf);
             commandBuffer.SetComputeBufferParam(banShader, 0, "wave_out", waveOutBuf);
             
             commandBuffer.SetComputeBufferParam(_clearOutBuffersShader, 0, "out_collapse", outCollapseBuf);

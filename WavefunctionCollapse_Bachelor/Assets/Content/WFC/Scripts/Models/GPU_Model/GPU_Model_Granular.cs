@@ -53,19 +53,16 @@ namespace Models.GPU_Model
         private void Observe()
         {
             var timer = new CodeTimer_Average(true, true, true, "Observe_Granular", Debug.Log);
-            /*
-             * Since we want to ban nodes in the in buffers we swap in and out buffers so that the out-buffer in the shader
-             * (the one written to) is actually the in-buffer. This way we can leave only one of the buffers Read-Writeable
-             */
-            BindInOutBuffers(true);
             
+            observerShader.SetBuffer(0, "wave_out", waveInBuf);
+            observerShader.SetBuffer(0, "out_collapse", inCollapseBuf);
+
             observerShader.Dispatch(0, 1, 1, 1);
-        
-            /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
-            BindInOutBuffers(true);
 
             _resultBuf.GetData(_resultCopyBuf);
             (openNodes, isPossible) = (Convert.ToBoolean(_resultCopyBuf[0].openNodes), Convert.ToBoolean(_resultCopyBuf[0].isPossible));
+            
+            waveInBuf.GetData(waveCopyBuffer);
             
             timer.Stop(false);
         }

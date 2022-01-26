@@ -85,7 +85,7 @@ namespace Models.GPU_Model
         protected  ComputeBuffer inCollapseBuf;
         protected  ComputeBuffer outCollapseBuf;
 
-        protected  bool openNodes = true;
+        protected  bool openNodes;
         #endregion
 
         #region ObserverShaderResources
@@ -140,17 +140,16 @@ namespace Models.GPU_Model
 
             {
                 propagatorCopyBuffer = new Propagator[nbPatterns * nbPatterns];
-                Parallel.For(0, nbPatterns, pattern =>
+                for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
-                    int patternOffset = pattern * nbPatterns;
                     for (int otherPattern = 0; otherPattern < nbPatterns; otherPattern++)
                     {
-                        propagatorCopyBuffer[patternOffset + otherPattern].propagatorDown = Convert.ToUInt32(densePropagator[pattern][0][otherPattern]);
-                        propagatorCopyBuffer[patternOffset + otherPattern].propagatorLeft = Convert.ToUInt32(densePropagator[pattern][1][otherPattern]);
-                        propagatorCopyBuffer[patternOffset + otherPattern].propagatorRight = Convert.ToUInt32(densePropagator[pattern][2][otherPattern]);
-                        propagatorCopyBuffer[patternOffset + otherPattern].propagatorUp = Convert.ToUInt32(densePropagator[pattern][3][otherPattern]);
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorDown = Convert.ToUInt32(densePropagator[pattern][0][otherPattern]);
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorLeft = Convert.ToUInt32(densePropagator[pattern][1][otherPattern]);
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorRight = Convert.ToUInt32(densePropagator[pattern][2][otherPattern]);
+                        propagatorCopyBuffer[pattern * nbPatterns + otherPattern].propagatorUp = Convert.ToUInt32(densePropagator[pattern][3][otherPattern]);
                     }
-                });
+                }
                 propagatorBuf.SetData(propagatorCopyBuffer);
             }
         }
@@ -200,14 +199,7 @@ namespace Models.GPU_Model
             propagatorShader.SetBuffer(0, "wave_in", waveInBuf);
             propagatorShader.SetBuffer(0, "wave_out", waveOutBuf);
 
-            observerShader.SetBuffer(0, "in_collapse", inCollapseBuf);
-            observerShader.SetBuffer(0, "out_collapse", outCollapseBuf);
-            observerShader.SetBuffer(0, "wave_in", waveInBuf);
-            observerShader.SetBuffer(0, "wave_out", waveOutBuf);
-        
-            banShader.SetBuffer(0, "in_collapse", inCollapseBuf);
             banShader.SetBuffer(0, "out_collapse", outCollapseBuf);
-            banShader.SetBuffer(0, "wave_in", waveInBuf);
             banShader.SetBuffer(0, "wave_out", waveOutBuf);
         }
     
@@ -218,8 +210,6 @@ namespace Models.GPU_Model
             propagatorShader.SetInt("height", height);
             propagatorShader.SetBool("is_periodic", periodic);
         
-            propagatorShader.SetBuffer(0, "wave_in", waveInBuf);
-            propagatorShader.SetBuffer(0, "wave_out", waveOutBuf);
             propagatorShader.SetBuffer(0, "weighting", weightBuf);
             propagatorShader.SetBuffer(0, "memoisation", memoisationBuf);
             propagatorShader.SetBuffer(0, "propagator", propagatorBuf);
@@ -230,8 +220,6 @@ namespace Models.GPU_Model
             observerShader.SetInt("height", height);
             observerShader.SetBool("is_periodic", periodic);
         
-            observerShader.SetBuffer(0, "wave_in", waveInBuf);
-            observerShader.SetBuffer(0, "wave_out", waveOutBuf);
             observerShader.SetBuffer(0, "weighting", weightBuf);
             observerShader.SetBuffer(0, "memoisation", memoisationBuf);
             observerShader.SetBuffer(0, "propagator", propagatorBuf);
@@ -243,8 +231,6 @@ namespace Models.GPU_Model
             banShader.SetInt("height", height);
             banShader.SetBool("is_periodic", periodic);
         
-            banShader.SetBuffer(0, "wave_in", waveInBuf);
-            banShader.SetBuffer(0, "wave_out", waveOutBuf);
             banShader.SetBuffer(0, "weighting", weightBuf);
             banShader.SetBuffer(0, "memoisation", memoisationBuf);
             banShader.SetBuffer(0, "propagator", propagatorBuf);
@@ -257,7 +243,9 @@ namespace Models.GPU_Model
         protected override void Clear()
         {
             base.Clear();
-        
+
+            openNodes = false;
+            
             Result[] resultBufData = {new Result
             {
                 isPossible = Convert.ToUInt32(isPossible),

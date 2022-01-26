@@ -250,7 +250,6 @@ GameObject:
   m_Component:
   - component: {fileID: 291630408}
   - component: {fileID: 291630407}
-  - component: {fileID: 291630409}
   m_Layer: 0
   m_Name: WFC
   m_TagString: Untagged
@@ -272,23 +271,202 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tiles:
   - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
-  - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
   - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
-  - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
-  runBenchmark: 0
-  runsPerSolver: 10
-  solver: 2
+  runBenchmark: 1
+  benchmarkRuns:
+  - tiles:
+    - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+    configs:
+    - iterations: 10
+      dimensions:
+        x: 8
+        y: 8
+      totalObserveIterations: 1
+      propagationIterations: 2
+    - iterations: 10
+      dimensions:
+        x: 16
+        y: 16
+      totalObserveIterations: 1
+      propagationIterations: 4
+    - iterations: 10
+      dimensions:
+        x: 32
+        y: 32
+      totalObserveIterations: 1
+      propagationIterations: 8
+    - iterations: 10
+      dimensions:
+        x: 64
+        y: 64
+      totalObserveIterations: 1
+      propagationIterations: 16
+    - iterations: 10
+      dimensions:
+        x: 128
+        y: 128
+      totalObserveIterations: 1
+      propagationIterations: 32
+    - iterations: 10
+      dimensions:
+        x: 256
+        y: 256
+      totalObserveIterations: 1
+      propagationIterations: 64
+  - tiles:
+    - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+    - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
+    configs:
+    - iterations: 10
+      dimensions:
+        x: 8
+        y: 8
+      totalObserveIterations: 4
+      propagationIterations: 2
+    - iterations: 10
+      dimensions:
+        x: 16
+        y: 16
+      totalObserveIterations: 8
+      propagationIterations: 2
+    - iterations: 10
+      dimensions:
+        x: 32
+        y: 32
+      totalObserveIterations: 16
+      propagationIterations: 2
+    - iterations: 10
+      dimensions:
+        x: 64
+        y: 64
+      totalObserveIterations: 32
+      propagationIterations: 2
+    - iterations: 10
+      dimensions:
+        x: 128
+        y: 128
+      totalObserveIterations: 64
+      propagationIterations: 2
+  - tiles:
+    - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+    - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
+    - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
+    configs:
+    - iterations: 10
+      dimensions:
+        x: 8
+        y: 8
+      totalObserveIterations: 2
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 16
+        y: 16
+      totalObserveIterations: 2
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 32
+        y: 32
+      totalObserveIterations: 4
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 64
+        y: 64
+      totalObserveIterations: 8
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 128
+        y: 128
+      totalObserveIterations: 16
+      propagationIterations: 1
+  - tiles:
+    - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+    - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
+    - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
+    - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
+    configs:
+    - iterations: 10
+      dimensions:
+        x: 8
+        y: 8
+      totalObserveIterations: 2
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 16
+        y: 16
+      totalObserveIterations: 2
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 32
+        y: 32
+      totalObserveIterations: 4
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 64
+        y: 64
+      totalObserveIterations: 8
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 128
+        y: 128
+      totalObserveIterations: 16
+      propagationIterations: 1
+  - tiles:
+    - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
+    - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
+    - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
+    - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
+    - {fileID: 11400000, guid: bc39127be4d8d86589893ba21f50325f, type: 2}
+    configs:
+    - iterations: 10
+      dimensions:
+        x: 8
+        y: 8
+      totalObserveIterations: 2
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 16
+        y: 16
+      totalObserveIterations: 2
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 32
+        y: 32
+      totalObserveIterations: 4
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 64
+        y: 64
+      totalObserveIterations: 8
+      propagationIterations: 1
+    - iterations: 10
+      dimensions:
+        x: 128
+        y: 128
+      totalObserveIterations: 16
+      propagationIterations: 1
+  solver: 3
   maxNumIterations: -1
-  width: 16
-  height: 16
+  width: 4
+  height: 4
   periodic: 1
   saveOutput: 1
   useApplicationPath: 1
   filePath: /Content/WFC/Outputs/
   fileName: Output
   displayOffset: {x: 100, y: 100}
-  displayHeight: 30
-  displayWidth: 30
+  displayHeight: 32
+  displayWidth: 32
   drawFrame: 0
   frameTexture: {fileID: 2800000, guid: 8ba78a6717d99e7149284a6b51708efa, type: 3}
   highlightTexture: {fileID: 2800000, guid: 0de633a87b1dea303864f5f317515aa2, type: 3}
@@ -300,7 +478,7 @@ MonoBehaviour:
   clearOutBuffersShader: {fileID: 7200000, guid: b879f1635e9452ef6bff8c0e3cb06aac, type: 3}
   resetOpenNodesShader: {fileID: 7200000, guid: c24e4aa2b054ead4199bfac51f777778, type: 3}
   totalObservePropagateIterations: 1
-  propagationIterations: 30
+  propagationIterations: 1
   timeFunctionCalls: 1
   debugMode: 0
   stepInterval: 0
@@ -318,16 +496,61 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &291630409
+--- !u!1 &357111138
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 357111140}
+  - component: {fileID: 357111139}
+  - component: {fileID: 357111141}
+  m_Layer: 0
+  m_Name: Console
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &357111139
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 291630406}
+  m_GameObject: {fileID: 357111138}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0e49953509cad240b90eae6e35f007d, type: 3}
+  m_Script: {fileID: 11500000, guid: 3e6f44169d624e0192fff03d3d999ea8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  filePath: ./BenchmarkLog
+--- !u!4 &357111140
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 357111138}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.8273258, y: 7.138168, z: -2.0995092}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &357111141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 357111138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf1bf7e3ec7e4710bd8deb7697ab523b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &982648492

@@ -66,6 +66,8 @@ namespace Models.GPU_Model
         {
             public uint isPossible;
             public uint openNodes;
+            public uint finished;
+            public uint padding;
         }
         private readonly ComputeBuffer _resultBuf; // Change this to structured buffer
 
@@ -100,7 +102,7 @@ namespace Models.GPU_Model
             _collapseClearData = new Collapse[height * width];
             _collapseCopyBuffer = new Collapse[height * width];
 
-            _resultBuf = new ComputeBuffer(1, sizeof(int) * 2);
+            _resultBuf = new ComputeBuffer(1, sizeof(int) * 4);
         }
 
         public override void SetData(int nbPatterns, double[] weights, (bool[][][] dense, int[][][] standard) propagator,
@@ -117,7 +119,7 @@ namespace Models.GPU_Model
             _weightCopyBuffer = new Weighting[weights.Length];
 
             ClearInBuffers();
-            ClearInOutBuffers();
+            ClearOutBuffers();
 
             {
                 _propagatorCopyBuffer = new Propagator[nbPatterns * nbPatterns];
@@ -176,8 +178,6 @@ namespace Models.GPU_Model
             _propagatorShader.SetInt("height", height);
             _propagatorShader.SetBool("is_periodic", periodic);
 
-            _propagatorShader.SetBuffer(0, "wave_in", _waveInBuf);
-            _propagatorShader.SetBuffer(0, "wave_out", _waveOutBuf);
             _propagatorShader.SetBuffer(0, "weighting", _weightBuf);
             _propagatorShader.SetBuffer(0, "memoisation", _memoisationBuf);
             _propagatorShader.SetBuffer(0, "propagator", _propagatorBuf);
@@ -230,10 +230,10 @@ namespace Models.GPU_Model
                 _memoisationBuf.SetData(_memoisationCopyBuffer);
             }
 
-            ClearInOutBuffers();
+            ClearOutBuffers();
         }
 
-        private void ClearInOutBuffers()
+        private void ClearOutBuffers()
         {
             _outCollapseBuf.SetData(_collapseClearData);
         }
@@ -285,6 +285,7 @@ namespace Models.GPU_Model
             if (node >= 0)
             {
                 Observe(node, ref objects.random);
+                if (!isPossible) Debug.Log("Failed after observe.");
                 if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
                 {
                     yield return DebugDrawCurrentState();
@@ -341,7 +342,7 @@ namespace Models.GPU_Model
 
                 /* Swap the in out buffers. */
                 BindInOutBuffers(true);
-                ClearInOutBuffers();
+                ClearOutBuffers();
 
                 if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
                 {
