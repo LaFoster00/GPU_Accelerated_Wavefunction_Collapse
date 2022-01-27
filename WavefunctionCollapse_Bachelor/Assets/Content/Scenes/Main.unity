@@ -277,37 +277,37 @@ MonoBehaviour:
   - tiles:
     - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
     configs:
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 8
         y: 8
       totalObserveIterations: 1
       propagationIterations: 2
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 16
         y: 16
       totalObserveIterations: 1
       propagationIterations: 4
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 32
         y: 32
       totalObserveIterations: 1
       propagationIterations: 8
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 64
         y: 64
       totalObserveIterations: 1
       propagationIterations: 16
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 128
         y: 128
       totalObserveIterations: 1
       propagationIterations: 32
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 256
         y: 256
@@ -317,31 +317,31 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
     - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
     configs:
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 8
         y: 8
       totalObserveIterations: 4
       propagationIterations: 2
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 16
         y: 16
       totalObserveIterations: 8
       propagationIterations: 2
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 32
         y: 32
       totalObserveIterations: 16
       propagationIterations: 2
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 64
         y: 64
       totalObserveIterations: 32
       propagationIterations: 2
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 128
         y: 128
@@ -352,31 +352,31 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
     - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
     configs:
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 8
         y: 8
       totalObserveIterations: 2
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 16
         y: 16
       totalObserveIterations: 2
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 32
         y: 32
       totalObserveIterations: 4
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 64
         y: 64
       totalObserveIterations: 8
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 128
         y: 128
@@ -388,31 +388,31 @@ MonoBehaviour:
     - {fileID: 11400000, guid: ece531f2b77789099a4fd872728989fb, type: 2}
     - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
     configs:
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 8
         y: 8
       totalObserveIterations: 2
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 16
         y: 16
       totalObserveIterations: 2
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 32
         y: 32
       totalObserveIterations: 4
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 64
         y: 64
       totalObserveIterations: 8
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 128
         y: 128
@@ -425,31 +425,31 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 524f75f2d734c7312b54cc57e56a4a3c, type: 2}
     - {fileID: 11400000, guid: bc39127be4d8d86589893ba21f50325f, type: 2}
     configs:
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 8
         y: 8
       totalObserveIterations: 2
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 16
         y: 16
       totalObserveIterations: 2
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 32
         y: 32
       totalObserveIterations: 4
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 64
         y: 64
       totalObserveIterations: 8
       propagationIterations: 1
-    - iterations: 10
+    - iterations: 20
       dimensions:
         x: 128
         y: 128
