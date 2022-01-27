@@ -480,8 +480,8 @@ MonoBehaviour:
   totalObservePropagateIterations: 1
   propagationIterations: 1
   timeFunctionCalls: 1
-  debugMode: 1
-  stepInterval: 1
+  debugMode: 0
+  stepInterval: 0
 --- !u!4 &291630408
 Transform:
   m_ObjectHideFlags: 0
