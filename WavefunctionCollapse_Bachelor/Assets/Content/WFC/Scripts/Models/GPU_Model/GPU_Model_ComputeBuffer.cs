@@ -236,7 +236,7 @@ namespace Models.GPU_Model
             banParamsCopyBuffer[0].node = node;
             banParamsCopyBuffer[0].pattern = pattern;
             banParamsBuf.SetData(banParamsCopyBuffer);
-            observerShader.Dispatch(0, 1, 1, 1);
+            banShader.Dispatch(0, 1, 1, 1);
         
             /* Swap back the in- and out-buffers so that they align with the correct socket for the propagation step. */
             BindInOutBuffers(true);

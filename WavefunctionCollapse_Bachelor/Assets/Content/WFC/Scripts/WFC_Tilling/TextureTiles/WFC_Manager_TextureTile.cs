@@ -265,6 +265,8 @@ namespace WFC.Tiling
             foreach (var benchmarkRun in benchmarkRuns)
             {
                 tiles = benchmarkRun.tiles.ToArray();
+                Debug.Log("----------------------------------------------------------------------------------------------------------");
+                Debug.Log('\n');
                 Debug.Log($"Running benchmark for {benchmarkRun.tiles.Count} tiles.");
                 List<TileNeighbour<Texture2D>> neighbours = new List<TileNeighbour<Texture2D>>();
                 foreach (var tile in tiles)
@@ -325,7 +327,7 @@ namespace WFC.Tiling
                                 break;
                         }
 
-                        print($"Running Benchmark for {solver.ToString()}.");
+                        print($"Running Benchmark for {solver.ToString()}. \n");
 
                         TilingWFC<Texture2D> tilingWfc = new TilingWFC<Texture2D>(model,
                             tiles.Cast<WFC_2DTile<Texture2D>>().ToArray(),
@@ -341,7 +343,11 @@ namespace WFC.Tiling
                             while (!result.Success)
                             {
                                 internalTimer.Start();
-                                Debug.Log("New Run");
+                                if (Application.isEditor)
+                                {
+                                    Debug.Log("New Run");
+                                }
+
                                 TilingWFC<Texture2D>.WFC_TypedResult wfcResult =
                                     new TilingWFC<Texture2D>.WFC_TypedResult();
 
@@ -353,10 +359,14 @@ namespace WFC.Tiling
                                 result.Result = wfcResult.result;
                                 result.Success = wfcResult.success;
                                 iteration++;
-                                if (!result.Success) print("Generation failed. Retrying");
+                                if (Application.isEditor && !result.Success) print("Generation failed. Retrying");
                                 internalTimer.Stop();
                             }
-                            Debug.Log($"This iteration took {internalTimer.Elapsed.TotalSeconds} seconds.");
+
+                            if (Application.isEditor)
+                            {
+                                Debug.Log($"This iteration took {internalTimer.Elapsed.TotalSeconds} seconds.");
+                            }
 
                             stopwatch.Stop();
                             yield return new WaitForSeconds(0.01f);
@@ -391,6 +401,9 @@ namespace WFC.Tiling
                         print(
                             $"Solver '{((Solver) i).ToString()} took {executionTimes[i] / benchmarkConfig.iterations} seconds on average for a run.");
                     }
+
+                    Debug.Log('\n');
+                    Debug.Log("----------------------------------------------------------------------------------------------------------");
                 }
             }
         }
@@ -403,6 +416,7 @@ namespace WFC.Tiling
                 foreach (var timing in timings)
                 {
                     Debug.Log(CodeTimer_Average.GetMessage(timing.Value));
+                    Debug.Log('\n');
                 }
             }
         }
