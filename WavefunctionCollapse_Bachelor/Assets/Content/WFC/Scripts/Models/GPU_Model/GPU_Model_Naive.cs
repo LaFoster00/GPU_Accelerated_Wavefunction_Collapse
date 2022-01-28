@@ -109,10 +109,13 @@ namespace Models.GPU_Model
         {
             /* Copy back memoisation data. It is needed to find the next free node. */
             CopyGpuMemoisationToCpu();
+            var timer = new CodeTimer_Average(true, true, true, "Observe_Naive", Debug.Log);
             int node = NextUnobservedNode(objects.random);
             if (node >= 0)
             {
                 Observe(node, ref objects.random);
+                timer.Stop(false);
+                
                 if (!isPossible) Debug.Log("Failed after observe.");
                 if (propagatorSettings.debug != PropagatorSettings.DebugMode.None)
                 {
@@ -138,6 +141,7 @@ namespace Models.GPU_Model
             }
             else
             {
+                timer.Stop(false);
                 result.output = WaveToOutput();
                 result.success = true;
                 result.finished = true;
@@ -206,8 +210,6 @@ namespace Models.GPU_Model
         
         protected void Observe(int node, ref Random random)
         {
-            var timer = new CodeTimer_Average(true, true, true, "Observe_Naive", Debug.Log);
-
             FillBanCopyBuffers();
 
             float[] distribution = new float[nbPatterns];
@@ -226,8 +228,6 @@ namespace Models.GPU_Model
             }
             
             ApplyBanCopyBuffers();
-
-            timer.Stop(false);
         }
 
         private void FillBanCopyBuffers()

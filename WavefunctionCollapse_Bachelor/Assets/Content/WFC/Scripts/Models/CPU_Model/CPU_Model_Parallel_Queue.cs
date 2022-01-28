@@ -37,6 +37,7 @@ namespace Models.CPU_Model
 
         protected override IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
         {
+            var timer = new CodeTimer_Average(true, true, true, "Observe_Parallel", Debug.Log);
             var nextNodeJob = new NextUnobservedNode_Job
             {
                 jobInfo = this.jobInfo,
@@ -50,8 +51,6 @@ namespace Models.CPU_Model
             int node = nextNodeJob.result;
             if (node >= 0)
             {
-                var timer = new CodeTimer_Average(true, true, true, "Observe_Parallel", Debug.Log);
-                
                 var observeJob = new Observe_Job
                 {
                     jobInfo = this.jobInfo,
@@ -95,6 +94,7 @@ namespace Models.CPU_Model
             }
             else
             {
+                timer.Stop(false);
                 result.output = WaveToOutput();
                 result.success = true;
                 result.finished = true;

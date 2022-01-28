@@ -168,8 +168,6 @@ namespace Models.CPU_Model
 
         protected virtual void Observe(int node, ref Random random)
         {
-            var timer = new CodeTimer_Average(true, true, true, "Observe_Sequential", Debug.Log);
-            
             // Choose an element according to the pattern distribution
             bool[] w = wave[node];
             for (int pattern = 0; pattern < nbPatterns; pattern++)
@@ -181,16 +179,16 @@ namespace Models.CPU_Model
             for (int pattern = 0; pattern < nbPatterns; pattern++)
                 if (w[pattern] != (pattern == r))
                     Ban(node, pattern);
-            
-            timer.Stop(false);
         }
 
         private IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result)
         {
+            var timer = new CodeTimer_Average(true, true, true, "Observe_Sequential", Debug.Log);
             int node = NextUnobservedNode(objects.random);
             if (node >= 0)
             {
                 Observe(node, ref objects.random);
+                timer.Stop(false);
 
                 var propagation = Propagate();
                 propagation.MoveNext();
@@ -208,6 +206,7 @@ namespace Models.CPU_Model
             }
             else
             {
+                timer.Stop(false);
                 result.output = WaveToOutput();
                 result.success = true;
                 result.finished = true;
@@ -252,8 +251,7 @@ namespace Models.CPU_Model
                 stepInfo.currentTile.y = node / width;
 
                 for (int direction = 0; direction < 4; direction++)
-                {
-                    var internalTimer = new CodeTimer_Average(true, true, true, "Propagate_Internal_Sequential", Debug.Log);
+                { 
                     stepInfo.targetTile.x = stepInfo.currentTile.x + Directions.DirectionsX[direction];
                     stepInfo.targetTile.y = stepInfo.currentTile.y + Directions.DirectionsY[direction];
                     if (periodic)
@@ -298,7 +296,6 @@ namespace Models.CPU_Model
                             yield return DebugDrawCurrentState();
                         }
                     }
-                    internalTimer.Stop(false);
                 }
             }
             timer.Stop(false);
