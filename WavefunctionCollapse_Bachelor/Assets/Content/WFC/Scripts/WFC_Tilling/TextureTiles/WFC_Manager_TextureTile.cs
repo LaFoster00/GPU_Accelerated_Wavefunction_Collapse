@@ -156,7 +156,7 @@ namespace WFC.Tiling
                     model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
                     break;
                 case Solver.CPU_Parallel_Batched:
-                    model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
+                    model = new CPU_Model_Parallel_HashSet(width, height, 1, periodic);
                     break;
                 case Solver.GPU_Naive:
                     model = new GPU_Model_Naive(observerShader, propagatorShader, banShader, width, height, 1, periodic);
@@ -308,7 +308,7 @@ namespace WFC.Tiling
                                 model = new CPU_Model_Parallel_Queue(width, height, 1, periodic);
                                 break;
                             case Solver.CPU_Parallel_Batched:
-                                model = new CPU_Model_Parallel_Batched(width, height, 1, periodic);
+                                model = new CPU_Model_Parallel_HashSet(width, height, 1, periodic);
                                 break;
                             case Solver.GPU_Naive:
                                 model = new GPU_Model_Naive(observerShader, propagatorShader, banShader, width, height, 1, periodic);

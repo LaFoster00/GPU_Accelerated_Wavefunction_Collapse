@@ -13,11 +13,11 @@ using Random = Unity.Mathematics.Random;
 namespace Models.CPU_Model
 {
     [BurstCompile]
-    public class CPU_Model_Parallel_Batched : CPU_Model_Parallel_Base
+    public class CPU_Model_Parallel_HashSet : CPU_Model_Parallel_Base
     {
         private NativeHashSet<int> openNodes;
 
-        public CPU_Model_Parallel_Batched(int width, int height, int patternSize, bool periodic) : base(width, height,
+        public CPU_Model_Parallel_HashSet(int width, int height, int patternSize, bool periodic) : base(width, height,
             patternSize, periodic)
         {
             jobInfo.width = width;

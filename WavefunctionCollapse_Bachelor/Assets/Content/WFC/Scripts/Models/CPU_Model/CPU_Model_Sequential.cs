@@ -310,7 +310,7 @@ namespace Models.CPU_Model
         {
             int[] observed = new int[nbNodes];
             int[,] outputPatterns = new int[height, width];
-            Parallel.For(0, wave.Length, node =>
+            for (int node = 0; node < nbNodes; node++)
             {
                 for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
@@ -323,7 +323,7 @@ namespace Models.CPU_Model
                         break;
                     }
                 }
-            });
+            }
 
             return outputPatterns;
         }

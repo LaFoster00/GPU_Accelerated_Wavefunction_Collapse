@@ -343,7 +343,7 @@ namespace Models.GPU_Model
         {
             bool[][] wave = CopyGpuWaveToCpu();
             int[,] outputPatterns = new int[height, width];
-            Parallel.For(0, wave.Length, node =>
+            for (int node = 0; node < nbNodes; node++)
             {
                 for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
@@ -355,7 +355,7 @@ namespace Models.GPU_Model
                         break;
                     }
                 }
-            });
+            }
 
             return outputPatterns;
         }

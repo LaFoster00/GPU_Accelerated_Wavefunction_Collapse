@@ -10,6 +10,7 @@ using Random = Unity.Mathematics.Random;
 
 namespace Models.CPU_Model
 {
+    [BurstCompile]
     public abstract class CPU_Model_Parallel_Base : CPU_Model, IDisposable
     {
         protected NativeArray<bool> waveIn;
@@ -137,8 +138,8 @@ namespace Models.CPU_Model
 
         protected override void Clear()
         {
-            Parallel.For(0, nbNodes, node =>
-                /* for (int node = 0; node < wave.Length; node++) */
+            //Parallel.For(0, nbNodes, node => 
+            for (int node = 0; node < nbNodes; node++)
             {
                 for (int pattern = 0; pattern < nbPatterns; pattern++)
                 {
@@ -151,7 +152,7 @@ namespace Models.CPU_Model
                 mem.sumsOfWeightsLogWeights = totalSumOfWeightLogWeights;
                 mem.entropies = startingEntropy;
                 memoisation[node] = mem;
-            });
+            }
 
             waveOut.CopyFrom(waveIn);
 
@@ -202,28 +203,6 @@ namespace Models.CPU_Model
 
         protected abstract IEnumerator Run_Internal(WFC_Objects objects, WFC_Result result);
         
-        protected int NextUnobservedNode(ref Random random)
-        {
-            double min = Double.MaxValue;
-            int argmin = -1;
-            for (int node = 0; node < nbNodes; node++)
-            {
-                if (!periodic && (node % width + patternSize > width || node / width + patternSize > height)) continue;
-                int remainingValues = memoisation[node].numPossiblePatterns;
-                double entropy = memoisation[node].entropies;
-                if (remainingValues > 1 && entropy <= min)
-                {
-                    double noise = 1E-6 * random.NextDouble();
-                    if (entropy + noise < min)
-                    {
-                        min = entropy + noise;
-                        argmin = node;
-                    }
-                }
-            }
-
-            return argmin;
-        }
 
         [BurstCompile]
         protected struct NextUnobservedNode_Job : IJob

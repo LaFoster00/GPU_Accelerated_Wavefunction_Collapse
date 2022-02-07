@@ -272,7 +272,7 @@ MonoBehaviour:
   tiles:
   - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
   - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
-  runBenchmark: 0
+  runBenchmark: 1
   benchmarkRuns:
   - tiles:
     - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
@@ -479,7 +479,7 @@ MonoBehaviour:
   resetOpenNodesShader: {fileID: 7200000, guid: c24e4aa2b054ead4199bfac51f777778, type: 3}
   totalObservePropagateIterations: 1
   propagationIterations: 1
-  timeFunctionCalls: 1
+  timeFunctionCalls: 0
   debugMode: 0
   stepInterval: 0
 --- !u!4 &291630408
