@@ -1,2 +1,2 @@
 # WavefunctionCollapse_Bachelor
-Practical part of Bachelor work on GPU Accelerated wavefunction collapse
+Bachelor source code, as well as documentation.
