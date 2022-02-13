@@ -55,6 +55,8 @@ namespace Models.CPU_Model
 
         protected NativeArray<Memoisation> memoisation;
 
+        protected NativeArray<bool> isPossibleJobData = new NativeArray<bool>(1, Allocator.Persistent);
+        
         public CPU_Model_Parallel_Base(int width, int height, int patternSize, bool periodic) : base(width, height,
             patternSize, periodic)
         {
@@ -157,6 +159,7 @@ namespace Models.CPU_Model
             waveOut.CopyFrom(waveIn);
 
             base.Clear();
+            isPossibleJobData[0] = isPossible;
         }
 
         public override IEnumerator Run(uint seed, int limit, WFC_Result result)
@@ -213,7 +216,7 @@ namespace Models.CPU_Model
             [ReadOnly] public NativeArray<Memoisation> memoisation;
             [ReadOnly] public Random random;
 
-            [WriteOnly] public int result;
+            [WriteOnly] public NativeArray<int> result;
 
             public void Execute()
             {
@@ -241,7 +244,7 @@ namespace Models.CPU_Model
                     }
                 }
 
-                result = argmin;
+                result[0] = argmin;
             }
         }
 
@@ -279,6 +282,7 @@ namespace Models.CPU_Model
             weighting.Dispose();
             memoisation.Dispose();
             propagator.Dispose();
+            isPossibleJobData.Dispose();
         }
     }
 }

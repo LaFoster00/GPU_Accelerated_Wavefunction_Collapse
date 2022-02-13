@@ -271,8 +271,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tiles:
   - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
-  - {fileID: 11400000, guid: 32c8084ee55e3d67890958ab868f8f1b, type: 2}
-  runBenchmark: 1
+  runBenchmark: 0
   benchmarkRuns:
   - tiles:
     - {fileID: 11400000, guid: 19781d39beefcaf3fa740428b7a8927e, type: 2}
@@ -455,18 +454,18 @@ MonoBehaviour:
         y: 128
       totalObserveIterations: 16
       propagationIterations: 1
-  solver: 3
+  solver: 2
   maxNumIterations: -1
-  width: 4
-  height: 4
+  width: 32
+  height: 8
   periodic: 1
   saveOutput: 1
   useApplicationPath: 1
   filePath: /Content/WFC/Outputs/
-  fileName: Output
+  fileName: 5_Tile_32_8
   displayOffset: {x: 100, y: 100}
-  displayHeight: 32
-  displayWidth: 32
+  displayHeight: 64
+  displayWidth: 64
   drawFrame: 0
   frameTexture: {fileID: 2800000, guid: 8ba78a6717d99e7149284a6b51708efa, type: 3}
   highlightTexture: {fileID: 2800000, guid: 0de633a87b1dea303864f5f317515aa2, type: 3}
@@ -480,8 +479,9 @@ MonoBehaviour:
   totalObservePropagateIterations: 1
   propagationIterations: 1
   timeFunctionCalls: 0
-  debugMode: 0
-  stepInterval: 0
+  printPerRunInfo: 0
+  debugMode: 2
+  stepInterval: 0.05
 --- !u!4 &291630408
 Transform:
   m_ObjectHideFlags: 0

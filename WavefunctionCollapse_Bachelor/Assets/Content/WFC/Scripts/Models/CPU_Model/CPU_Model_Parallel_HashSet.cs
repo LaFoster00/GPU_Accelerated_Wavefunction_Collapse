@@ -92,29 +92,35 @@ namespace Models.CPU_Model
                 wave = this.waveIn,
                 memoisation = this.memoisation,
                 random = objects.random,
+                result = new NativeArray<int>(1, Allocator.TempJob),
             };
 
-            nextNodeJob.Execute();
+            nextNodeJob.Schedule().Complete();
             //Copy back the random object, the state will be needed later.
             objects.random = nextNodeJob.random;
             //Copy back the resulting node
-            int node = nextNodeJob.result;
+            int node = nextNodeJob.result[0];
+            nextNodeJob.result.Dispose();
             if (node >= 0)
             {
+                var random = new NativeArray<Random>(1, Allocator.TempJob);
+                random[0] = objects.random;
                 var observeJob = new Observe_Job
                 {
                     jobInfo = this.jobInfo,
                     node = node,
-                    random = objects.random,
+                    random = random,
                     wave = this.waveIn,
                     weighting = this.weighting,
                     memoisation = this.memoisation,
-                    isPossible = this.isPossible,
+                    isPossible = isPossibleJobData,
                     openNodes = this.openNodes.AsParallelWriter(),
+                    distribution = new NativeArray<double>(jobInfo.nbPatterns, Allocator.TempJob),
                 };
-                observeJob.Execute();
-                objects.random = observeJob.random;
-                isPossible = observeJob.isPossible;
+                observeJob.Schedule().Complete();
+                objects.random = random[0];
+                random.Dispose();
+                isPossible = isPossibleJobData[0];
 
                 waveOut.CopyFrom(waveIn);
                 
@@ -156,25 +162,26 @@ namespace Models.CPU_Model
 
             public NativeArray<bool> wave;
             [ReadOnly] public NativeArray<Weighting> weighting;
-            [ReadOnly] public Random random;
-            [WriteOnly] public bool isPossible;
+            public NativeArray<Random> random;
+            [WriteOnly] public NativeArray<bool> isPossible;
 
             public NativeArray<Memoisation> memoisation;
             public NativeHashSet<int>.ParallelWriter openNodes;
 
-            private NativeArray<double> distribution;
+            [DeallocateOnJobCompletion]
+            public NativeArray<double> distribution;
 
             public void Execute()
             {
                 // Choose an element according to the pattern distribution
-                distribution = new NativeArray<double>(jobInfo.nbPatterns, Allocator.Temp);
-
+                Random randomAccess = random[0];
+                
                 for (int pattern = 0; pattern < jobInfo.nbPatterns; pattern++)
                 {
                     distribution[pattern] = wave[node * jobInfo.nbPatterns + pattern] ? weighting[pattern].weight : 0.0;
                 }
 
-                int r = RandomFromDistribution(random.NextDouble());
+                int r = RandomFromDistribution(randomAccess.NextDouble());
                 for (int pattern = 0; pattern < jobInfo.nbPatterns; pattern++)
                 {
                     if (wave[node * jobInfo.nbPatterns + pattern] != (pattern == r))
@@ -195,11 +202,10 @@ namespace Models.CPU_Model
                                 
                         };
                         ban.Execute();
-                        isPossible = ban.isPossible;
                     }
                 }
 
-                distribution.Dispose();
+                random[0] = randomAccess;
             }
 
             public int RandomFromDistribution(double threshold)
@@ -234,7 +240,7 @@ namespace Models.CPU_Model
                 var propagateJob = new Propagate_Job()
                 {
                     jobInfo = this.jobInfo,
-                    isPossible = isPossible,
+                    isPossible = isPossibleJobData,
                     waveIn = this.waveIn,
                     waveOut = this.waveOut,
                     openWorkNodes = openNodesArray,
@@ -244,7 +250,7 @@ namespace Models.CPU_Model
                     openNodes = openNodes.AsParallelWriter(),
                 };
                 propagateJob.Schedule(openNodesArray.Length, (int) math.ceil(openNodesArray.Length / 8.0f)).Complete();
-                isPossible = propagateJob.isPossible;
+                isPossible = isPossibleJobData[0];
                 waveIn.CopyFrom(waveOut);
 
                 openNodesArray.Dispose();
@@ -266,12 +272,11 @@ namespace Models.CPU_Model
         private struct Propagate_Job : IJobParallelFor
         {
             [ReadOnly] public JobInfo jobInfo;
-            [WriteOnly] public bool isPossible;
+            [NativeDisableContainerSafetyRestriction, WriteOnly] public NativeArray<bool> isPossible;
 
             /* Wave data, wave[node * nbPatterns + pattern] */
             [ReadOnly] public NativeArray<bool> waveIn;
-            [NativeDisableContainerSafetyRestriction]
-            public NativeArray<bool> waveOut;
+            [NativeDisableContainerSafetyRestriction, WriteOnly] public NativeArray<bool> waveOut;
 
             /* Maps the index of execute to the actual node index of that thread. */
             [ReadOnly] public NativeArray<int> openWorkNodes;
@@ -285,7 +290,6 @@ namespace Models.CPU_Model
 
             [NativeDisableContainerSafetyRestriction]
             public NativeArray<Memoisation> memoisation;
-
             public NativeHashSet<int>.ParallelWriter openNodes;
 
             public void Execute(int index)
@@ -359,7 +363,6 @@ namespace Models.CPU_Model
                                 
                             };
                             ban.Execute();
-                            isPossible = ban.isPossible;
                         }
                     }
                 }
@@ -403,7 +406,7 @@ namespace Models.CPU_Model
                 node = node,
                 nodeCoord = nodeCoord,
                 pattern = pattern,
-                isPossible = isPossible,
+                isPossible = isPossibleJobData,
                 wave = waveIn,
                 jobInfo = jobInfo,
                 memoisation = memoisation,
@@ -411,7 +414,7 @@ namespace Models.CPU_Model
                 openNodes = openNodes.AsParallelWriter()
             };
             ban.Execute();
-            isPossible = ban.isPossible;
+            isPossible = isPossibleJobData[0];
         }
 
         [BurstCompile]
@@ -419,7 +422,7 @@ namespace Models.CPU_Model
         {
             [ReadOnly] public int node;
             [ReadOnly] public int pattern;
-            [ReadOnly] public bool isPossible;
+            [ReadOnly] public NativeSlice<bool> isPossible;
             [ReadOnly] public JobInfo jobInfo;
             [ReadOnly] public int2 nodeCoord;
             public NativeSlice<bool> wave;
@@ -444,7 +447,7 @@ namespace Models.CPU_Model
                 mem.entropies = math.log(sum) - mem.sumsOfWeightsLogWeights / sum;
                 if (mem.numPossiblePatterns <= 0)
                 {
-                    isPossible = false;
+                    isPossible[0] = false;
                 }
 
                 memoisation[node] = mem;

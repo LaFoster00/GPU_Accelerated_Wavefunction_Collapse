@@ -50,8 +50,7 @@ namespace WFC.Tiling
         public (bool Success, Texture2D[,] Result) result;
         public (Model.StepInfo stepInfo, List<Texture2D>[,] debug) debugOutput;
 
-        [Header("Benchmark")] 
-        [SerializeField] private bool runBenchmark = true;
+        [Header("Benchmark")] [SerializeField] private bool runBenchmark = true;
 
         [SerializeField] private List<BenchmarkRun> benchmarkRuns = new List<BenchmarkRun>()
         {
@@ -69,21 +68,18 @@ namespace WFC.Tiling
             }
         };
 
-        [Header("Solver")]
-        [SerializeField] private Solver solver;
+        [Header("Solver")] [SerializeField] private Solver solver;
         [SerializeField] private int maxNumIterations = -1;
-        
-        [Header("Output")]
-        [SerializeField] private int width;
+
+        [Header("Output")] [SerializeField] private int width;
         [SerializeField] private int height;
         [SerializeField] private bool periodic = true;
         [SerializeField] private bool saveOutput = false;
         [SerializeField] private bool useApplicationPath = true;
         [SerializeField] private string filePath = "/Content/WFC/Outputs/";
         [SerializeField] private string fileName = "Output";
-        
-        [Header("Display")]
-        [SerializeField] private Vector2Int displayOffset;
+
+        [Header("Display")] [SerializeField] private Vector2Int displayOffset;
         [SerializeField] private int displayHeight = 16;
         [SerializeField] private int displayWidth = 16;
         [SerializeField] private bool drawFrame = true;
@@ -91,20 +87,21 @@ namespace WFC.Tiling
         [SerializeField] private Texture2D highlightTexture;
         [SerializeField] private Texture2D greenHighlightTexture;
         [SerializeField] private Texture2D yellowFrameTexture;
-        
-        [Header("GPU Compute Shader")]
+
+        [Header("GPU Compute Shader")] 
         [SerializeField] private ComputeShader observerShader;
         [SerializeField] private ComputeShader propagatorShader;
         [SerializeField] private ComputeShader banShader;
         [SerializeField] private ComputeShader clearOutBuffersShader;
         [SerializeField] private ComputeShader resetOpenNodesShader;
 
-        [Header("ComputeBuffer Settings")]
+        [Header("ComputeBuffer Settings")] 
         [SerializeField] private int totalObservePropagateIterations = 10;
         [SerializeField] private int propagationIterations = 4;
 
-        [Header("Debug Mode")] [SerializeField]
-        private bool timeFunctionCalls = false;
+        [Header("Debug Mode")] 
+        [SerializeField] private bool timeFunctionCalls = false;
+        [SerializeField] private bool printPerRunInfo = false;
         [SerializeField] private Model.PropagatorSettings.DebugMode debugMode;
         [SerializeField] private float stepInterval;
 
@@ -242,14 +239,15 @@ namespace WFC.Tiling
         public Texture2D OutputToTexture(Texture2D[,] output)
         {
             int tilesize = output[0, 0].width;
-            int MX = output.GetLength(0), MY = output.GetLength(1);
+            int MY = output.GetLength(0), MX = output.GetLength(1);
             Texture2D result = new Texture2D(MX * tilesize, MY * tilesize, output[0,0].format, false);
 
             for (int tileX = 0; tileX < MX; tileX++)
             {
                 for (int tileY = 0; tileY < MY; tileY++)
                 {
-                    result.SetPixels(tileX * tilesize, tileY * tilesize, tilesize, tilesize, output[height - tileY - 1, tileX].GetPixels());
+                    var pixels = output[height - tileY - 1, tileX].GetPixels();
+                    result.SetPixels(tileX * tilesize, tileY * tilesize, tilesize, tilesize, pixels);
                 }
             }
 
@@ -293,7 +291,7 @@ namespace WFC.Tiling
                     double[] executionTimes = new double[(int) Solver.GPU_ComputeBuffer + 1];
 
                     int run = 0;
-                    while (run <= (int) Solver.GPU_ComputeBuffer)
+                    while (run <= (int) Solver.CPU_Parallel_Batched)
                     {
                         run++;
                         solver = (Solver) run - 1;
@@ -343,7 +341,7 @@ namespace WFC.Tiling
                             while (!result.Success)
                             {
                                 internalTimer.Start();
-                                if (Application.isEditor)
+                                if (Application.isEditor && printPerRunInfo)
                                 {
                                     Debug.Log("New Run");
                                 }
@@ -363,7 +361,7 @@ namespace WFC.Tiling
                                 internalTimer.Stop();
                             }
 
-                            if (Application.isEditor)
+                            if (Application.isEditor && printPerRunInfo)
                             {
                                 Debug.Log($"This iteration took {internalTimer.Elapsed.TotalSeconds} seconds.");
                             }
