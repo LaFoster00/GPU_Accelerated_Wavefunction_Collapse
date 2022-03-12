@@ -3,4 +3,4 @@ Bachelor source code, as well as documentation.
 
 The bachelor thesis can be found inside the **_documentation_** folder.
 
-You can find my research paper on *Terrain Feature Generation Using Wavefunction Collapse* [here](https://mega.nz/file/mgJRWKZb#0H9NguHGDVGBeApdLGMxZW29iI93HOOfl-3eoSlVbfM).
+You can find my research paper on *Terrain Feature Generation Using Wavefunction Collapse* [here](https://mega.nz/file/mgJRWKZb#0H9NguHGDVGBeApdLGMxZW29iI93HOOfl-3eoSlVbfM) or as part of the combined Bachelor-Ressearch PDF in the document folder.
